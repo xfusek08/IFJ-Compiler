@@ -1,7 +1,10 @@
 # IFJ-Compiler
-Projekt do IFJ
+Projekt to IFJ
+  IFJ17 (FreeBASIC) compiler
+  
+  ... coming soon
 
-Autoři
+Authors
 ------
 
 WinDos
@@ -13,4 +16,4 @@ WinDos
 Licence
 -------
 
-Tento program je poskytován pod licencí GPLv3.0.
+This program is distributed under GPLv3.0.
