@@ -1,5 +1,5 @@
 # IFJ-Compiler
-Projekt to IFJ
+Project IFJ
   IFJ17 (FreeBASIC) compiler
   
   ... coming soon
