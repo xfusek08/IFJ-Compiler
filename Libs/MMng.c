@@ -1,14 +1,9 @@
 /**
- * @brief   Memory manager sources
- * @file    MMng.c
- * @author  Petr Fusek (xfusek08)
- * @date    26.09.2017
- *
- * **Last modified**:  Petr Fusek
- *
- * @todo some genral error handeling with types and all ... 
- * @todo all exits replace whith some general runtime error func 
- * @todo add some debugging logging macra ... 
+ * \project IFJ-Compiler
+ * \brief   Memory manager sources
+ * \file    MMng.c
+ * \author  Petr Fusek (xfusek08)
+ * \date    26.09.2017 - Petr Fusek
  */
 
 #include <stdio.h>

@@ -1,15 +1,18 @@
 /**
- * @brief   Memory manager
- * @file    MMng.h
- * @author  Petr Fusek (xfusek08)
- * @date    26.09.2017
+ * \project IFJ-Compiler
+ * \brief   Memory manager
+ * \file    MMng.h
  *
  * This package provides functions for basic safe memory operations.
  * There are functions for memory allocation and deallocation including deallocation of all memory at once.
  * Operations are treated and all errors are handled by freeing memory and terminating program with corresponding error description.
- * Therefore there is no need of another external check of allocation result. This is make better surence of right work with memmory. 
+ * Therefore there is no need of another external check of allocation result. This is make better surence of right work with memmory.
  *
- * **Last modified:**  Petr Fusek
+ * \author  Petr Fusek (xfusek08)
+ * \date    26.09.2017 - Petr Fusek
+ * \todo some genral error handeling with types and all ...
+ * \todo all exits replace whith some general runtime error func
+ * \todo add some debugging logging macra ...
  */
 
 #ifndef _MMng
