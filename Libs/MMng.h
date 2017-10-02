@@ -1,3 +1,4 @@
+/******************************************************************************/
 /**
  * \project IFJ-Compiler
  * \file    MMng.h
@@ -14,6 +15,7 @@
  * \todo all exits replace whith some general runtime error func
  * \todo add some debugging logging macra ...
  */
+/******************************************************************************/
 
 #ifndef _MMng
 #define _MMng
