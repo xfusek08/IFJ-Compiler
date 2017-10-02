@@ -1,7 +1,7 @@
 /**
  * \project IFJ-Compiler
- * \brief   Memory manager sources
  * \file    MMng.c
+ * \brief   Memory manager sources
  * \author  Petr Fusek (xfusek08)
  * \date    26.09.2017 - Petr Fusek
  */

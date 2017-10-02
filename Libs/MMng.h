@@ -1,7 +1,7 @@
 /**
  * \project IFJ-Compiler
- * \brief   Memory manager
  * \file    MMng.h
+ * \brief   Memory manager
  *
  * This package provides functions for basic safe memory operations.
  * There are functions for memory allocation and deallocation including deallocation of all memory at once.
@@ -19,26 +19,26 @@
 #define _MMng
 
 /**
- * @brief Initialization 
+ * \brief Initialization
  *
  * Function prepares internal data structures and allows using another functions of memory manager.
- * This function has to be called before first call of **safe allocation fucntion** (@ref mmng_safeMalloc) owterwise error is occured.
+ * This function has to be called before first call of **safe allocation fucntion** (\ref mmng_safeMalloc) owterwise error is occured.
  */
 void mmng_init();
 
 /**
- * @brief Safe allocation
+ * \brief Safe allocation
  * 
  * Function provides allocation of memory. In case of error frees all so far allocated memory and terminate program with coresponding error.
  * Pointer of new allocated block is stored in internal data structure for safe deallocation.
  *
- * @param   size_t    size of memory to be allocated, corespond to result of sizeof() function
- * @retval  void *    pointer to allocated memory
+ * \param   size_t    size of memory to be allocated, corespond to result of sizeof() function
+ * \retval  void *    pointer to allocated memory
  */
  void *mmng_safeMalloc(size_t size);
 
  /**
- * @brief Free all allocated memory
+ * \brief Free all allocated memory
  * 
  * Function safely frees all allocated memory including internal data structures.
  * After calling this function program should end or memory manager has to be initialized again. 
@@ -46,7 +46,7 @@ void mmng_init();
  void mmng_freeAll();
 
  /**
- * @brief Safe free
+ * \brief Safe free
  * 
  * Function safely frees pointer and unregister it from internal data structures
  */
