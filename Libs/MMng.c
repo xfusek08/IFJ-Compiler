@@ -52,7 +52,7 @@ TMMPItem TMMPItem_create()
 TMMPList TMMPList_create()
 {
 
-  TMMPList newList = (TMMPList)malloc(sizeof(struct PItem));
+  TMMPList newList = (TMMPList)malloc(sizeof(struct PList));
   if (newList == NULL)
   {
     // allocation error in mmng ... write out and exit;
