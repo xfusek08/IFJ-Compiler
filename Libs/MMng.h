@@ -7,12 +7,11 @@
  * This package provides functions for basic safe memory operations.
  * There are functions for memory allocation and deallocation including deallocation of all memory at once.
  * Operations are treated and all errors are handled by freeing memory and terminating program with corresponding error description.
- * Therefore there is no need of another external check of allocation result. This is make better surence of right work with memmory.
+ * Therefore there is no need for another external checks of allocation results. This makes better surence of proper work with memmory.
  *
  * \author  Petr Fusek (xfusek08)
  * \date    26.09.2017 - Petr Fusek
- * \todo some genral error handeling with types and all ...
- * \todo all exits replace whith some general runtime error func
+ * \todo all errors redo for Application Error library
  * \todo add some debugging logging macra ...
  */
 /******************************************************************************/
