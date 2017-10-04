@@ -1,6 +1,6 @@
 
 CFLAGS = -std=c99 -Wall -Wextra -Werror
-EXECUTABLE = test
+EXECUTABLE = ifjcompile
 SOURCES = $(wildcard *.c) $(wildcard */*.c)
 OBJS = $(patsubst %.c,%.o,$(SOURCES))
 
