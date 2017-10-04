@@ -25,7 +25,6 @@ struct PItem {
 // table of all allocated pointers
 typedef struct PList *TMMPList;
 struct PList {
-  unsigned int count;
   TMMPItem head;
   TMMPItem tail;
 };
@@ -60,7 +59,6 @@ TMMPList TMMPList_create()
     exit(1);
   }
 
-  newList->count = 0;
   newList->head = NULL;
   newList->tail = NULL;
 
@@ -83,8 +81,6 @@ void TMMPList_addPointer(TMMPList list, void *pointer)
 
   if (list->head == NULL)
     list->head = newItem;
-  
-  list->count++;
 }
 
 /**
@@ -109,7 +105,6 @@ bool TMMPList_deletePointer(TMMPList list, void *pointer)
         list->tail = prevItem;
 
       free(actItem);
-      list->count--;
       return true;
     }
     prevItem = actItem; 
@@ -168,7 +163,7 @@ void mmng_freeAll()
 {
   assertIfNotInit("mmng_freeAll()");
   
-  while (GLBPointerList->count > 0)
+  while (GLBPointerList->head != NULL)
     mmng_safeFree(GLBPointerList->head);
   free(GLBPointerList);
   GLBPointerList = NULL;
