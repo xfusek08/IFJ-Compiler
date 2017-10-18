@@ -16,4 +16,3 @@ $(EXECUTABLE): $(OBJS)
 
 clean:
 	-rm *.o */*.o
-

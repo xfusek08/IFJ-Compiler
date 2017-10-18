@@ -29,7 +29,7 @@ void mmng_init();
 
 /**
  * \brief Safe allocation
- * 
+ *
  * Function provides allocation of memory. In case of error frees all so far allocated memory and terminate program with coresponding error.
  * Pointer of new allocated block is stored in internal data structure for safe deallocation.
  *
@@ -40,15 +40,15 @@ void mmng_init();
 
  /**
  * \brief Free all allocated memory
- * 
+ *
  * Function safely frees all allocated memory including internal data structures.
- * After calling this function program should end or memory manager has to be initialized again. 
+ * After calling this function program should end or memory manager has to be initialized again.
  */
  void mmng_freeAll();
 
  /**
  * \brief Safe free
- * 
+ *
  * Function safely frees pointer and unregister it from internal data structures
  */
  void mmng_safeFree(void *pointer);

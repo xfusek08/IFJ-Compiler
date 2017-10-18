@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Libs/MMng.h"
+#include "Libs/symtable.h"
 
 int main(int argc, char *argv[])
 {
@@ -18,9 +19,11 @@ int main(int argc, char *argv[])
   (void)argv;
 
   mmng_init();
+  symbt_init();
 
-  // ... spousta mallocu a frees ... 
+  // ... spousta mallocu a frees ...
 
+  symbt_destroy();
   mmng_freeAll();
   return 0;
 }

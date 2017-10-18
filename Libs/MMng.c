@@ -53,7 +53,7 @@ TMMPItem TMMPItem_create()
 
   newItem->pointer = NULL;
   newItem->next = NULL;
-  
+
   return newItem;
 }
 
@@ -83,12 +83,12 @@ TMMPList TMMPList_create()
 void TMMPList_addPointer(TMMPList list, void *pointer)
 {
   TMMPItem newItem = TMMPItem_create();
-  
+
   newItem->pointer = pointer;
-  
+
   if (list->tail != NULL)
     list->tail->next = newItem;
-  
+
   list->tail = newItem;
 
   if (list->head == NULL)
@@ -96,7 +96,7 @@ void TMMPList_addPointer(TMMPList list, void *pointer)
 }
 
 /**
- * removes pointer from list but frees only list item not pointer itself 
+ * removes pointer from list but frees only list item not pointer itself
  * returns true if some item was deleted, otherwise false
  */
 bool TMMPList_deletePointer(TMMPList list, void *pointer)
@@ -109,17 +109,17 @@ bool TMMPList_deletePointer(TMMPList list, void *pointer)
     {
       if (prevItem != NULL)
         prevItem->next = actItem->next;
-      
-      if (list->head == actItem) 
+
+      if (list->head == actItem)
         list->head = actItem->next;
 
-      if (list->tail == actItem) 
+      if (list->tail == actItem)
         list->tail = prevItem;
 
       free(actItem);
       return true;
     }
-    prevItem = actItem; 
+    prevItem = actItem;
     actItem = actItem->next;
   }
   return false;
@@ -152,7 +152,7 @@ void mmng_init()
   {
     fprintf(stderr, "mmng_init(): Memory manager is already initialized.");
     exit(1);
-  } 
+  }
   GLBPointerList = TMMPList_create();
 }
 
@@ -176,7 +176,7 @@ void *mmng_safeMalloc(size_t size)
 void mmng_freeAll()
 {
   assertIfNotInit("mmng_freeAll()");
-  
+
   while (GLBPointerList->head != NULL)
     mmng_safeFree(GLBPointerList->head);
   free(GLBPointerList);
@@ -187,7 +187,7 @@ void mmng_freeAll()
 void mmng_safeFree(void *pointer)
 {
   assertIfNotInit("mmng_safeFree()");
-  
+
   if (TMMPList_deletePointer(GLBPointerList, pointer))
     free(pointer);
   else
