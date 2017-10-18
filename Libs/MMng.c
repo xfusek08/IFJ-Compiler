@@ -4,7 +4,7 @@
  * \file    MMng.c
  * \brief   Memory manager sources
  * \author  Petr Fusek (xfusek08)
- * \date    26.09.2017 - Petr Fusek
+ * \date    18.10.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -13,7 +13,9 @@
 #include <stdbool.h>
 #include "MMng.h"
 
-// ************************** internal data structures *****************************
+// =============================================================================
+// ================= Iternal data structures definition ========================
+// =============================================================================
 
 // one item of general pointer table
 typedef struct PItem *TMMPItem;
@@ -28,6 +30,14 @@ struct PList {
   TMMPItem head;
   TMMPItem tail;
 };
+
+
+// global internal instance of list of pointers
+TMMPList GLBPointerList;
+
+// =============================================================================
+// ======================= TMMPItem implementation ==============================
+// =============================================================================
 
 // constructor of TMMPItem
 TMMPItem TMMPItem_create()
@@ -47,6 +57,10 @@ TMMPItem TMMPItem_create()
   return newItem;
 }
 
+// =============================================================================
+// ======================= TMMPList implementation ==============================
+// =============================================================================
+
 // constructor of TMMPList
 TMMPList TMMPList_create()
 {
@@ -64,8 +78,6 @@ TMMPList TMMPList_create()
 
   return newList;
 }
-
-// operation ovef pointer list
 
 // adds item with pointer on the end of list
 void TMMPList_addPointer(TMMPList list, void *pointer)
@@ -113,10 +125,9 @@ bool TMMPList_deletePointer(TMMPList list, void *pointer)
   return false;
 }
 
-// definition of internal static instance of list pf pointers
-TMMPList GLBPointerList;
-
-// ******************************* support functions  ******************************
+// =============================================================================
+// ====================== support function ====================================
+// =============================================================================
 
 // error if GLBPointerList is not initialized
 void assertIfNotInit(char *funcname)
@@ -130,8 +141,11 @@ void assertIfNotInit(char *funcname)
   }
 }
 
-// ************************** Interface function definition ************************
+// =============================================================================
+// ====================== Interface implementation =============================
+// =============================================================================
 
+// memory manager initialization
 void mmng_init()
 {
   if (GLBPointerList != NULL)
