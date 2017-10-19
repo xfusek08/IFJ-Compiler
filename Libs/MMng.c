@@ -4,7 +4,7 @@
  * \file    MMng.c
  * \brief   Memory manager sources
  * \author  Petr Fusek (xfusek08)
- * \date    18.10.2017 - Petr Fusek
+ * \date    19.10.2017 - Petr Fusek
  */
 /******************************************************************************/
 

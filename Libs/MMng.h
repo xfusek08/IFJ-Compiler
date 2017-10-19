@@ -10,7 +10,7 @@
  * Therefore there is no need for another external checks of allocation results. This makes better surence of proper work with memmory.
  *
  * \author  Petr Fusek (xfusek08)
- * \date    3.10.2017 - Petr Fusek
+ * \date    19.10.2017 - Petr Fusek
  * \todo all errors redo for Application Error library
  * \todo add some debugging logging macra ...
  */
