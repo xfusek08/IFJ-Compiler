@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Libs/MMng.h"
+#include "Libs/stacks.h"
 
 int main(int argc, char *argv[])
 {
@@ -18,9 +19,24 @@ int main(int argc, char *argv[])
   (void)argv;
 
   mmng_init();
+  // ... spousta mallocu a frees ...
+  
+  iStack stack = ist_init();
+  for (int i = 1; i < 10; i++)
+  {
+    stack->push(stack, i);
+  }
 
-  // ... spousta mallocu a frees ... 
+  for (int i = 1; i < 10; i++)
+  {
+    printf("top: ");
+    printf("%d\n", stack->top(stack));
+    stack->pop(stack);
+  }
 
+  stack->destruct(stack);
   mmng_freeAll();
+                         
+  
   return 0;
 }
