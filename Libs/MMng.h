@@ -20,7 +20,7 @@
 #define _MMng
 
 /**
- * \brief Initialization
+ * Initialization
  *
  * Function prepares internal data structures and allows using another functions of memory manager.
  * This function has to be called before first call of **safe allocation fucntion** (\ref mmng_safeMalloc) owterwise error is occured.
@@ -28,29 +28,38 @@
 void mmng_init();
 
 /**
- * \brief Safe allocation
- * 
+ * Safe allocation
+ *
  * Function provides allocation of memory. In case of error frees all so far allocated memory and terminate program with coresponding error.
  * Pointer of new allocated block is stored in internal data structure for safe deallocation.
  *
  * \param   size_t    size of memory to be allocated, corespond to result of sizeof() function
  * \retval  void *    pointer to allocated memory
  */
- void *mmng_safeMalloc(size_t size);
+void *mmng_safeMalloc(size_t size);
 
- /**
- * \brief Free all allocated memory
- * 
- * Function safely frees all allocated memory including internal data structures.
- * After calling this function program should end or memory manager has to be initialized again. 
+/**
+ * Reallocate allocated memory of given pointer to new size.
+ *
+ * \param   void *    pointer to allocated memory, if NULL new memory is allocated
+ * \param   size_t    size of memory to be allocated, corespond to result of sizeof() function
+ * \retval  void *    new pointer to reallocated memmory
  */
- void mmng_freeAll();
+void *mmng_safeRealloc(void *pointer, size_t size);
 
- /**
- * \brief Safe free
- * 
+/**
+ * Free all allocated memory
+ *
+ * Function safely frees all allocated memory including internal data structures.
+ * After calling this function program should end or memory manager has to be initialized again.
+ */
+void mmng_freeAll();
+
+/**
+ * Safe free
+ *
  * Function safely frees pointer and unregister it from internal data structures
  */
- void mmng_safeFree(void *pointer);
+void mmng_safeFree(void *pointer);
 
 #endif // _MMng
