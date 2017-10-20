@@ -4,7 +4,7 @@
  * \file    MMng.c
  * \brief   Memory manager sources
  * \author  Petr Fusek (xfusek08)
- * \date    18.10.2017 - Petr Fusek
+ * \date    19.10.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -53,7 +53,7 @@ TMMPItem TMMPItem_create()
 
   newItem->pointer = NULL;
   newItem->next = NULL;
-  
+
   return newItem;
 }
 
@@ -64,7 +64,6 @@ TMMPItem TMMPItem_create()
 // constructor of TMMPList
 TMMPList TMMPList_create()
 {
-
   TMMPList newList = (TMMPList)malloc(sizeof(struct PList));
   if (newList == NULL)
   {
@@ -82,13 +81,16 @@ TMMPList TMMPList_create()
 // adds item with pointer on the end of list
 void TMMPList_addPointer(TMMPList list, void *pointer)
 {
+  if (pointer == NULL)
+    return;
+
   TMMPItem newItem = TMMPItem_create();
-  
+
   newItem->pointer = pointer;
-  
+
   if (list->tail != NULL)
     list->tail->next = newItem;
-  
+
   list->tail = newItem;
 
   if (list->head == NULL)
@@ -96,11 +98,14 @@ void TMMPList_addPointer(TMMPList list, void *pointer)
 }
 
 /**
- * removes pointer from list but frees only list item not pointer itself 
+ * removes pointer from list but frees only list item not pointer itself
  * returns true if some item was deleted, otherwise false
  */
 bool TMMPList_deletePointer(TMMPList list, void *pointer)
 {
+  if (pointer == NULL)
+    return false;
+
   TMMPItem actItem = list->head;
   TMMPItem prevItem = NULL;
   while(actItem != NULL)
@@ -109,17 +114,17 @@ bool TMMPList_deletePointer(TMMPList list, void *pointer)
     {
       if (prevItem != NULL)
         prevItem->next = actItem->next;
-      
-      if (list->head == actItem) 
+
+      if (list->head == actItem)
         list->head = actItem->next;
 
-      if (list->tail == actItem) 
+      if (list->tail == actItem)
         list->tail = prevItem;
 
       free(actItem);
       return true;
     }
-    prevItem = actItem; 
+    prevItem = actItem;
     actItem = actItem->next;
   }
   return false;
@@ -152,7 +157,7 @@ void mmng_init()
   {
     fprintf(stderr, "mmng_init(): Memory manager is already initialized.");
     exit(1);
-  } 
+  }
   GLBPointerList = TMMPList_create();
 }
 
@@ -172,11 +177,28 @@ void *mmng_safeMalloc(size_t size)
   return pointer;
 }
 
+// Reallocate allocated memory of given pointer to new size.
+void *mmng_safeRealloc(void *pointer, size_t size)
+{
+  assertIfNotInit("mmng_safeRealloc()");
+  void *newPointer = realloc(pointer, size);
+  if (newPointer == NULL)
+  {
+    perror("mmng_safeRealloc(): Reallocation error");
+    mmng_freeAll();
+    exit(1);
+  }
+  // delete old pointer
+  TMMPList_deletePointer(pointer);
+  // store new pointer
+  TMMPList_addPointer(GLBPointerList, pointer);
+}
+
 // Free all allocated memory
 void mmng_freeAll()
 {
   assertIfNotInit("mmng_freeAll()");
-  
+
   while (GLBPointerList->head != NULL)
     mmng_safeFree(GLBPointerList->head);
   free(GLBPointerList);
@@ -187,7 +209,7 @@ void mmng_freeAll()
 void mmng_safeFree(void *pointer)
 {
   assertIfNotInit("mmng_safeFree()");
-  
+
   if (TMMPList_deletePointer(GLBPointerList, pointer))
     free(pointer);
   else
