@@ -14,30 +14,33 @@
 #ifndef STACKSLIB
 #define STACKSLIB
 
+#include "grammar.h"
 #define STACK_INITIAL_SIZE 30
 
 
-typedef struct integerStack *iStack;
+typedef struct grammarStack *TGrStack;
 
 /**
-* Integer stack
+* Grammar Stack
+*
+* Each item contains one grammar enum variable.
 */
-struct integerStack{
+struct grammarStack{
   /** insert value on top */
-  void (*push)(iStack , int);
+  void (*push)(TGrStack , Egrammar);
   /** remove item on top */
-  void (*pop)(iStack);
+  void (*pop)(TGrStack);
   /** returns data of item on top */
-  int (*top)(iStack);
+  Egrammar (*top)(TGrStack);
   /** safe destruction of stack. If stack is not empty, throw error. */
-  void(*destruct)(iStack);
+  void(*destruct)(TGrStack);
 
   int count;
   int size;
   int *stack;
 };
 
-typedef struct pointerStack pStack;
+typedef struct pointerStack *TPStack;
 /**
 * Pointer stack
 */
@@ -59,11 +62,11 @@ struct pointerStack{
 /**
 * Initialize empty integer stack and returns its pointer.
 */
-iStack ist_init();
+TGrStack ist_init();
 
 /**
 * Initialize empty pointer stack and returns its pointer.
 */
-pStack *pst_init();
+TPStack pst_init();
 
 #endif // !STACKSLIB
