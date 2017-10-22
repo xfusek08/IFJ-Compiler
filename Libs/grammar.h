@@ -14,10 +14,10 @@
 #ifndef GRAMMAR
 #define GRAMMAR
 
-enum Egrammar
+typedef enum
 {
-
-};
+  placeholder
+}Egrammar;
 
 
 #endif

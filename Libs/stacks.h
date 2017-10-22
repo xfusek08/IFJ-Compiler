@@ -46,13 +46,13 @@ typedef struct pointerStack *TPStack;
 */
 struct pointerStack{
   /** insert value on top */
-  void (*push)(pStack *, void *);
+  void (*push)(TPStack *, void *);
   /** remove item on top */
-  void (*pop)(pStack *);
+  void (*pop)(TPStack *);
   /** returns data of item on top */
-  void *(*top)(pStack *);
+  void *(*top)(TPStack *);
   /** safe destruction of stack. If stack is not empty, throw error. */
-  void (*destruct)(pStack *);
+  void (*destruct)(TPStack *);
   
   int count;
   int size;

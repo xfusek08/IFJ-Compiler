@@ -12,12 +12,13 @@
 
 #include "stacks.h"
 #include "MMng.h"
+#include "grammar.h"
 #include <stdlib.h>
 #include <stdio.h>
 
 /****** INTEGER STACK ********/
 
-void ist_push(TGrStack stack, int val)
+void ist_push(TGrStack stack, Egrammar val)
 {
   if (stack->count == stack->size)
   {
@@ -38,7 +39,7 @@ void ist_pop(TGrStack stack)
   stack->count--;
 }
 
-int ist_top(TGrStack stack)
+Egrammar ist_top(TGrStack stack)
 {
   if (stack->count == 0)
   {
@@ -61,8 +62,8 @@ void ist_destruct(TGrStack stack)
 
 TGrStack TGrStack_init()
 {
-  TGrStack stack = mmng_safeMalloc(sizeof(struct integerStack));
-  stack->stack = mmng_safeMalloc(sizeof(int)*STACK_INITIAL_SIZE);
+  TGrStack stack = mmng_safeMalloc(sizeof(struct grammarStack));
+  stack->stack = mmng_safeMalloc(sizeof(Egrammar)*STACK_INITIAL_SIZE);
   stack->size = STACK_INITIAL_SIZE;
   stack->count = 0;
   stack->push = ist_push;

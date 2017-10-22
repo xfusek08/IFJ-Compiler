@@ -21,10 +21,10 @@ int main(int argc, char *argv[])
   mmng_init();
   // ... spousta mallocu a frees ...
   
-  iStack stack = ist_init();
+  TGrStack stack = TGrStack_init();
   for (int i = 1; i < 10; i++)
   {
-    stack->push(stack, i);
+    stack->push(stack, placeholder);
   }
 
   for (int i = 1; i < 10; i++)
