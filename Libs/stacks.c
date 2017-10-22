@@ -23,7 +23,7 @@ void ist_push(TGrStack stack, Egrammar val)
 {
   if (stack->count == stack->size)
   {
-    //TODO: realloc
+    stack->stack = mmng_safeRealloc(stack->stack, stack->size * sizeof(Egrammar) + stack->size * sizeof(Egrammar) * STACK_REALLOC_MULTIPLIER);
     fprintf(stderr, "stack realloc not implemented yet.\n");
     exit(1);
   }
@@ -80,7 +80,7 @@ void pst_push(TPStack stack, void *val)
 {
   if (stack->count == stack->size)
   {
-    //TODO: realloc
+    stack->stack = mmng_safeRealloc(stack->stack, stack->size * sizeof(void *) + stack->size * sizeof(void *) * STACK_REALLOC_MULTIPLIER);
     fprintf(stderr, "stack realloc not implemented yet.\n");
     exit(1);
   }

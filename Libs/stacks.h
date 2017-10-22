@@ -15,7 +15,12 @@
 #define STACKSLIB
 
 #include "grammar.h"
+/*Capacity of newly initialized stack*/
 #define STACK_INITIAL_SIZE 30
+/*Indicates how much space stack realloc when its full.
+new_size = old_size + old_size * STACK_REALLOC_MULTIPLIER)
+*/
+#define STACK_REALLOC_MULTIPLIER 2
 
 
 typedef struct grammarStack *TGrStack;
@@ -34,8 +39,9 @@ struct grammarStack{
   Egrammar (*top)(TGrStack);
   /** safe destruction of stack. If stack is not empty, throw error. */
   void(*destruct)(TGrStack);
-
+  /** Number of items in stack. */
   int count;
+  /** Capacity of stack. */
   int size;
   int *stack;
 };
@@ -53,8 +59,9 @@ struct pointerStack{
   void *(*top)(TPStack);
   /** safe destruction of stack. If stack is not empty, throw error. */
   void (*destruct)(TPStack);
-  
+  /** Number of items in stack. */
   int count;
+  /** Capacity of stack. */
   int size;
   void **stack;
 };
