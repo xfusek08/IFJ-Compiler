@@ -62,11 +62,11 @@ struct pointerStack{
 /**
 * Initialize empty integer stack and returns its pointer.
 */
-TGrStack ist_init();
+TGrStack TGrStack_init();
 
 /**
 * Initialize empty pointer stack and returns its pointer.
 */
-TPStack pst_init();
+TPStack TPStack_init();
 
 #endif // !STACKSLIB

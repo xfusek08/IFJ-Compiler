@@ -17,7 +17,7 @@
 
 /****** INTEGER STACK ********/
 
-void ist_push(iStack stack, int val)
+void ist_push(TGrStack stack, int val)
 {
   if (stack->count == stack->size)
   {
@@ -28,7 +28,7 @@ void ist_push(iStack stack, int val)
   stack->stack[stack->count++] = val;
 }
 
-void ist_pop(iStack stack)
+void ist_pop(TGrStack stack)
 {
   if (stack->count == 0)
   {
@@ -38,7 +38,7 @@ void ist_pop(iStack stack)
   stack->count--;
 }
 
-int ist_top(iStack stack)
+int ist_top(TGrStack stack)
 {
   if (stack->count == 0)
   {
@@ -48,7 +48,7 @@ int ist_top(iStack stack)
   return stack->stack[stack->count-1];
 }
 
-void ist_destruct(iStack stack)
+void ist_destruct(TGrStack stack)
 {
   if (stack->count != 0)
   {
@@ -59,9 +59,9 @@ void ist_destruct(iStack stack)
   mmng_safeFree(stack);
 }
 
-iStack ist_init()
+TGrStack TGrStack_init()
 {
-  iStack stack = mmng_safeMalloc(sizeof(struct integerStack));
+  TGrStack stack = mmng_safeMalloc(sizeof(struct integerStack));
   stack->stack = mmng_safeMalloc(sizeof(int)*STACK_INITIAL_SIZE);
   stack->size = STACK_INITIAL_SIZE;
   stack->count = 0;
