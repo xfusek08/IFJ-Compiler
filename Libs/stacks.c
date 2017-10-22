@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+
 /****** INTEGER STACK ********/
 
 void ist_push(TGrStack stack, Egrammar val)
@@ -75,3 +76,57 @@ TGrStack TGrStack_init()
 
 
 /****** POINTER STACK ********/
+void pst_push(TPStack stack, void *val)
+{
+  if (stack->count == stack->size)
+  {
+    //TODO: realloc
+    fprintf(stderr, "stack realloc not implemented yet.\n");
+    exit(1);
+  }
+  stack->stack[stack->count++] = val;
+}
+
+void pst_pop(TPStack stack)
+{
+  if (stack->count == 0)
+  {
+    fprintf(stderr, "trying pop empty stack!\n");
+    exit(1);
+  }
+  stack->count--;
+}
+
+void *pst_top(TPStack stack)
+{
+  if (stack->count == 0)
+  {
+    fprintf(stderr, "trying read from empty stack!\n");
+    exit(1);
+  }
+  return stack->stack[stack->count - 1];
+}
+
+void pst_destruct(TPStack stack)
+{
+  if (stack->count != 0)
+  {
+    fprintf(stderr, "Trying to destruct non-empty stack!\n");
+    exit(1);
+  }
+  mmng_safeFree(stack->stack);
+  mmng_safeFree(stack);
+}
+
+TPStack TPStack_init()
+{
+  TPStack stack = mmng_safeMalloc(sizeof(struct pointerStack));
+  stack->stack = mmng_safeMalloc(sizeof(void *)*STACK_INITIAL_SIZE);
+  stack->size = STACK_INITIAL_SIZE;
+  stack->count = 0;
+  stack->push = pst_push;
+  stack->pop = pst_pop;
+  stack->top = pst_top;
+  stack->destruct = pst_destruct;
+  return stack;
+}

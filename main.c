@@ -35,6 +35,25 @@ int main(int argc, char *argv[])
   }
 
   stack->destruct(stack);
+
+  printf("-------Pointer tack\n");
+  int a = 1;
+  int b = 2;
+  int c = 3;
+  TPStack pstack = TPStack_init();
+  pstack->push(pstack, &a);
+  pstack->push(pstack, &b);
+  pstack->push(pstack, &c);
+
+  for (int i = 1; i < 4; i++)
+  {
+    printf("top: ");
+    printf("%d\n", *(int *)(pstack->top(pstack)));
+    pstack->pop(pstack);
+  }
+
+  pstack->destruct(pstack);
+
   mmng_freeAll();
                          
   
