@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 
   mmng_init();
 
-  // ... spousta mallocu a frees ... 
+  // ... spousta mallocu a frees ...
 
   mmng_freeAll();
   return 0;
