@@ -13,6 +13,7 @@
 #include "stacks.h"
 #include "MMng.h"
 #include "grammar.h"
+#include "appErr.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -24,8 +25,6 @@ void ist_push(TGrStack stack, Egrammar val)
   if (stack->count == stack->size)
   {
     stack->stack = mmng_safeRealloc(stack->stack, stack->size * sizeof(Egrammar) + stack->size * sizeof(Egrammar) * STACK_REALLOC_MULTIPLIER);
-    fprintf(stderr, "stack realloc not implemented yet.\n");
-    exit(1);
   }
   stack->stack[stack->count++] = val;
 }
@@ -34,8 +33,7 @@ void ist_pop(TGrStack stack)
 {
   if (stack->count == 0)
   {
-    fprintf(stderr, "trying pop empty stack!\n");
-    exit(1);
+    apperr_runtimeError("TGrStack: Trying to pop empty stack!");
   }
   stack->count--;
 }
@@ -44,8 +42,7 @@ Egrammar ist_top(TGrStack stack)
 {
   if (stack->count == 0)
   {
-    fprintf(stderr, "trying read from empty stack!\n");
-    exit(1);
+    apperr_runtimeError("TGrStack: Trying read from empty stack!");
   }
   return stack->stack[stack->count-1];
 }
@@ -54,8 +51,7 @@ void ist_destruct(TGrStack stack)
 {
   if (stack->count != 0)
   {
-    fprintf(stderr, "Trying to destruct non-empty stack!\n");
-    exit(1);
+    apperr_runtimeError("TGrStack: Trying to destruct non-empty stack!");
   }
   mmng_safeFree(stack->stack);
   mmng_safeFree(stack);
@@ -81,8 +77,6 @@ void pst_push(TPStack stack, void *val)
   if (stack->count == stack->size)
   {
     stack->stack = mmng_safeRealloc(stack->stack, stack->size * sizeof(void *) + stack->size * sizeof(void *) * STACK_REALLOC_MULTIPLIER);
-    fprintf(stderr, "stack realloc not implemented yet.\n");
-    exit(1);
   }
   stack->stack[stack->count++] = val;
 }
@@ -91,8 +85,7 @@ void pst_pop(TPStack stack)
 {
   if (stack->count == 0)
   {
-    fprintf(stderr, "trying pop empty stack!\n");
-    exit(1);
+    apperr_runtimeError("TPStack: Trying to pop empty stack!");
   }
   stack->count--;
 }
@@ -101,8 +94,7 @@ void *pst_top(TPStack stack)
 {
   if (stack->count == 0)
   {
-    fprintf(stderr, "trying read from empty stack!\n");
-    exit(1);
+    apperr_runtimeError("TPStack: Trying read from empty stack!");
   }
   return stack->stack[stack->count - 1];
 }
@@ -111,8 +103,7 @@ void pst_destruct(TPStack stack)
 {
   if (stack->count != 0)
   {
-    fprintf(stderr, "Trying to destruct non-empty stack!\n");
-    exit(1);
+    apperr_runtimeError("TPStack: Trying to destruct non-empty stack!");
   }
   mmng_safeFree(stack->stack);
   mmng_safeFree(stack);
