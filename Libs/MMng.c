@@ -4,7 +4,7 @@
  * \file    MMng.c
  * \brief   Memory manager sources
  * \author  Petr Fusek (xfusek08)
- * \date    19.10.2017 - Petr Fusek
+ * \date    23.10.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -189,9 +189,10 @@ void *mmng_safeRealloc(void *pointer, size_t size)
     exit(1);
   }
   // delete old pointer
-  TMMPList_deletePointer(pointer);
+  TMMPList_deletePointer(GLBPointerList, pointer);
   // store new pointer
   TMMPList_addPointer(GLBPointerList, pointer);
+  return newPointer;
 }
 
 // Free all allocated memory
@@ -200,7 +201,7 @@ void mmng_freeAll()
   assertIfNotInit("mmng_freeAll()");
 
   while (GLBPointerList->head != NULL)
-    mmng_safeFree(GLBPointerList->head);
+    mmng_safeFree(GLBPointerList->head->pointer);
   free(GLBPointerList);
   GLBPointerList = NULL;
 }
@@ -214,7 +215,7 @@ void mmng_safeFree(void *pointer)
     free(pointer);
   else
   {
-    fprintf(stderr, "mmng_safeFree(): pointer canntot be freed. Pointer is not part of internal pointer evidence");
+    fprintf(stderr, "mmng_safeFree(): pointer can't be freed. Pointer is not part of internal pointer evidence");
     exit(1);
   }
 }
