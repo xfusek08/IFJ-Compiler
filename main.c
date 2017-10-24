@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Libs/MMng.h"
+#include "Libs/stacks.h"
 
 int main(int argc, char *argv[])
 {
@@ -18,9 +19,9 @@ int main(int argc, char *argv[])
   (void)argv;
 
   mmng_init();
-
-  // ... spousta mallocu a frees ... 
-
+  // ... spousta mallocu a frees ...
   mmng_freeAll();
+                         
+  
   return 0;
 }

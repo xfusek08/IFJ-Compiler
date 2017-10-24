@@ -5,10 +5,11 @@
  * \brief   Liblary providing supportive function for project
  *
  * \author  Petr Fusek (xfusek08)
- * \date    18.10.2017 - Petr Fusek
+ * \date    23.10.2017 - Petr Fusek
  */
 /******************************************************************************/
 
+#include <string.h>
 #include "utils.h"
 
 // hard string copy
