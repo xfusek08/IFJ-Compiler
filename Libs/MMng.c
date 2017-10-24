@@ -189,9 +189,10 @@ void *mmng_safeRealloc(void *pointer, size_t size)
     exit(1);
   }
   // delete old pointer
-  TMMPList_deletePointer(pointer);
+  TMMPList_deletePointer(GLBPointerList, pointer);
   // store new pointer
   TMMPList_addPointer(GLBPointerList, pointer);
+  return newPointer;
 }
 
 // Free all allocated memory

@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
   mmng_init();
   // ... spousta mallocu a frees ...
   
-  TGrStack stack = TGrStack_init();
+  TGrStack stack = TGrStack_create();
   for (int i = 1; i < 10; i++)
   {
     stack->push(stack, placeholder);
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
   int a = 1;
   int b = 2;
   int c = 3;
-  TPStack pstack = TPStack_init();
+  TPStack pstack = TPStack_create();
   pstack->push(pstack, &a);
   pstack->push(pstack, &b);
   pstack->push(pstack, &c);
