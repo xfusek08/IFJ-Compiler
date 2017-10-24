@@ -7,7 +7,7 @@
 * Provide implementation of various stacks.
 *
 * \author  Pavel Vosyka (xvosyk00)
-* \date    18.10.2017 - Pavel Vosyka
+* \date    24.10.2017 - Pavel Vosyka
 */
 /******************************************************************************/
 

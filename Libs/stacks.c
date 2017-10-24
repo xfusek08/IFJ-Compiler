@@ -4,9 +4,7 @@
 * \file    stacks.c
 * \brief   Stack library
 * \author  Pavel Vosyka (xvosyk00)
-* \date    18.10.2017 - Pavel Vosyka
-* \todo implement pointer stack
-* \todo make enum stack from integer stack
+* \date    24.10.2017 - Pavel Vosyka
 */
 /******************************************************************************/
 
