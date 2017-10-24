@@ -19,9 +19,11 @@ int main(int argc, char *argv[])
   (void)argv;
 
   mmng_init();
+
   // ... spousta mallocu a frees ...
+
   mmng_freeAll();
-                         
-  
+
+
   return 0;
 }

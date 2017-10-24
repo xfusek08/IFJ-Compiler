@@ -4,7 +4,7 @@
  * \file    MMng.c
  * \brief   Memory manager sources
  * \author  Petr Fusek (xfusek08)
- * \date    23.10.2017 - Petr Fusek
+ * \date    24.10.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "MMng.h"
+#include "appErr.h"
 
 // =============================================================================
 // ================= Iternal data structures definition ========================
@@ -44,12 +45,7 @@ TMMPItem TMMPItem_create()
 {
   TMMPItem newItem = (TMMPItem)malloc(sizeof(struct PItem));
   if (newItem == NULL)
-  {
-    // allocation error in mmng ... write out and exit;
-    perror("TMMPItem_create(): Allocation error in memory manager");
-    mmng_freeAll();
-    exit(1);
-  }
+    apperr_runtimeError("Allocation error in memory manager");
 
   newItem->pointer = NULL;
   newItem->next = NULL;
@@ -66,11 +62,7 @@ TMMPList TMMPList_create()
 {
   TMMPList newList = (TMMPList)malloc(sizeof(struct PList));
   if (newList == NULL)
-  {
-    // allocation error in mmng ... write out and exit;
-    perror("TMMPList_create(): Allocation error in memory manager");
-    exit(1);
-  }
+    apperr_runtimeError("Allocation error in memory manager");
 
   newList->head = NULL;
   newList->tail = NULL;
@@ -135,14 +127,12 @@ bool TMMPList_deletePointer(TMMPList list, void *pointer)
 // =============================================================================
 
 // error if GLBPointerList is not initialized
-void assertIfNotInit(char *funcname)
+void assertIfNotInit()
 {
   if (GLBPointerList == NULL)
   {
-    if (funcname == NULL)
-      funcname = "undefined function";
-    fprintf(stderr, "%s: Memory manager is not initialized.", funcname);
-    exit(1);
+    fprintf( stderr, "\033[31;1mError:\033[0m Memory manager is not initialized.\n");
+    exit(internalErr);
   }
 }
 
@@ -154,25 +144,19 @@ void assertIfNotInit(char *funcname)
 void mmng_init()
 {
   if (GLBPointerList != NULL)
-  {
-    fprintf(stderr, "mmng_init(): Memory manager is already initialized.");
-    exit(1);
-  }
+    apperr_runtimeError("mmng_init(): Memory manager is already initialized.");
   GLBPointerList = TMMPList_create();
 }
 
 // Safe allocation
 void *mmng_safeMalloc(size_t size)
 {
-  assertIfNotInit("mmng_safeMalloc()");
+  assertIfNotInit();
 
   void *pointer = malloc(size);
   if (pointer == NULL)
-  {
-    perror("mmng_safeMalloc(): Allocation error");
-    mmng_freeAll();
-    exit(1);
-  }
+    apperr_runtimeError("mmng_safeMalloc(): Allocation error.");
+
   TMMPList_addPointer(GLBPointerList, pointer);
   return pointer;
 }
@@ -180,14 +164,12 @@ void *mmng_safeMalloc(size_t size)
 // Reallocate allocated memory of given pointer to new size.
 void *mmng_safeRealloc(void *pointer, size_t size)
 {
-  assertIfNotInit("mmng_safeRealloc()");
+  assertIfNotInit();
+
   void *newPointer = realloc(pointer, size);
   if (newPointer == NULL)
-  {
-    perror("mmng_safeRealloc(): Reallocation error");
-    mmng_freeAll();
-    exit(1);
-  }
+    apperr_runtimeError("mmng_safeRealloc(): Reallocation error.");
+
   // delete old pointer
   TMMPList_deletePointer(GLBPointerList, pointer);
   // store new pointer
@@ -198,7 +180,7 @@ void *mmng_safeRealloc(void *pointer, size_t size)
 // Free all allocated memory
 void mmng_freeAll()
 {
-  assertIfNotInit("mmng_freeAll()");
+  assertIfNotInit();
 
   while (GLBPointerList->head != NULL)
     mmng_safeFree(GLBPointerList->head->pointer);
@@ -209,13 +191,10 @@ void mmng_freeAll()
 // Safe free
 void mmng_safeFree(void *pointer)
 {
-  assertIfNotInit("mmng_safeFree()");
+  assertIfNotInit();
 
   if (TMMPList_deletePointer(GLBPointerList, pointer))
     free(pointer);
   else
-  {
-    fprintf(stderr, "mmng_safeFree(): pointer can't be freed. Pointer is not part of internal pointer evidence");
-    exit(1);
-  }
+    apperr_runtimeError("mmng_safeFree(): Pointer can't be freed. Pointer is not part of internal pointer evidence.");
 }
