@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Libs/MMng.h"
-#include "Libs/symtable.h"
+#include "Libs/stacks.h"
 
 int main(int argc, char *argv[])
 {
@@ -25,5 +25,7 @@ int main(int argc, char *argv[])
 
   symbt_destroy();
   mmng_freeAll();
+
+
   return 0;
 }

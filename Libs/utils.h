@@ -5,25 +5,24 @@
  * \brief   Liblary providing supportive function and types for the project
  *
  * \author  Petr Fusek (xfusek08)
- * \date    18.10.2017 - Petr Fusek
+ * \date    23.10.2017 - Petr Fusek
  */
 /******************************************************************************/
 
 #ifndef _utils
 #define _utils
 
-#include <string.h>
 #include "MMng.h"
 
 /**
- * Structure of basic dataset of input language data types, 
+ * Structure of basic dataset of input language data types,
  * for storing data of constants or literals ect.
  */
 typedef struct {
   int intVal;
   double doubleVal;
   char *stringVal;
-} SData; 
+} SData;
 
 /**
  * Fuction create hard copy of given string
