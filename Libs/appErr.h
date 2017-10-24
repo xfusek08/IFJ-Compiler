@@ -16,13 +16,13 @@
 
 /*! Enum of error types and error codes */
 typedef enum {
-  lexicalErr = 1, /*!< incorrect structure of the current lex */
-  syntaxErr = 2,  /*!< wrong program syntax */
-  semanticErr = 3,    /*!< undefined function/variable, attempt to redefine function/variable, etc. */
-  typeCompatibilityErr = 4,   /*!< semantic error of type compatibility in arithmetic, string and relational */
-                              /*!< expressions, or poor number of parameter types for function calls */
-  anotherSemanticErr = 6, /*!< another semantic error */
-  internalErr = 99    /*!< internal compiler error - unaffected by the input program (eg. memory allocation error, etc.) */
+    lexicalErr = 1, /*!< incorrect structure of the current lex */
+    syntaxErr = 2,  /*!< wrong program syntax */
+    semanticErr = 3,    /*!< undefined function/variable, attempt to redefine function/variable, etc. */
+    typeCompatibilityErr = 4,   /*!< semantic error of type compatibility in arithmetic, string and relational */
+                                /*!< expressions, or poor number of parameter types for function calls */
+    anotherSemanticErr = 6, /*!< another semantic error */
+    internalErr = 99    /*!< internal compiler error - unaffected by the input program (eg. memory allocation error, etc.) */
 } ErrType;
 
 /**
