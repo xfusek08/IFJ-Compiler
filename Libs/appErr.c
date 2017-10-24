@@ -14,13 +14,15 @@
 #include "appErr.h"
 #include "MMng.h"
 
-void apperr_runtimeError(char *errMsg){
+void apperr_runtimeError(char *errMsg)
+{
   fprintf( stderr, "\033[31;1mError:\033[0m %s\n", errMsg);
   mmng_freeAll();
   exit(internalErr);
 }
 
-void apperr_codeError(ErrType type, int row, int col, char *line){
+void apperr_codeError(ErrType type, int row, int col, char *line)
+{
     
   switch (type)
   {
@@ -48,9 +50,11 @@ void apperr_codeError(ErrType type, int row, int col, char *line){
   unsigned int i = 1;
   int consoleRowNum = 0;
 
-  while(i <= strlen(line)){
+  while(i <= strlen(line))
+  {
     int j = 0;
-    for(; j < 80 && i <= strlen(line); j++){
+    for(; j < 80 && i <= strlen(line); j++)
+    {
       printf("%c", line[i+j-1]);
     }
 
@@ -60,8 +64,10 @@ void apperr_codeError(ErrType type, int row, int col, char *line){
 
     int rowFirstCharPosition = (consoleRowNum)*80 + 1;
 
-    if(rowFirstCharPosition <= col && col < rowFirstCharPosition + 80){
-      for(int j = 1; j <= (col-1)%80; j++){
+    if(rowFirstCharPosition <= col && col < rowFirstCharPosition + 80)
+    {
+      for(int j = 1; j <= (col-1)%80; j++)
+      {
         printf(" ");
       }
       printf("\x1B[31m^\x1B[0m\n");
