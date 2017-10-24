@@ -61,7 +61,7 @@ void ist_destruct(TGrStack stack)
   mmng_safeFree(stack);
 }
 
-TGrStack TGrStack_init()
+TGrStack TGrStack_create()
 {
   TGrStack stack = mmng_safeMalloc(sizeof(struct grammarStack));
   stack->stack = mmng_safeMalloc(sizeof(Egrammar)*STACK_INITIAL_SIZE);
@@ -118,7 +118,7 @@ void pst_destruct(TPStack stack)
   mmng_safeFree(stack);
 }
 
-TPStack TPStack_init()
+TPStack TPStack_create()
 {
   TPStack stack = mmng_safeMalloc(sizeof(struct pointerStack));
   stack->stack = mmng_safeMalloc(sizeof(void *)*STACK_INITIAL_SIZE);
