@@ -17,16 +17,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
-/****** INTEGER STACK ********/
+// =============================================================================
+// ====================== support functions ====================================
+// =============================================================================
+/****** GRAMMAR STACK ********/
 
 void ist_push(TGrStack stack, Egrammar val)
 {
   if (stack->count == stack->size)
   {
-    stack->stack = mmng_safeRealloc(stack->stack, stack->size * sizeof(Egrammar) + stack->size * sizeof(Egrammar) * STACK_REALLOC_MULTIPLIER);
+    stack->grArray = mmng_safeRealloc(stack->grArray, stack->size * sizeof(Egrammar) + stack->size * sizeof(Egrammar) * STACK_REALLOC_MULTIPLIER);
   }
-  stack->stack[stack->count++] = val;
+  stack->grArray[stack->count++] = val;
 }
 
 void ist_pop(TGrStack stack)
@@ -44,41 +46,27 @@ Egrammar ist_top(TGrStack stack)
   {
     apperr_runtimeError("TGrStack: Trying read from empty stack!");
   }
-  return stack->stack[stack->count-1];
+  return stack->grArray[stack->count-1];
 }
 
-void ist_destruct(TGrStack stack)
+void ist_destroy(TGrStack stack)
 {
   if (stack->count != 0)
   {
-    apperr_runtimeError("TGrStack: Trying to destruct non-empty stack!");
+    apperr_runtimeError("TGrStack: Trying to destroy non-empty stack!");
   }
-  mmng_safeFree(stack->stack);
+  mmng_safeFree(stack->grArray);
   mmng_safeFree(stack);
 }
-
-TGrStack TGrStack_create()
-{
-  TGrStack stack = mmng_safeMalloc(sizeof(struct grammarStack));
-  stack->stack = mmng_safeMalloc(sizeof(Egrammar)*STACK_INITIAL_SIZE);
-  stack->size = STACK_INITIAL_SIZE;
-  stack->count = 0;
-  stack->push = ist_push;
-  stack->pop = ist_pop;
-  stack->top = ist_top;
-  stack->destruct = ist_destruct;
-  return stack;
-}
-
 
 /****** POINTER STACK ********/
 void pst_push(TPStack stack, void *val)
 {
   if (stack->count == stack->size)
   {
-    stack->stack = mmng_safeRealloc(stack->stack, stack->size * sizeof(void *) + stack->size * sizeof(void *) * STACK_REALLOC_MULTIPLIER);
+    stack->ptArray = mmng_safeRealloc(stack->ptArray, stack->size * sizeof(void *) + stack->size * sizeof(void *) * STACK_REALLOC_MULTIPLIER);
   }
-  stack->stack[stack->count++] = val;
+  stack->ptArray[stack->count++] = val;
 }
 
 void pst_pop(TPStack stack)
@@ -96,28 +84,46 @@ void *pst_top(TPStack stack)
   {
     apperr_runtimeError("TPStack: Trying read from empty stack!");
   }
-  return stack->stack[stack->count - 1];
+  return stack->ptArray[stack->count - 1];
 }
 
-void pst_destruct(TPStack stack)
+void pst_destroy(TPStack stack)
 {
   if (stack->count != 0)
   {
-    apperr_runtimeError("TPStack: Trying to destruct non-empty stack!");
+    apperr_runtimeError("TPStack: Trying to destroy non-empty stack!");
   }
-  mmng_safeFree(stack->stack);
+  mmng_safeFree(stack->ptArray);
   mmng_safeFree(stack);
+}
+
+
+// =============================================================================
+// ====================== Interface implementation =============================
+// =============================================================================
+
+TGrStack TGrStack_create()
+{
+  TGrStack stack = mmng_safeMalloc(sizeof(struct grammarStack));
+  stack->grArray = mmng_safeMalloc(sizeof(Egrammar)*STACK_INITIAL_SIZE);
+  stack->size = STACK_INITIAL_SIZE;
+  stack->count = 0;
+  stack->push = ist_push;
+  stack->pop = ist_pop;
+  stack->top = ist_top;
+  stack->destroy = ist_destroy;
+  return stack;
 }
 
 TPStack TPStack_create()
 {
   TPStack stack = mmng_safeMalloc(sizeof(struct pointerStack));
-  stack->stack = mmng_safeMalloc(sizeof(void *)*STACK_INITIAL_SIZE);
+  stack->ptArray = mmng_safeMalloc(sizeof(void *)*STACK_INITIAL_SIZE);
   stack->size = STACK_INITIAL_SIZE;
   stack->count = 0;
   stack->push = pst_push;
   stack->pop = pst_pop;
   stack->top = pst_top;
-  stack->destruct = pst_destruct;
+  stack->destroy = pst_destroy;
   return stack;
 }

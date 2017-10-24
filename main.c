@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     stack->pop(stack);
   }
 
-  stack->destruct(stack);
+  stack->destroy(stack);
 
   printf("-------Pointer tack\n");
   int a = 1;
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     pstack->pop(pstack);
   }
 
-  pstack->destruct(pstack);
+  pstack->destroy(pstack);
 
   mmng_freeAll();
                          

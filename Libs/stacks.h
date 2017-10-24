@@ -11,8 +11,8 @@
 */
 /******************************************************************************/
 
-#ifndef STACKSLIB
-#define STACKSLIB
+#ifndef _STACKSLIB
+#define _STACKSLIB
 
 #include "grammar.h"
 /*Capacity of newly initialized stack*/
@@ -38,12 +38,12 @@ struct grammarStack{
   /** returns data of item on top */
   Egrammar (*top)(TGrStack);
   /** safe destruction of stack. If stack is not empty, throw error. */
-  void(*destruct)(TGrStack);
+  void(*destroy)(TGrStack);
   /** Number of items in stack. */
   int count;
   /** Capacity of stack. */
   int size;
-  int *stack;
+  Egrammar *grArray;
 };
 
 typedef struct pointerStack *TPStack;
@@ -58,12 +58,12 @@ struct pointerStack{
   /** returns data of item on top */
   void *(*top)(TPStack);
   /** safe destruction of stack. If stack is not empty, throw error. */
-  void (*destruct)(TPStack);
+  void (*destroy)(TPStack);
   /** Number of items in stack. */
   int count;
   /** Capacity of stack. */
   int size;
-  void **stack;
+  void **ptArray;
 };
 
 /**
@@ -76,4 +76,4 @@ TGrStack TGrStack_create();
 */
 TPStack TPStack_create();
 
-#endif // !STACKSLIB
+#endif // !_STACKSLIB
