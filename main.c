@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include "Libs/MMng.h"
 #include "Libs/stacks.h"
+#include "Libs/symtable.h"
 
 int main(int argc, char *argv[])
 {

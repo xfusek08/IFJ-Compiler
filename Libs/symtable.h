@@ -14,12 +14,7 @@
 #ifndef _SymbTab
 #define _SymbTab
 
-
-// references
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include "MMng.h"
 #include "utils.h"
 
 /**
@@ -85,7 +80,7 @@ void symbt_popFrame();
  *
  * \returns unsigned int number or frames (tables on stack)
  */
-unsigned int symbt_cntFrames();
+int symbt_cntFrames();
 
 /**
  * Finds symbol by indentifier
@@ -106,7 +101,18 @@ TSymbol symbt_findSymb(char *ident);
  * \note To hold identifier ident as key is created new string and key value is copied.
  * so ident string is parameter could be safely freed.
  */
-TSymbol symbt_findOrCreateSymb(char *ident);
+TSymbol symbt_findOrInsertSymb(char *ident);
+
+
+/**
+ * Creates new symbol on top table frame.
+ *
+ * Symbol is created only if it doesn't exists on top table frame.
+ * If symbol with same identifier already exists returns NULL.
+ * \param  char* ident string identifier used as key
+ * \returns TSymbol newly created symbol, NULL if symbol exists
+ */
+TSymbol symbt_insertSymbOnTop(char *ident);
 
 /**
  * Removes symbol first occurrence of symbol with
