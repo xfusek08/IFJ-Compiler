@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Libs/MMng.h"
-#include "Libs/stacks.h"
+#include "Libs/syntaxAnalyzer.h"
 
 int main(int argc, char *argv[])
 {
@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 
   mmng_init();
 
-  // ... spousta mallocu a frees ...
+  syntx_analyzeCode();
 
   mmng_freeAll();
 

@@ -7,7 +7,7 @@
 * Contains both terminals and non-terminals.
 *
 * \author  Pavel Vosyka (xvosyk00)
-* \date    22.10.2017 - Pavel Vosyka
+* \date    28.10.2017 - Pavel Vosyka
 */
 /******************************************************************************/
 
@@ -16,8 +16,13 @@
 
 typedef enum
 {
-  placeholder
+  /*NON-TERMINALS*/
+  nwS, nwVarDefinition, nwExpr, nwDimEx,
+
+  /*TERMINALS*/
+  kwDim, ident, kwAs, kwtype, asng
 }Egrammar;
 
+const char *printEgrammar(Egrammar grammar);
 
 #endif
