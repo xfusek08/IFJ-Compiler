@@ -7,7 +7,7 @@
  * This package provides functions over global stack of symbol tables.
  *
  * \author  Petr Fusek (xfusek08)
- * \date    18.10.2017 - Petr Fusek
+ * \date    29.10.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -105,7 +105,7 @@ TSymbol symbt_findOrInsertSymb(char *ident);
 
 
 /**
- * Creates new symbol on top table frame.
+ * Creates new symbol in top table frame.
  *
  * Symbol is created only if it doesn't exists on top table frame.
  * If symbol with same identifier already exists returns NULL.
@@ -120,5 +120,7 @@ TSymbol symbt_insertSymbOnTop(char *ident);
  * \param  char* ident string identifier used as key
  */
 void symbt_deleteSymb(char *ident);
+
+void symbt_print();
 
 #endif // _SymbTab

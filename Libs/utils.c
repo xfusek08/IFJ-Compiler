@@ -10,6 +10,7 @@
 /******************************************************************************/
 
 #include <string.h>
+#include "MMng.h"
 #include "utils.h"
 
 // hard string copy
