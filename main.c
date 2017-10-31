@@ -4,7 +4,7 @@
  * \file    Main.c
  * \brief   Main program
  * \author  Petr Fusek (xfusek08)
- * \date    29.10.2017 - Petr Fusek
+ * \date    30.10.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -24,14 +24,13 @@ int main(int argc, char *argv[])
   symbt_init();
   while (1)
   {
-    char keychar;
-    printf(">");
-    scanf(" %c", &keychar);
-    char keystring[2];
-    keystring[0] = keychar;
-    keystring[1] = '\0';
-    symbt_findOrInsertSymb(keystring);
+    char ident[50];
+    printf("> ");
+    scanf(" %50s", ident);
+    symbt_findOrInsertSymb(ident);
+    printf("\n");
     symbt_print();
+    printf("\n");
   }
 
   symbt_destroy();

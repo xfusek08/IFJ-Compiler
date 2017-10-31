@@ -4,7 +4,7 @@
  * \file    symtable.c
  * \brief   Symbol table implementation
  * \author  Petr Fusek (xfusek08)
- * \date    29.10.2017 - Petr Fusek
+ * \date    30.10.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -23,17 +23,15 @@
 // ================= Iternal data structures definition ========================
 // =============================================================================
 
-// node of AVL tree main root with no parend reprezenting one symbol table
+// node of AVL tree main root with no parent reprezenting one symbol table
 typedef struct STNode *TSTNode;
 struct STNode {
+  int balance;      // balance factor of the tree
   char *key;        // searching key string
   TSymbol symbol;   // instance of symbol
+  TSTNode parent;   // parent node
   TSTNode left;     // root of lft sub-tree
   TSTNode right;    // root of right sub-tree
-
-  // Methods
-  // TSymbol (*find)(TSTNode, char *); // Finds symbol with corresponding key, NULL if not found
-  // TSymbol (*insert)(TSTNode, char *); // Insert into tree new symbol with key ident, NULL if this key exists
 };
 
 // global internal instance of symbol table stack
@@ -71,8 +69,10 @@ void TSymbol_destroy(TSymbol symbol)
 TSTNode TSTNode_create(char *key)
 {
   TSTNode newNode = (TSTNode)mmng_safeMalloc(sizeof(struct STNode));
+  newNode->balance = 0;
   newNode->key = util_StrHardCopy(key); // new hard copy of string
   newNode->symbol = NULL;
+  newNode->parent = NULL;
   newNode->left = NULL;
   newNode->right = NULL;
   return newNode;
@@ -110,6 +110,36 @@ int TSTNode_height(TSTNode self)
   return height;
 }
 
+// return root of tree where self is
+TSTNode TSTNode_getRoot(TSTNode self)
+{
+  while (self->parent != NULL)
+    self = self->parent;
+  return self;
+}
+
+// prints simple diagram reprezenting structure of tree
+void printTreePart(TSTNode node, int depht)
+{
+  if (node != NULL)
+  {
+    if (node->left != NULL)
+      printTreePart(node->left, depht + 1);
+
+    for (int i = 0; i < depht; i++)
+    {
+      if (i + 1 == depht)
+        printf(" •--");
+      else
+        printf("    ");
+    }
+    printf("[%s]\n", node->key);
+
+    if (node->right != NULL)
+      printTreePart(node->right, depht + 1);
+  }
+}
+
 // Creates and rewrites symbol on concrete TSTNode with key,
 // key of node is changed
 TSymbol TSTNode_newSymbol(TSTNode self, char *key)
@@ -127,6 +157,55 @@ TSymbol TSTNode_newSymbol(TSTNode self, char *key)
   }
   self->symbol = TSymbol_create(self->key);
   return self->symbol;
+}
+
+// operation RR
+void TSTNode_rotateRight(TSTNode self)
+{
+  if (self == NULL || self->left == NULL)
+    return;
+
+  printf("Rotate Right: %s\n", self->key);
+  printTreePart(self, 0);
+  printf("\n  | \n");
+  printf(" \\|/ \n\n");
+
+  // change parent pointer to left child
+  if (self->parent != NULL)
+  {
+    if (self->parent->left == self)         // self is on left
+      self->parent->left = self->left;
+    else                                    // self is on right
+      self->parent->right = self->left;
+  }
+  // switch position with you left child
+  self->left->parent  = self->parent;
+  self->parent        = self->left;
+  self->left          = self->parent->right;
+  self->left->parent  = self;
+  self->parent->right = self;
+
+  printTreePart(self->parent, 0);
+}
+
+// methode starts from some node in tree and balances tree from node up to its root node
+void TSTNode_balanceFromBottom(TSTNode node)
+{
+  // test
+  printf("Balancing tree:\n");
+  //end test
+
+  while (node != NULL)
+  {
+    int balance = TSTNode_height(node->left) - TSTNode_height(node->right);
+    if (balance < -1)       // right side is taller
+      TSTNode_rotateRight(node);
+    else if (balance > 1)   // left side is taller
+    {
+
+    }
+    node = node->parent;
+  }
 }
 
 // Finds symbol with corresponding key, NULL if not found
@@ -167,16 +246,27 @@ TSymbol TSTNode_insert(TSTNode self, char *key)
 
   // navigate throuth tree recursively
   int compRes = strcmp(self->key, key);
+
+  printf(" \"%s\" ", key);
+  if (compRes == 0)
+    printf("is equal to");
+  else if (compRes > 0)
+    printf("is smaller then");
+  else
+    printf("is bigger then");
+  printf(" \"%s\"\n", self->key);
+
   if (compRes == 0)                             // key is self
     return NULL;
   else if (compRes > 0 && self->left != NULL)   // key is smaller than self key
     return TSTNode_insert(self->left, key);
-  else if (self->right != NULL)                 // key is greater than self key
+  else if (compRes < 0 && self->right != NULL)  // key is greater than self key
     return TSTNode_insert(self->right, key);
 
   // create record
   TSTNode newNode = TSTNode_create(key); // key string is copied here
   TSTNode_newSymbol(newNode, key);
+  newNode->parent = self;
 
   // register record
   if (compRes > 0)          // key is smaller than self key
@@ -184,9 +274,14 @@ TSymbol TSTNode_insert(TSTNode self, char *key)
   else                      //  key is greater than self key
     self->right = newNode;
 
+  TSTNode_balanceFromBottom(self);
+
   // return record
   return newNode->symbol;
 }
+
+// Insert into tree new symbol with key ident, return pointer to that symbol NULL if this key exists
+TSymbol TSTNode_delete(TSTNode self, char *key);
 
 // =============================================================================
 // ====================== support function =====================================
@@ -197,20 +292,6 @@ void symbt_assertIfNotInit()
 {
   if (GLBSymbTabStack == NULL)
     apperr_runtimeError("Symbol table is not initialized.");
-}
-
-void printTree(TSTNode node)
-{
-  int totalHeight = TSTNode_height(node);
-  int totalWidth = 6;
-  for (int i = 1; i < totalHeight; i++)
-    totalWidth *= 2;
-
-  printf("Tree --- Height: %d --- width: %d ---\n", totalHeight, totalWidth);
-
-  // TODO: vymyslet jak tisknout strom
-
-  printf("End tree ---------------\n");
 }
 
 // =============================================================================
@@ -301,7 +382,10 @@ TSymbol symbt_insertSymbOnTop(char *ident)
     return NULL;
 
   TSTNode topTab = GLBSymbTabStack->top(GLBSymbTabStack);
-  return TSTNode_insert(topTab, ident);
+  TSymbol resSymb = TSTNode_insert(topTab, ident);
+  GLBSymbTabStack->pop(GLBSymbTabStack);
+  GLBSymbTabStack->push(GLBSymbTabStack, TSTNode_getRoot(topTab));
+  return resSymb;
 }
 
 
@@ -311,5 +395,5 @@ void symbt_deleteSymb(char *ident);
 
 void symbt_print()
 {
-  printTree(GLBSymbTabStack->top(GLBSymbTabStack));
+  printTreePart(GLBSymbTabStack->top(GLBSymbTabStack), 0);
 }
