@@ -83,7 +83,7 @@ void TSTNode_destroy(TSTNode node)
 {
   // delete subtrees recursively
   if (node->left != NULL)
-    TSTNode_destroy(node->right);
+    TSTNode_destroy(node->left);
   if (node->right != NULL)
     TSTNode_destroy(node->right);
 
@@ -102,12 +102,15 @@ int TSTNode_height(TSTNode self)
     return 0;
   if (self->symbol == NULL)
     return 0;
-  int height = 1;
+  int height_left = 1;
+  int height_right = 1;
   if (self->right != NULL)
-    height += TSTNode_height(self->right);
+    height_left += TSTNode_height(self->right);
   if (self->left != NULL)
-    height += TSTNode_height(self->left);
-  return height;
+    height_right += TSTNode_height(self->left);
+
+  // return bigger of heights
+  return (height_left > height_right) ? height_left : height_right;
 }
 
 // return root of tree where self is
@@ -119,12 +122,12 @@ TSTNode TSTNode_getRoot(TSTNode self)
 }
 
 // prints simple diagram reprezenting structure of tree
-void printTreePart(TSTNode node, int depht)
+void TSTNode_print(TSTNode node, int depht)
 {
   if (node != NULL)
   {
-    if (node->left != NULL)
-      printTreePart(node->left, depht + 1);
+    if (node->right != NULL)
+      TSTNode_print(node->right, depht + 1);
 
     for (int i = 0; i < depht; i++)
     {
@@ -135,8 +138,8 @@ void printTreePart(TSTNode node, int depht)
     }
     printf("[%s]\n", node->key);
 
-    if (node->right != NULL)
-      printTreePart(node->right, depht + 1);
+    if (node->left != NULL)
+      TSTNode_print(node->left, depht + 1);
   }
 }
 
@@ -165,11 +168,7 @@ void TSTNode_rotateRight(TSTNode self)
   if (self == NULL || self->left == NULL)
     return;
 
-  printf("Rotate Right: %s\n", self->key);
-  printTreePart(self, 0);
-  printf("\n  | \n");
-  printf(" \\|/ \n\n");
-
+  printf("RotRight: %s\n", self->key);
   // change parent pointer to left child
   if (self->parent != NULL)
   {
@@ -178,32 +177,70 @@ void TSTNode_rotateRight(TSTNode self)
     else                                    // self is on right
       self->parent->right = self->left;
   }
-  // switch position with you left child
+
+  // switch position with your left child
   self->left->parent  = self->parent;
   self->parent        = self->left;
   self->left          = self->parent->right;
-  self->left->parent  = self;
   self->parent->right = self;
-
-  printTreePart(self->parent, 0);
+  if (self->left != NULL)
+    self->left->parent  = self;
 }
+
+// operation LL
+void TSTNode_rotateLeft(TSTNode self)
+{
+  if (self == NULL || self->right == NULL)
+    return;
+
+  printf("RotLeft: %s\n", self->key);
+  // change parent pointer to left child
+  if (self->parent != NULL)
+  {
+    if (self->parent->right == self)         // self is on left
+      self->parent->right = self->right;
+    else                                    // self is on right
+      self->parent->left = self->right;
+  }
+
+  // switch position with you left child
+  self->right->parent = self->parent;
+  self->parent        = self->right;
+  self->right         = self->parent->left;
+  self->parent->left  = self;
+  if (self->right != NULL)
+    self->right->parent  = self;
+}
+
 
 // methode starts from some node in tree and balances tree from node up to its root node
 void TSTNode_balanceFromBottom(TSTNode node)
 {
-  // test
-  printf("Balancing tree:\n");
-  //end test
+  #ifdef ST_DEBUG
+  printf("Balance %s\n", node->key);
+  #endif
 
+  int balanceFactor = 0;
+  int balanceFactorpPrev = 0;
   while (node != NULL)
   {
-    int balance = TSTNode_height(node->left) - TSTNode_height(node->right);
-    if (balance < -1)       // right side is taller
-      TSTNode_rotateRight(node);
-    else if (balance > 1)   // left side is taller
-    {
+    balanceFactor = TSTNode_height(node->left) - TSTNode_height(node->right);
 
+    if (balanceFactor < -1)       // -2 - right side is taller
+    {
+      if (balanceFactorpPrev > 0) // 1 - left side of right child is taller => RL
+        TSTNode_rotateRight(node->right);
+      TSTNode_rotateLeft(node);
     }
+    else if (balanceFactor > 1)   // 2 - left side is taller
+    {
+      if (balanceFactorpPrev < 0) // -1 - right side of left child is taller => LR
+        TSTNode_rotateLeft(node->left);
+      TSTNode_rotateRight(node);
+    }
+
+    // we need remember previous child node for resove type of operation
+    balanceFactorpPrev = balanceFactor;
     node = node->parent;
   }
 }
@@ -247,6 +284,7 @@ TSymbol TSTNode_insert(TSTNode self, char *key)
   // navigate throuth tree recursively
   int compRes = strcmp(self->key, key);
 
+  #ifdef ST_DEBUG
   printf(" \"%s\" ", key);
   if (compRes == 0)
     printf("is equal to");
@@ -255,6 +293,7 @@ TSymbol TSTNode_insert(TSTNode self, char *key)
   else
     printf("is bigger then");
   printf(" \"%s\"\n", self->key);
+  #endif
 
   if (compRes == 0)                             // key is self
     return NULL;
@@ -395,5 +434,5 @@ void symbt_deleteSymb(char *ident);
 
 void symbt_print()
 {
-  printTreePart(GLBSymbTabStack->top(GLBSymbTabStack), 0);
+  TSTNode_print(GLBSymbTabStack->top(GLBSymbTabStack), 0);
 }
