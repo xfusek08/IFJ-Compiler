@@ -7,7 +7,7 @@
  * This package provides functions over global stack of symbol tables.
  *
  * \author  Petr Fusek (xfusek08)
- * \date    29.10.2017 - Petr Fusek
+ * \date    06.11.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -115,12 +115,15 @@ TSymbol symbt_findOrInsertSymb(char *ident);
 TSymbol symbt_insertSymbOnTop(char *ident);
 
 /**
- * Removes symbol first occurrence of symbol with
+ * Removes first occurrence of symbol from top of stack with given identifier
  *
  * \param  char* ident string identifier used as key
  */
 void symbt_deleteSymb(char *ident);
 
+/**
+ * Prints top tree table into stdout
+ */
 void symbt_print();
 
 #endif // _SymbTab

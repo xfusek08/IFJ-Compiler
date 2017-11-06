@@ -4,7 +4,7 @@
  * \file    symtable.c
  * \brief   Symbol table implementation
  * \author  Petr Fusek (xfusek08)
- * \date    30.10.2017 - Petr Fusek
+ * \date    06.11.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -44,6 +44,9 @@ TPStack GLBSymbTabStack;
 // constructor of TSymbol
 TSymbol TSymbol_create(char *ident)
 {
+  if (ident == NULL)
+    apperr_runtimeError("Symbol table: Invalid NULL parameter while creating symbol.");
+
   TSymbol newSymb = (TSymbol)mmng_safeMalloc(sizeof(struct Symbol));
   newSymb->ident = ident;
   newSymb->type = symtUnknown;
@@ -68,10 +71,13 @@ void TSymbol_destroy(TSymbol symbol)
 // Constructor of TSTNode
 TSTNode TSTNode_create(char *key)
 {
+  if (key == NULL)
+    apperr_runtimeError("Symbol table: Invalid NULL parameter while creating tableNode.");
+
   TSTNode newNode = (TSTNode)mmng_safeMalloc(sizeof(struct STNode));
   newNode->balance = 0;
   newNode->key = util_StrHardCopy(key); // new hard copy of string
-  newNode->symbol = NULL;
+  newNode->symbol = TSymbol_create(key);
   newNode->parent = NULL;
   newNode->left = NULL;
   newNode->right = NULL;
@@ -79,13 +85,19 @@ TSTNode TSTNode_create(char *key)
 }
 
 // destructor of TSTNode
-void TSTNode_destroy(TSTNode node)
+void TSTNode_destroy(TSTNode node, bool recursively)
 {
-  // delete subtrees recursively
-  if (node->left != NULL)
-    TSTNode_destroy(node->left);
-  if (node->right != NULL)
-    TSTNode_destroy(node->right);
+  if (node == NULL)
+    return;
+
+  if (recursively)
+  {
+    // delete subtrees recursively
+    if (node->left != NULL)
+      TSTNode_destroy(node->left, true);
+    if (node->right != NULL)
+      TSTNode_destroy(node->right, true);
+  }
 
   // destroy symbol
   TSymbol_destroy(node->symbol);
@@ -143,25 +155,6 @@ void TSTNode_print(TSTNode node, int depht)
   }
 }
 
-// Creates and rewrites symbol on concrete TSTNode with key,
-// key of node is changed
-TSymbol TSTNode_newSymbol(TSTNode self, char *key)
-{
-  if (self == NULL)
-    apperr_runtimeError("Symbol table: Invalid NULL parameter while calling newSymbol method.");
-
-  if (self->symbol != NULL)
-    TSymbol_destroy(self->symbol);
-
-  if (self->key != NULL)
-  {
-    mmng_safeFree(self->key);
-    self->key = util_StrHardCopy(key);
-  }
-  self->symbol = TSymbol_create(self->key);
-  return self->symbol;
-}
-
 // operation RR
 void TSTNode_rotateRight(TSTNode self)
 {
@@ -213,7 +206,7 @@ void TSTNode_rotateLeft(TSTNode self)
 }
 
 
-// methode starts from some node in tree and balances tree from node up to its root node
+// methode starts from given node in tree and balance tree up to root node
 void TSTNode_balanceFromBottom(TSTNode node)
 {
   #ifdef ST_DEBUG
@@ -246,19 +239,16 @@ void TSTNode_balanceFromBottom(TSTNode node)
 }
 
 // Finds symbol with corresponding key, NULL if not found
-TSymbol TSTNode_find(TSTNode self, char *key)
+TSTNode TSTNode_find(TSTNode self, char *key)
 {
-  if (self == NULL)
-    apperr_runtimeError("Symbol table: Invalid NULL parameter while calling find method.");
-
-  if (self->symbol == NULL)
-    return NULL;
+  if (self == NULL || key == NULL)
+    apperr_runtimeError("Symbol table: NULL parameter while calling find method.");
 
   int compRes = strcmp(self->key, key);
 
   // key is self
   if (compRes == 0)
-    return self->symbol;
+    return self;
 
   // key is smaller than self key
   else if (compRes > 0 && self->left != NULL)
@@ -271,15 +261,11 @@ TSymbol TSTNode_find(TSTNode self, char *key)
   return NULL;
 }
 
-// Insert into tree new symbol with key ident, return pointer to that symbol NULL if this key exists
-TSymbol TSTNode_insert(TSTNode self, char *key)
+// Insert into tree new node with key ident, return pointer to that node NULL if this key already exists
+TSTNode TSTNode_insert(TSTNode self, char *key)
 {
-  if (self == NULL)
-    apperr_runtimeError("Symbol table: Invalid NULL parameter while calling insert method.");
-
-  // symbol is inserted in self when self is empty tree
-  if (self->symbol == NULL)
-    return TSTNode_newSymbol(self, key);
+  if (self == NULL || key == NULL)
+    apperr_runtimeError("Symbol table: NULL parameter while calling insert method.");
 
   // navigate throuth tree recursively
   int compRes = strcmp(self->key, key);
@@ -304,7 +290,6 @@ TSymbol TSTNode_insert(TSTNode self, char *key)
 
   // create record
   TSTNode newNode = TSTNode_create(key); // key string is copied here
-  TSTNode_newSymbol(newNode, key);
   newNode->parent = self;
 
   // register record
@@ -316,11 +301,99 @@ TSymbol TSTNode_insert(TSTNode self, char *key)
   TSTNode_balanceFromBottom(self);
 
   // return record
-  return newNode->symbol;
+  return newNode;
 }
 
 // Insert into tree new symbol with key ident, return pointer to that symbol NULL if this key exists
-TSymbol TSTNode_delete(TSTNode self, char *key);
+// Returns self, if self is deleted, returns new root of whole tree
+TSTNode TSTNode_delete(TSTNode self, char *key)
+{
+  if (self == NULL || key == NULL)
+    apperr_runtimeError("Symbol table: NULL parameter while calling node delete method.");
+
+  // find node to be delete
+  TSTNode toDelNode = TSTNode_find(self, key);
+
+  if (toDelNode == NULL)
+    return NULL;
+
+  TSTNode kritNode = NULL;
+
+  // 1) Node is terminating
+  if (toDelNode->right == NULL && toDelNode->left == NULL)
+  {
+    kritNode = toDelNode->parent;
+    if (kritNode != NULL)
+    {
+      if (kritNode->left == toDelNode)
+        kritNode->left = NULL;
+      else
+        kritNode->right = NULL;
+    }
+  }
+  // 2) node has only one child
+  else if (toDelNode->right == NULL || toDelNode->left == NULL)
+  {
+    // choose existing child as kritical node
+    if (toDelNode->right == NULL)
+      kritNode = toDelNode->left;
+    else
+      kritNode = toDelNode->right;
+
+    kritNode->parent = toDelNode->parent;
+
+    if (toDelNode->parent->left == toDelNode)
+      toDelNode->parent->left = kritNode;
+    else
+      toDelNode->parent->right = kritNode;
+  }
+  // 3) node has both children
+  else
+  {
+    // lets find replacement in mostlef node in right child
+    TSTNode replacementNode = toDelNode->right;
+    while (replacementNode->left != NULL)
+      replacementNode = replacementNode->left;
+
+    // specify kritical node
+    // special case is when replacement is direct child of toDelNode
+    if (replacementNode == toDelNode->right)
+    {
+      kritNode = replacementNode;
+    }
+    else
+    {
+      // kritnode for balancing is parent of replacementNode
+      kritNode = replacementNode->parent;
+      kritNode->left = replacementNode->right;  // we know that replacement doesnt have left child but there may be on right
+      if (kritNode->left != NULL)
+        kritNode->left->parent = kritNode;
+
+      // replacement inherits its right child only if it is not direct child of toDelNode
+      replacementNode->right = toDelNode->right;
+      replacementNode->right->parent = replacementNode;
+    }
+
+    // replacement inherites position in tree from to del node
+    replacementNode->left = toDelNode->left;
+    replacementNode->parent = toDelNode->parent;
+    replacementNode->left->parent = replacementNode;
+
+    // fix parent of replacement
+    if (toDelNode->parent != NULL)
+    {
+      if (toDelNode->parent->left == toDelNode)
+        toDelNode->parent->left = replacementNode;
+      else
+        toDelNode->parent->right = replacementNode;
+    }
+  }
+
+  // destroy node non recursively (keep subtrees)
+  TSTNode_destroy(toDelNode, false);
+  TSTNode_balanceFromBottom(kritNode);
+  return TSTNode_getRoot(kritNode);
+}
 
 // =============================================================================
 // ====================== support function =====================================
@@ -351,8 +424,11 @@ void symbt_init()
 void symbt_destroy()
 {
   symbt_assertIfNotInit();
-  while (GLBSymbTabStack->count > 0)
+  // make sure nothing stays in stack
+  while (!(GLBSymbTabStack->count == 1 && GLBSymbTabStack->top(GLBSymbTabStack) == NULL))
     symbt_popFrame();
+  // delete last left table on stack
+  GLBSymbTabStack->pop(GLBSymbTabStack);
   GLBSymbTabStack->destroy(GLBSymbTabStack);
   GLBSymbTabStack = NULL;
 }
@@ -361,7 +437,7 @@ void symbt_destroy()
 void symbt_pushFrame()
 {
   symbt_assertIfNotInit();
-  GLBSymbTabStack->push(GLBSymbTabStack, TSTNode_create(""));
+  GLBSymbTabStack->push(GLBSymbTabStack, NULL);
 }
 
 // Frees destroys symbol table on top of the stack.
@@ -369,8 +445,11 @@ void symbt_popFrame()
 {
   symbt_assertIfNotInit();
   TSTNode actST = GLBSymbTabStack->top(GLBSymbTabStack);
-  TSTNode_destroy(actST);
-  GLBSymbTabStack->pop(GLBSymbTabStack);
+  TSTNode_destroy(actST, true);
+  if (GLBSymbTabStack->count > 1)
+    GLBSymbTabStack->pop(GLBSymbTabStack);
+  else
+    GLBSymbTabStack->ptArray[0] = NULL;
 }
 
 // Count frames
@@ -385,17 +464,19 @@ TSymbol symbt_findSymb(char *ident)
 {
   symbt_assertIfNotInit();
   if (ident == NULL)
-    return NULL;
+    apperr_runtimeError("Stmbol table: NULL identifier while calling delete symbol method.");
 
-  int index = GLBSymbTabStack->count - 1;
-  while (index >= 0) // searching from top of the stack
+  // searching from top of the stack
+  for (int i = GLBSymbTabStack->count - 1; i >= 0; i--)
   {
-    // we storimg pointers on TSTNode because NULL is also symbol table instance
-    TSTNode actTable = GLBSymbTabStack->ptArray[index];
-    TSymbol foundSymb =  TSTNode_find(actTable, ident);
-    if (foundSymb != NULL)
-      return foundSymb;
-    index--;
+    // we storimg pointers on TSTNode NULL in stack means empty table but in existing frame
+    TSTNode actTable = GLBSymbTabStack->ptArray[i];
+    if (actTable != NULL)
+    {
+      TSTNode foundNode = TSTNode_find(actTable, ident);
+      if (foundNode != NULL)
+        return foundNode->symbol;
+    }
   }
   return NULL;
 }
@@ -405,7 +486,7 @@ TSymbol symbt_findOrInsertSymb(char *ident)
 {
   symbt_assertIfNotInit();
   if (ident == NULL)
-    return NULL;
+    apperr_runtimeError("Stmbol table: NULL identifier while calling delete symbol method.");
 
   TSymbol foundSymb = symbt_findSymb(ident);
   if (foundSymb != NULL)
@@ -418,19 +499,39 @@ TSymbol symbt_insertSymbOnTop(char *ident)
 {
   symbt_assertIfNotInit();
   if (ident == NULL)
-    return NULL;
+    apperr_runtimeError("Stmbol table: NULL identifier while calling delete symbol method.");
 
+  TSymbol resSymb = NULL;
   TSTNode topTab = GLBSymbTabStack->top(GLBSymbTabStack);
-  TSymbol resSymb = TSTNode_insert(topTab, ident);
-  GLBSymbTabStack->pop(GLBSymbTabStack);
-  GLBSymbTabStack->push(GLBSymbTabStack, TSTNode_getRoot(topTab));
+  if (topTab == NULL)
+  {
+    topTab = TSTNode_create(ident); // symbol is also created in this constructor
+    resSymb = topTab->symbol;
+  }
+  else
+    resSymb = TSTNode_insert(topTab, ident)->symbol;
+
+  // make sure that pointer on top of table stact is pointin on to root of tree
+  GLBSymbTabStack->ptArray[GLBSymbTabStack->count - 1] = TSTNode_getRoot(topTab);
   return resSymb;
 }
 
+// Removes first occurrence of symbol from top of stack with given identifier
+void symbt_deleteSymb(char *ident)
+{
+  symbt_assertIfNotInit();
+  if (ident == NULL)
+    apperr_runtimeError("Stmbol table: NULL identifier while calling delete symbol method.");
 
-// Removes symbol first occurrence of symbol with
-void symbt_deleteSymb(char *ident);
-
+  // searching from top of the stack
+  for (int i = GLBSymbTabStack->count - 1; i >= 0; i--)
+  {
+    // we storimg pointers on TSTNode NULL in stack means empty table but in existing frame
+    TSTNode actTable = GLBSymbTabStack->ptArray[i];
+    if (actTable != NULL)
+      TSTNode_delete(actTable, ident);
+  }
+}
 
 void symbt_print()
 {
