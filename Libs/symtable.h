@@ -7,7 +7,7 @@
  * This package provides functions over global stack of symbol tables.
  *
  * \author  Petr Fusek (xfusek08)
- * \date    06.11.2017 - Petr Fusek
+ * \date    08.11.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -21,27 +21,37 @@
  * Types of symbols evided in symbol table.
  */
 typedef enum {
-  symtUnknown,  // unknown type
-  symtFuction,  // data type function
-  symtInt,      // data type int
-  symtFloat,    // data type float
-  symtBool,     // data type bool
-  symtString    // data type string
+  symtUnknown,      // unknown type
+  symtFuction,      // data type function
+  symtInt,          // data type int
+  symtFloat,        // data type float
+  symtBool,         // data type bool
+  symtString,       // data type string
+  symtConstInt,     // constant integer
+  symtConstDouble,  // constant double
+  symtConstString   // constant string litaral
 } SymbolType;
+
+/**
+ * Structure of basic dataset of input language data types,
+ * for storing data of constants or literals ect.
+ */
+typedef struct {
+  int intVal;
+  double doubleVal;
+  char *stringVal;
+} SData;
 
 /**
  * Object reprezenting one symbol
  *
  * There is no public constructor to this object. It is created by symbol table itself while inserting item.
  * Same case is with destroying object
- *
- * \TODO: is identificator nesessary ?
  */
 typedef struct Symbol *TSymbol;
 struct Symbol {
   char *ident;      // Identificator string
   SymbolType type;  // data type of symbol
-  bool IsConstant;  // flag, true whenever simbol is comstant and is relevant to remember some value
   SData value;      // Internal struct, filled in case of constant
 };
 
