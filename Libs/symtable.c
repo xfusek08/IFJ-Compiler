@@ -50,7 +50,6 @@ TSymbol TSymbol_create(char *ident)
   TSymbol newSymb = (TSymbol)mmng_safeMalloc(sizeof(struct Symbol));
   newSymb->ident = ident;
   newSymb->type = symtUnknown;
-  newSymb->IsConstant = false;
   newSymb->value.intVal = 0;
   newSymb->value.doubleVal = 0.0;
   newSymb->value.stringVal = NULL;
