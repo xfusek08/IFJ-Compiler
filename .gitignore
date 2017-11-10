@@ -53,3 +53,6 @@ dkms.conf
 
 # Documentation
 Documentation/
+
+# linux executible
+ifjcompile
