@@ -32,18 +32,18 @@ typedef struct grammarStack *TGrStack;
 */
 struct grammarStack{
   /** insert value on top */
-  void (*push)(TGrStack , Egrammar);
+  void (*push)(TGrStack , EGrSymb);
   /** remove item on top */
   void (*pop)(TGrStack);
   /** returns data of item on top */
-  Egrammar (*top)(TGrStack);
+  EGrSymb (*top)(TGrStack);
   /** safe destruction of stack. If stack is not empty, throw error. */
   void(*destroy)(TGrStack);
   /** Number of items in stack. */
   int count;
   /** Capacity of stack. */
   int size;
-  Egrammar *grArray;
+  EGrSymb *grArray;
 };
 
 typedef struct pointerStack *TPStack;
