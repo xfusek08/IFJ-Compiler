@@ -20,11 +20,11 @@
 // =============================================================================
 /****** GRAMMAR STACK ********/
 
-void ist_push(TGrStack stack, Egrammar val)
+void ist_push(TGrStack stack, EGrSymb val)
 {
   if (stack->count == stack->size)
   {
-    stack->grArray = mmng_safeRealloc(stack->grArray, stack->size * sizeof(Egrammar) + stack->size * sizeof(Egrammar) * STACK_REALLOC_MULTIPLIER);
+    stack->grArray = mmng_safeRealloc(stack->grArray, stack->size * sizeof(EGrSymb) + stack->size * sizeof(EGrSymb) * STACK_REALLOC_MULTIPLIER);
   }
   stack->grArray[stack->count++] = val;
 }
@@ -38,7 +38,7 @@ void ist_pop(TGrStack stack)
   stack->count--;
 }
 
-Egrammar ist_top(TGrStack stack)
+EGrSymb ist_top(TGrStack stack)
 {
   if (stack->count == 0)
   {
@@ -103,7 +103,7 @@ void pst_destroy(TPStack stack)
 TGrStack TGrStack_create()
 {
   TGrStack stack = mmng_safeMalloc(sizeof(struct grammarStack));
-  stack->grArray = mmng_safeMalloc(sizeof(Egrammar)*STACK_INITIAL_SIZE);
+  stack->grArray = mmng_safeMalloc(sizeof(EGrSymb)*STACK_INITIAL_SIZE);
   stack->size = STACK_INITIAL_SIZE;
   stack->count = 0;
   stack->push = ist_push;
