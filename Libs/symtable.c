@@ -53,6 +53,7 @@ TSymbol TSymbol_create(char *ident)
   newSymb->value.intVal = 0;
   newSymb->value.doubleVal = 0.0;
   newSymb->value.stringVal = NULL;
+  newSymb->value.boolVal = false;
   return newSymb;
 }
 
@@ -127,31 +128,12 @@ int TSTNode_height(TSTNode self)
 // return root of tree where self is
 TSTNode TSTNode_getRoot(TSTNode self)
 {
-  while (self->parent != NULL)
-    self = self->parent;
-  return self;
-}
-
-// prints simple diagram reprezenting structure of tree
-void TSTNode_print(TSTNode node, int depht)
-{
-  if (node != NULL)
+  if (self != NULL)
   {
-    if (node->right != NULL)
-      TSTNode_print(node->right, depht + 1);
-
-    for (int i = 0; i < depht; i++)
-    {
-      if (i + 1 == depht)
-        printf(" •--");
-      else
-        printf("    ");
-    }
-    printf("[%s]\n", node->key);
-
-    if (node->left != NULL)
-      TSTNode_print(node->left, depht + 1);
+    while (self->parent != NULL)
+      self = self->parent;
   }
+  return self;
 }
 
 // operation RR
@@ -160,7 +142,10 @@ void TSTNode_rotateRight(TSTNode self)
   if (self == NULL || self->left == NULL)
     return;
 
+  #ifdef ST_DEBUG
   printf("RotRight: %s\n", self->key);
+  #endif // ST_DEBUG
+
   // change parent pointer to left child
   if (self->parent != NULL)
   {
@@ -185,7 +170,10 @@ void TSTNode_rotateLeft(TSTNode self)
   if (self == NULL || self->right == NULL)
     return;
 
+  #ifdef ST_DEBUG
   printf("RotLeft: %s\n", self->key);
+  #endif // ST_DEBUG
+
   // change parent pointer to left child
   if (self->parent != NULL)
   {
@@ -208,14 +196,14 @@ void TSTNode_rotateLeft(TSTNode self)
 // methode starts from given node in tree and balance tree up to root node
 void TSTNode_balanceFromBottom(TSTNode node)
 {
-  #ifdef ST_DEBUG
-  printf("Balance %s\n", node->key);
-  #endif
-
   int balanceFactor = 0;
   int balanceFactorpPrev = 0;
   while (node != NULL)
   {
+    #ifdef ST_DEBUG
+    printf("Balancing: %s\n", node->key);
+    #endif // ST_DEBUG
+
     balanceFactor = TSTNode_height(node->left) - TSTNode_height(node->right);
 
     if (balanceFactor < -1)       // -2 - right side is taller
@@ -278,7 +266,7 @@ TSTNode TSTNode_insert(TSTNode self, char *key)
   else
     printf("is bigger then");
   printf(" \"%s\"\n", self->key);
-  #endif
+  #endif // ST_DEBUG
 
   if (compRes == 0)                             // key is self
     return NULL;
@@ -426,10 +414,11 @@ void symbt_destroy()
   // make sure nothing stays in stack
   while (!(GLBSymbTabStack->count == 1 && GLBSymbTabStack->top(GLBSymbTabStack) == NULL))
     symbt_popFrame();
-  // delete last left table on stack
+
+  // delete last left table on stack (pop left null)
   GLBSymbTabStack->pop(GLBSymbTabStack);
-  GLBSymbTabStack->destroy(GLBSymbTabStack);
-  GLBSymbTabStack = NULL;
+  GLBSymbTabStack->destroy(GLBSymbTabStack); // destroy stack
+  GLBSymbTabStack = NULL; // null global reference
 }
 
 // Creates new instance of symbol table on top of the stack
@@ -463,7 +452,7 @@ TSymbol symbt_findSymb(char *ident)
 {
   symbt_assertIfNotInit();
   if (ident == NULL)
-    apperr_runtimeError("Stmbol table: NULL identifier while calling delete symbol method.");
+    apperr_runtimeError("Symbol table: NULL identifier while calling delete symbol method.");
 
   // searching from top of the stack
   for (int i = GLBSymbTabStack->count - 1; i >= 0; i--)
@@ -485,7 +474,7 @@ TSymbol symbt_findOrInsertSymb(char *ident)
 {
   symbt_assertIfNotInit();
   if (ident == NULL)
-    apperr_runtimeError("Stmbol table: NULL identifier while calling delete symbol method.");
+    apperr_runtimeError("Symbol table: NULL identifier while calling delete symbol method.");
 
   TSymbol foundSymb = symbt_findSymb(ident);
   if (foundSymb != NULL)
@@ -498,7 +487,7 @@ TSymbol symbt_insertSymbOnTop(char *ident)
 {
   symbt_assertIfNotInit();
   if (ident == NULL)
-    apperr_runtimeError("Stmbol table: NULL identifier while calling delete symbol method.");
+    apperr_runtimeError("Symbol table: NULL identifier while calling delete symbol method.");
 
   TSymbol resSymb = NULL;
   TSTNode topTab = GLBSymbTabStack->top(GLBSymbTabStack);
@@ -520,7 +509,7 @@ void symbt_deleteSymb(char *ident)
 {
   symbt_assertIfNotInit();
   if (ident == NULL)
-    apperr_runtimeError("Stmbol table: NULL identifier while calling delete symbol method.");
+    apperr_runtimeError("Symbol table: NULL identifier while calling delete symbol method.");
 
   // searching from top of the stack
   for (int i = GLBSymbTabStack->count - 1; i >= 0; i--)
@@ -528,11 +517,74 @@ void symbt_deleteSymb(char *ident)
     // we storimg pointers on TSTNode NULL in stack means empty table but in existing frame
     TSTNode actTable = GLBSymbTabStack->ptArray[i];
     if (actTable != NULL)
-      TSTNode_delete(actTable, ident);
+    {
+      // Delete function returns new root of tree because order of nodes could be changed for balance
+      // and act root node could be deleted of shifted deeper into the tree
+      // or node on top could be only one in table in that case null is returned.
+      GLBSymbTabStack->ptArray[i] = TSTNode_delete(actTable, ident);
+      return;
+    }
   }
 }
 
+// =============================================================================
+// ====================== funkce pro testovaci programy ========================
+// =============================================================================
+
+#ifdef DEBUG
+
+// prints simple diagram reprezenting structure of tree
+void TSTNode_print(TSTNode node, int depht)
+{
+  if (node != NULL)
+  {
+    if (node->right != NULL)
+      TSTNode_print(node->right, depht + 1);
+
+    for (int i = 0; i < depht; i++)
+    {
+      if (i + 1 == depht)
+        printf(" •--");
+      else
+        printf("    ");
+    }
+    printf("[%s]\n", node->key);
+
+    if (node->left != NULL)
+      TSTNode_print(node->left, depht + 1);
+  }
+}
+
+// Prints top table as binary tree into stdout
 void symbt_print()
 {
   TSTNode_print(GLBSymbTabStack->top(GLBSymbTabStack), 0);
 }
+
+// Prints instance of TSymbol into stdout
+void symbt_printSymb(TSymbol symbol)
+{
+  char *stype;
+  switch(symbol->type)
+  {
+    case symtUnknown:     stype = "unspecified"; break;
+    case symtFuction:     stype = "function"; break;
+    case symtInt:         stype = "integer variable"; break;
+    case symtFloat:       stype = "floating point variable "; break;
+    case symtString:      stype = "string variable"; break;
+    case symtBool:        stype = "boolean variable"; break;
+    case symtConstInt:    stype = "integer constant"; break;
+    case symtConstDouble: stype = "floating point constant"; break;
+    case symtConstString: stype = "string constant"; break;
+    case symtConstBool:   stype = "boolean constant"; break;
+  }
+  printf("Symbol: %p\n", symbol);
+  printf("  identifier:   %s\n", symbol->ident);
+  printf("  type:         %s\n", stype);
+  printf("  data:\n");
+  printf("    integer value:  %d\n", symbol->value.intVal);
+  printf("    double value:   %lf\n", symbol->value.doubleVal);
+  printf("    string value:   %s\n", symbol->value.stringVal);
+  printf("    bool value:     %s\n", (symbol->value.boolVal) ? "True" : "False");
+}
+#endif // DEBUG

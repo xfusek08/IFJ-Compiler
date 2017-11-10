@@ -23,6 +23,11 @@ int main(int argc, char *argv[])
 
   mmng_init();
   symbt_init();
+
+  #ifdef DEBUG
+  setbuf(stdout, NULL);
+  setbuf(stderr, NULL);
+
   char ident[3];
   ident[2] = '\0';
   for (int i = 0; i < 10; i++)
@@ -101,7 +106,32 @@ int main(int argc, char *argv[])
   symbt_print();
   printf("\n");
 
+  printf(
+    "Testing symbols:\n"
+    "Inserting ahoj...\n");
+  TSymbol symbInserted = symbt_findOrInsertSymb("ahoj");
+  symbt_printSymb(symbInserted);
+
+  printf("Getting ahoj...\n");
+  TSymbol symbFinded = symbt_findSymb("ahoj");
+  symbt_printSymb(symbFinded);
+
+  if (symbInserted == symbFinded)
+    printf("Symbols are equal\n");
+
+  symbInserted = symbt_findOrInsertSymb("ahoj");
+  symbt_printSymb(symbInserted);
+  if (symbInserted == symbFinded)
+    printf("Symbols are still equal\n");
+
+  symbt_deleteSymb(symbInserted->ident);
+
+  printf("Deinicialization ... \n");
+
+  #endif // debug
+
   symbt_destroy();
   mmng_freeAll();
+  printf("Success.\n");
   return 0;
 }

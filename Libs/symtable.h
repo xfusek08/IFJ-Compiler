@@ -29,7 +29,8 @@ typedef enum {
   symtString,       // data type string
   symtConstInt,     // constant integer
   symtConstDouble,  // constant double
-  symtConstString   // constant string litaral
+  symtConstString,  // constant string litaral
+  symtConstBool     // constant bool literal
 } SymbolType;
 
 /**
@@ -40,6 +41,7 @@ typedef struct {
   int intVal;
   double doubleVal;
   char *stringVal;
+  bool boolVal;
 } SData;
 
 /**
@@ -131,9 +133,20 @@ TSymbol symbt_insertSymbOnTop(char *ident);
  */
 void symbt_deleteSymb(char *ident);
 
+// funkce pouze pro testovaci programy
+
+#ifdef DEBUG
+
 /**
- * Prints top tree table into stdout
+ * Prints top table as binary tree into stdout
  */
 void symbt_print();
+
+/**
+ * Prints instance of TSymbol into stdout
+ */
+void symbt_printSymb(TSymbol symbol);
+
+#endif // DEBUG
 
 #endif // _SymbTab
