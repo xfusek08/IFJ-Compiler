@@ -4,7 +4,7 @@
  * \file    symtable.c
  * \brief   Symbol table implementation
  * \author  Petr Fusek (xfusek08)
- * \date    06.11.2017 - Petr Fusek
+ * \date    10.11.2017 - Petr Fusek
  */
 /******************************************************************************/
 

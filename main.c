@@ -4,7 +4,7 @@
  * \file    Main.c
  * \brief   Main program
  * \author  Petr Fusek (xfusek08)
- * \date    30.10.2017 - Petr Fusek
+ * \date    10.11.2017 - Petr Fusek
  */
 /******************************************************************************/
 
