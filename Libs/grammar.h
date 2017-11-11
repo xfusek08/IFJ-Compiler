@@ -44,16 +44,13 @@ typedef enum
   NT_PARAM_EXT,     // continuous parameter (, param ,pram)
   NT_EXPR_LIST,     // expresion list
   NT_EXPR,          // expresion
-  NT_INIF           // body of if statement
+  NT_INIF,           // body of if statement
+
+  /* Precedence table symbols */
+  priorLess, priorEq, priorGrt
 }EGrSymb;
 
-/**
-* returns 1 if symbol is terminal, otherwise 0
-*/
-int isTerminal(EGrSymb symb)
-{
-  return symb < 1000 ? 1 : 0;
-}
+
 
 /*
 

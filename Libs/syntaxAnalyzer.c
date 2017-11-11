@@ -19,7 +19,27 @@
 SToken token; //loaded token, we might want to have array/list of tokens for code generation
 TGrStack statStack; //stack used in syntx_statAnalyze()
 
-//returns closest terminal to top of the stack
+//radim******
+/**
+* Returns 1 if symbol is not defined
+*/
+int Table(EGrSymb a, EGrSymb b, EGrSymb *ref)
+{
+
+}      
+//radim konec*************
+
+/**
+* returns 1 if symbol is terminal, otherwise 0
+*/
+int isTerminal(EGrSymb symb)
+{
+  return symb < 1000 ? 1 : 0;
+}
+
+/**
+* returns closest terminal to top of the stack
+*/
 EGrSymb syntx_getFirstTerminal(TGrStack stack)
 {
   for (int i = 0; i < stack->count; i++)
@@ -32,7 +52,9 @@ EGrSymb syntx_getFirstTerminal(TGrStack stack)
   return eol;
 }
 
-//Precedent statement analyze
+/**
+* Precedent statement analyze
+*/
 void syntx_statAnalyze()
 {
   statStack->push(statStack, eol);
@@ -44,9 +66,10 @@ void syntx_statAnalyze()
       break;
     }
     printf("Analyzing token: %d\n", token.type);
-
+    printf("First terminal on stack: %d\n", terminal);
   }
 }
+
 
 void syntx_analyzeCode()
 {
