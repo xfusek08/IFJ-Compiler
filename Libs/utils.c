@@ -10,10 +10,13 @@
 /******************************************************************************/
 
 #include <string.h>
+#include "MMng.h"
 #include "utils.h"
 
 // hard string copy
 char *util_StrHardCopy(const char *str)
 {
-  return strcpy(mmng_safeMalloc(sizeof(char) * strlen(str)), str);
+  if (str != NULL)
+    return strcpy(mmng_safeMalloc(sizeof(char) * strlen(str) + 1), str);
+  return NULL;
 }
