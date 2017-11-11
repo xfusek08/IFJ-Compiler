@@ -7,18 +7,19 @@
 * Contains both terminals and non-terminals.
 *
 * \author  Pavel Vosyka (xvosyk00)
-* \date    10.11.2017 - Petr Fusek
+* \date    11.11.2017 - Pavel Vosyka
 */
 /******************************************************************************/
 
 #ifndef GRAMMAR
 #define GRAMMAR
 
+//note: Be carefull with changing values of enum, isTerminal() rely on them.
 typedef enum
 {
   /* TERMINALS */
   /* operators */
-  opPlus, opMns, opMul, opDiv, opDivFlt, opPlusEq, opMnsEq, opMulEq, opDivEq, opDivFltEq, opEq, opLes, opGrt,
+  opPlus = 0, opMns, opMul, opDiv, opDivFlt, opPlusEq, opMnsEq, opMulEq, opDivEq, opDivFltEq, opEq, opLes, opGrt,
   opLessEq, opGrtEq, opLeftBrc, opRightBrc, opSemcol, opComma,
 
   /* key words */
@@ -30,7 +31,7 @@ typedef enum
   ident, asng, eol, dataType,
 
   /* NON-TERMINALS */
-  NT_PROG,          // Program - staritng non-terminal
+  NT_PROG = 1000,          // Program - staritng non-terminal
   NT_ASSINGEXT,     // Assignement (...  [as datatype])
   NT_DD_EXT,        // inicialization of static variable
   NT_SCOPE,         // program body
@@ -45,6 +46,14 @@ typedef enum
   NT_EXPR,          // expresion
   NT_INIF           // body of if statement
 }EGrSymb;
+
+/**
+* returns 1 if symbol is terminal, otherwise 0
+*/
+int isTerminal(EGrSymb symb)
+{
+  return symb < 1000 ? 1 : 0;
+}
 
 /*
 

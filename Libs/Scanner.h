@@ -17,7 +17,7 @@
 #include "grammar.h"
 
 typedef struct {
-  Egrammar type; // typ tokenu
+  EGrSymb type; // typ tokenu
 
 } SToken;
 

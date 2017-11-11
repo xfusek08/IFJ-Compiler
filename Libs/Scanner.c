@@ -14,7 +14,7 @@
 #include "Scanner.h"
 #include "grammar.h"
 
-Egrammar tokens[] = { kwDim, ident, kwAs, kwtype };
+EGrSymb tokens[] = { kwDim, ident, kwAs, dataType, eol };
 
 int scan_GetNextToken(SToken *token)
 {
