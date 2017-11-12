@@ -31,19 +31,21 @@ typedef enum
 
   /* NON-TERMINALS */
   NT_PROG,          // Program - staritng non-terminal
+  NT_DD,            // definitions and declarations section
   NT_ASSINGEXT,     // Assignement (...  [as datatype])
-  NT_DD_EXT,        // inicialization of static variable
-  NT_SCOPE,         // program body
-  NT_STAT_LIST,     // statement list
-  NT_STAT,          // one statement
-  NT_STAT_DOIN,     // body of do..loop statement
-  NT_STAT_DOIN_WU,  // [while/until]
-  NT_PARAM_LIST,    // parameter list
+  NT_SCOPE,         //
+  NT_PARAM_LIST,    // list of parameters
   NT_PARAM,         // one parameter
-  NT_PARAM_EXT,     // continuous parameter (, param ,pram)
-  NT_EXPR_LIST,     // expresion list
-  NT_EXPR,          // expresion
-  NT_INIF           // body of if statement
+  NT_PARAM_EXT,     // continue of param list
+  NT_STAT_LIST,     // list of statements
+  NT_STAT,          // one statement
+  NT_DOIN,          // body of do..loop statement
+  NT_DOIN_WU,       // until or while neterminal
+  NT_FORSTEP,       // step of for
+  NT_INIF_EXT,      // extension of body of if statement
+  NT_EXPR_LIST,     // list of expression for print function
+  NT_EXPR,          // one expresion
+  NT_ARGUMENT_LIST  // list of expression separated by comma
 }EGrSymb;
 
 /*
@@ -53,7 +55,7 @@ typedef enum
 first(NT_DD) = { kwDeclare -> (2); kwFunction -> (3);  kwStatic -> (4); else -> (5 [epsilon]) }
 2. NT_DD -> kwDeclare kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_DD
 3. NT_DD -> kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_STAT_LIST kwEnd kwFunction eol NT_DD
-4. NT_DD -> kwStatic kwShared ident kwAs dataType NT_DD_EXT
+4. NT_DD -> kwStatic kwShared ident kwAs dataType NT_ASSINGEXT
 5. NT_DD -> (epsilon)
 
 first(NT_ASSINGEXT) = { asgn -> (6); else -> (7 [epsilon]) }
@@ -147,6 +149,7 @@ first(NT_EXPR_LIST) = { first(NT_EXPR) -> (36); else -> (37 [epsilon]) }
 
 56. NT_ARGUMENT_LIST -> NT_EXPR opComma NT_ARGUMENT_LIST
 57. NT_ARGUMENT_LIST -> NT_EXPR
+58. NT_ARGUMENT_LIST -> (epsilon)
 
 */
 
