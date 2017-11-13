@@ -4,15 +4,18 @@
 * \file    grammar.h
 * \brief   Grammar enumeration
 *
-* Contains both terminals and non-terminals.
+* This file contains enummeration of grammar (terminal + non-terminals) and definition of token provided by scanner and processed by parsers.
 *
 * \author  Pavel Vosyka (xvosyk00)
-* \date    10.11.2017 - Petr Fusek
+* \date    13.11.2017 - Petr Fusek
 */
 /******************************************************************************/
 
-#ifndef GRAMMAR
-#define GRAMMAR
+#ifndef _Grammar
+#define _Grammar
+
+#include "utils.h"
+#include "symtable.h"
 
 typedef enum
 {
@@ -33,7 +36,7 @@ typedef enum
   NT_PROG,          // Program - staritng non-terminal
   NT_DD,            // definitions and declarations section
   NT_ASSINGEXT,     // Assignement (...  [as datatype])
-  NT_SCOPE,         //
+  NT_SCOPE,         // Scope statement where local variables can be owerriten.
   NT_PARAM_LIST,    // list of parameters
   NT_PARAM,         // one parameter
   NT_PARAM_EXT,     // continue of param list
@@ -46,9 +49,18 @@ typedef enum
   NT_EXPR_LIST,     // list of expression for print function
   NT_EXPR,          // one expresion
   NT_ARGUMENT_LIST  // list of expression separated by comma
-}EGrSymb;
+} EGrSymb;
 
-/*
+/**
+ * Struct representing one token of analysis
+ */
+typedef struct {
+  EGrSymb type;       /*!< terminal lextype from grammar */
+  TSymbol symbol;     /*!< Symbol evided in symbol table, NULL if there is no need of additional information */
+  DataType dataType;  /*!< This attribute is used only if token type is dataType (we need remember wich data type) and symbol of such of token is unnecessary */
+} SToken;
+
+/* GRAMMAR RULES:
 
 1. NT_PROG -> NT_DD NT_SCOPE
 
@@ -153,4 +165,4 @@ first(NT_EXPR_LIST) = { first(NT_EXPR) -> (36); else -> (37 [epsilon]) }
 
 */
 
-#endif
+#endif // _Grammar

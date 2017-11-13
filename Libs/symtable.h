@@ -7,7 +7,7 @@
  * This package provides functions over global stack of symbol tables.
  *
  * \author  Petr Fusek (xfusek08)
- * \date    10.11.2017 - Petr Fusek
+ * \date    13.11.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -21,28 +21,31 @@
  * Types of symbols evided in symbol table.
  */
 typedef enum {
-  symtUnknown,      // unknown type
-  symtFuction,      // data type function
-  symtInt,          // data type int
-  symtFloat,        // data type float
-  symtBool,         // data type bool
-  symtString,       // data type string
-  symtConstInt,     // constant integer
-  symtConstDouble,  // constant double
-  symtConstString,  // constant string litaral
-  symtConstBool     // constant bool literal
+  symtUnknown,
+  symtFuction,
+  symtVariable,
+  symtConstant
 } SymbolType;
 
 /**
- * Structure of basic dataset of input language data types,
- * for storing data of constants or literals ect.
+ * Structure uset in data, containg information about Function symbol.
  */
 typedef struct {
-  int intVal;
-  double doubleVal;
-  char *stringVal;
-  bool boolVal;
-} SData;
+  char *label;            /*!< label of function used in outbut code */
+  DataType returnType;    /*!< return type of function */
+  bool isDefined;         /*!< flag, true if function has been defined */
+} SFuncData;
+
+/**
+ * Union of mutually excluded attributes wich are used for different SymbolTypes
+ */
+typedef union {
+  int intVal;        /*!< integer value used when  symbol type is symtConstInt */
+  double doubleVal;  /*!< double value used when  symbol type is symtConstDouble */
+  char *stringVal;   /*!< pointer to first char of string literal value used when symbol type is symtConstString */
+  bool boolVal;      /*!< boolean value used when symbol type is symtConstBool */
+  SFuncData;         /*!< structure containg inforamtion aboud function used when symbol type is symtFuction */
+} Data;
 
 /**
  * Object reprezenting one symbol
@@ -52,9 +55,10 @@ typedef struct {
  */
 typedef struct Symbol *TSymbol;
 struct Symbol {
-  char *ident;      // Identificator string
-  SymbolType type;  // data type of symbol
-  SData value;      // Internal struct, filled in case of constant
+  char *ident;        /*!< identifier of symbol (is also used as key to symbol table) */
+  SymbolType type;    /*!< Type of symbol */
+  DataType dataType;  /*!< Data type of symbol, in case of constant type desides wich attribute from Data union will be used to store information. */
+  Data data;          /*!< Union of attributes containg right data for concrete type of symbol. */
 };
 
 /**
