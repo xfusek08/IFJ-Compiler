@@ -5,12 +5,23 @@
  * \brief   Liblary providing supportive function and types for the project
  *
  * \author  Petr Fusek (xfusek08)
- * \date    23.10.2017 - Petr Fusek
+ * \date    13.11.2017 - Petr Fusek
  */
 /******************************************************************************/
 
 #ifndef _utils
 #define _utils
+
+/**
+ * Global data type enum
+ */
+typedef enum {
+  dtUnspecified,
+  dtInt,
+  dtFloat,
+  dtString,
+  dtBool
+} DataType;
 
 /**
  * Fuction create hard copy of given string
