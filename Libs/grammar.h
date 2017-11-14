@@ -30,7 +30,7 @@ typedef enum
   kwNext, kwNot, kwOr, kwShared, kwStatic, kwTrue, kwTo, kwUntil,
 
   /* other */
-  ident, asng, eol, dataType,
+  ident, asng, eol, eof, dataType,
 
   /* NON-TERMINALS */
   NT_PROG,          // Program - staritng non-terminal
