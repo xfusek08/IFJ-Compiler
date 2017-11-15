@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
   mmng_init();
   symbt_init();
 
+
   symbt_destroy();
   mmng_freeAll();
   return 0;

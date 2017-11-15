@@ -7,7 +7,7 @@
  * This package provides functions over global stack of symbol tables.
  *
  * \author  Petr Fusek (xfusek08)
- * \date    13.11.2017 - Petr Fusek
+ * \date    15.11.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -31,20 +31,22 @@ typedef enum {
  * Structure uset in data, containg information about Function symbol.
  */
 typedef struct {
-  char *label;            /*!< label of function used in outbut code */
-  DataType returnType;    /*!< return type of function */
-  bool isDefined;         /*!< flag, true if function has been defined */
+  char *label;          /*!< label of function used in outbut code */
+  DataType returnType;  /*!< return type of function */
+  int argumentCount;    /*!< number of arguments */
+  DataType *arguments;  /*!< array of arguments required by function in order. Lenght of array is equal to argumentCount */
+  bool isDefined;       /*!< flag, true if function has been defined */
 } SFuncData;
 
 /**
  * Union of mutually excluded attributes wich are used for different SymbolTypes
  */
 typedef union {
-  int intVal;        /*!< integer value used when  symbol type is symtConstInt */
-  double doubleVal;  /*!< double value used when  symbol type is symtConstDouble */
-  char *stringVal;   /*!< pointer to first char of string literal value used when symbol type is symtConstString */
-  bool boolVal;      /*!< boolean value used when symbol type is symtConstBool */
-  SFuncData;         /*!< structure containg inforamtion aboud function used when symbol type is symtFuction */
+  int intVal;           /*!< integer value used when  symbol type is symtConstInt */
+  double doubleVal;     /*!< double value used when  symbol type is symtConstDouble */
+  char *stringVal;      /*!< pointer to first char of string literal value used when symbol type is symtConstString */
+  bool boolVal;         /*!< boolean value used when symbol type is symtConstBool */
+  SFuncData funcData;   /*!< structure containg inforamtion aboud function used when symbol type is symtFuction */
 } Data;
 
 /**
@@ -55,10 +57,10 @@ typedef union {
  */
 typedef struct Symbol *TSymbol;
 struct Symbol {
-  char *ident;        /*!< identifier of symbol (is also used as key to symbol table) */
-  SymbolType type;    /*!< Type of symbol */
-  DataType dataType;  /*!< Data type of symbol, in case of constant type desides wich attribute from Data union will be used to store information. */
-  Data data;          /*!< Union of attributes containg right data for concrete type of symbol. */
+  char *ident;          /*!< identifier of symbol (is also used as key to symbol table) */
+  SymbolType type;      /*!< Type of symbol */
+  DataType dataType;    /*!< Data type of symbol, in case of constant type desides wich attribute from Data union will be used to store information. */
+  Data data;            /*!< Union of attributes containg right data for concrete type of symbol. */
 };
 
 /**
