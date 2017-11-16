@@ -1,0 +1,188 @@
+/******************************************************************************/
+/**
+ * \project IFJ-Compiler
+ * \file    rParser.c
+ * \brief   Implementation of main parser using recursive descent
+ *
+ * Main functionality is based on grammar non-terminal symbols, where each non terminal has it's own
+ * fnciton each function checks series of tokens from lexical analyzer and desides if terminal symbols
+ * are correct under non-terminal wich function reprezents.
+ * This will checks correct syntax of input program and simutalates TO-DOWN analysis.
+ * Also some non-terminals have some sematic meaning for exaplme conditins or loops, so
+ * Some control code is generated and symbols in sybol table are managed.
+ *
+ * \author  Petr Fusek (xfusek08)
+ * \date    16.11.2017 - Petr Fusek
+ */
+/******************************************************************************/
+
+// #include "lexical analyzer"
+#include "symtable.h"
+#include "grammar.h"
+#include "rParser.h"
+
+// =============================================================================
+// ====================== Interface implementation =============================
+// =============================================================================
+
+void rparser_processProgram()
+{
+
+}
+
+// =============================================================================
+// ========== Series Of recursive Grammar NON-terminal functions ===============
+// =============================================================================
+
+/**
+ * All functions returns last token on wich they ended and is not part of thein monterminal structure
+ * And all fuctions  taken first token as parameter on wich they suppose to start.
+ */
+
+// Program - staritng non-terminal
+SToken ck_NT_PROG(SToken actToken)
+{
+  // 1. NT_PROG -> NT_DD NT_SCOPE eof
+  actToken = ck_NT_DD(actToken);
+  actToken = ck_NT_SCOPE(actToken);
+  if (actToken->type != eof)
+    // lexical code error unexpected token (after main scope, expected token EOF)
+}
+
+// definitions and declarations section
+// first(NT_DD) = { kwDeclare -> (2); kwFunction -> (3);  kwStatic -> (4); else -> (5 [epsilon]) }
+SToken ck_NT_DD(SToken actToken)
+{
+  switch (actToken->type)
+  {
+    // 2. NT_DD -> kwDeclare kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_DD
+    case kwDeclare:
+      actToken = /* get nest token */
+      if (actToken->type == kwFunction) ...
+      break;
+    // 3. NT_DD -> kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_STAT_LIST kwEnd kwFunction eol NT_DD
+    case kwFunction:
+      break;
+    // 4. NT_DD -> kwStatic kwShared ident kwAs dataType NT_ASSINGEXT
+    case kwStatic:
+      break;
+    // 5. NT_DD -> (epsilon)
+    default:
+  }
+}
+
+// Assignement (...  [as datatype])
+// first(NT_ASSINGEXT) = { asgn -> (6); else -> (7 [epsilon]) }
+SToken ck_NT_ASSINGEXT(SToken actToken)
+{
+  // 6. NT_ASSINGEXT -> asgn NT_EXPR
+  // 7. NT_ASSINGEXT -> (epsilon)
+}
+
+// Scope statement where local variables can be owerriten.
+// first(NT_SCOPE) = { kwScope -> (8); else -> (error) }
+SToken ck_NT_SCOPE(SToken actToken)
+{
+  // 8. NT_SCOPE -> kwScope NT_STAT_LIST kwEnd kwScope eol
+}
+
+// list of parameters
+// first(NT_PARAM_LIST) = { first(NT_PARAM) -> (9); else -> (10 [epsilon]) }
+SToken ck_NT_PARAM_LIST(SToken actToken)
+{
+  // 9.  NT_PARAM_LIST -> NT_PARAM
+  // 10. NT_PARAM_LIST -> (epsilon)
+}
+
+// one parameter
+// first(NT_PARAM) = { ident -> (11); else -> (error) }
+SToken ck_NT_PARAM(SToken actToken)
+{
+  // 11. NT_PARAM -> ident kwAs dataType NT_PARAM_EXT
+}
+
+// continue of param list
+// first(NT_PARAM_EXT) = { opComma -> (12); else -> (13 [epsilon]) }
+SToken ck_NT_PARAM_EXT(SToken actToken)
+{
+  // 12. NT_PARAM_EXT -> opComma NT_PARAM
+  // 13. NT_PARAM_EXT -> (epsilon)
+}
+
+// list of statements
+// first(NT_STAT_LIST) = { first(NT_STAT) -> (14); else -> (15 [epsilon]) }
+SToken ck_NT_STAT_LIST(SToken actToken)
+{
+  // 14. NT_STAT_LIST -> NT_STAT eol NT_STAT_LIST
+  // 15. NT_STAT_LIST -> (epsilon)
+}
+
+// one statement
+// first(NT_STAT) = {
+//   kwInput -> (16);
+//   kwPrint -> (17);
+//   kwIf -> (18);
+//   kwDim -> (19);
+//   ident -> (20);
+//   kwContinue -> (21);
+//   kwExit -> (22);
+//   first(NT_SCOPE) -> (23);
+//   kwReturn -> (24);
+//   kwDo -> (25);
+//   kwFor -> (26);
+//   else -> (error) }
+SToken ck_NT_STAT(SToken actToken)
+{
+  // 16. NT_STAT -> kwInput ident
+  // 17. NT_STAT -> kwPrint NT_EXPR_LIST
+  // 18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf eol
+  // 19. NT_STAT -> kwDim iden kwAs dataType NT_ASSINGEXT
+  // 20. NT_STAT -> ident asng NT_EXPR
+  // 21. NT_STAT -> kwContinue
+  // 22. NT_STAT -> kwExit
+  // 23. NT_STAT -> NT_SCOPE
+  // 24. NT_STAT -> kwReturn NT_EXPR
+  // 25. NT_STAT -> kwDo NT_DOIN kwLoop
+  // 26. NT_STAT -> kwFor ident NT_ASSINGEXT kwTo NT_EXPR NT_STEP eol NT_STAT_LIST kwNext
+}
+
+// body of do..loop statement
+// first(NT_DOIN) = { first(NT_DOIN_WU) -> (27); eol -> (28) else -> (error)}
+SToken ck_NT_DOIN(SToken actToken)
+{
+  // 27. NT_DOIN -> NT_DOIN_WU NT_EXPR eol NT_STAT_LIST
+  // 28. NT_DOIN -> eol NT_STAT_LIST NT_DOIN_WU NT_EXPR
+}
+
+// until or while neterminal
+// first(NT_DOIN_WU) = { kwWhile -> (29); kwUntil -> (30); else -> (error) }
+SToken ck_NT_DOIN_WU(SToken actToken)
+{
+  // 29. NT_DOIN_WU -> kwWhile
+  // 30. NT_DOIN_WU -> kwUntil
+}
+
+// step of for
+// first(NT_FORSTEP) = { kwStep -> (31); else -> (32 [epsilon]) }
+SToken ck_NT_FORSTEP(SToken actToken)
+{
+  // 31. NT_FORSTEP -> kwStep NT_EXPR
+  // 32. NT_FORSTEP -> (epsilon)
+}
+
+// extension of body of if statement
+// first(NT_INIF_EXT) = { kwElsif -> (33); kwElse -> (34); else -> (35 [epsilon]) }
+SToken ck_NT_INIF_EXT(SToken actToken)
+{
+  // 33. NT_INIF_EXT -> kwElsif NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT
+  // 34. NT_INIF_EXT -> kwElse eol NT_STAT_LIST
+  // 35. NT_INIF_EXT -> (epsilon)
+}
+
+// list of expression for print function
+// first(NT_EXPR_LIST) = { first(NT_EXPR) -> (36); else -> (37 [epsilon]) }
+SToken ck_NT_EXPR_LIST(SToken actToken)
+{
+  // 36. NT_EXPR_LIST -> NT_EXPR opSemcol NT_EXPR_LIST
+  // 37. NT_EXPR_LIST -> (epsilon)
+}

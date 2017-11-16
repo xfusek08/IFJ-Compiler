@@ -15,6 +15,7 @@
 #include "Libs/MMng.h"
 #include "Libs/stacks.h"
 #include "Libs/symtable.h"
+#include "Libs/rParser.h"
 
 int main(int argc, char *argv[])
 {
@@ -24,6 +25,7 @@ int main(int argc, char *argv[])
   mmng_init();
   symbt_init();
 
+  rparser_processProgram()
 
   symbt_destroy();
   mmng_freeAll();

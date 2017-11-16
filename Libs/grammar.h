@@ -30,7 +30,7 @@ typedef enum
   kwNext, kwNot, kwOr, kwShared, kwStatic, kwTrue, kwTo, kwUntil,
 
   /* other */
-  ident, asng, eol, dataType,
+  ident, asng, eol, dataType, eof
 
   /* NON-TERMINALS */
   NT_PROG,          // Program - staritng non-terminal
@@ -62,7 +62,7 @@ typedef struct {
 
 /* GRAMMAR RULES:
 
-1. NT_PROG -> NT_DD NT_SCOPE
+1. NT_PROG -> NT_DD NT_SCOPE eof
 
 first(NT_DD) = { kwDeclare -> (2); kwFunction -> (3);  kwStatic -> (4); else -> (5 [epsilon]) }
 2. NT_DD -> kwDeclare kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_DD
@@ -77,7 +77,7 @@ first(NT_ASSINGEXT) = { asgn -> (6); else -> (7 [epsilon]) }
 first(NT_SCOPE) = { kwScope -> (8); else -> (error) }
 8. NT_SCOPE -> kwScope NT_STAT_LIST kwEnd kwScope eol
 
-first(NT_SCOPE) = { first(NT_PARAM) -> (9); else -> (10 [epsilon]) }
+first(NT_PARAM_LIST) = { first(NT_PARAM) -> (9); else -> (10 [epsilon]) }
 9.  NT_PARAM_LIST -> NT_PARAM
 10. NT_PARAM_LIST -> (epsilon)
 
