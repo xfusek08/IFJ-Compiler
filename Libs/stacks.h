@@ -72,6 +72,14 @@ struct pointerStack{
 TGrStack TGrStack_create();
 
 /**
+* Adds symbol after specified position. Position zero equals bottom of the stack.
+* \param stack Valid stack. can`t be empty.
+* \param position must be valid index of existing element.
+* \param symbol is added after element on position.
+*/
+void TGrStack_postInsert(TGrStack stack, int position, EGrSymb symbol);
+
+/**
 * Initialize empty pointer stack and returns its pointer.
 */
 TPStack TPStack_create();

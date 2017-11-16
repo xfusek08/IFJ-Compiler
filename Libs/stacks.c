@@ -113,6 +113,21 @@ TGrStack TGrStack_create()
   return stack;
 }
 
+void TGrStack_postInsert(TGrStack stack, int position, EGrSymb symbol)
+{
+  if (stack->count == stack->size)
+  {
+    stack->push(stack, eol); //becouse full stack is handled in push function
+    stack->pop(stack);
+  }
+  for (int i = position+1; i < stack->count; i++)
+  {
+    stack->grArray[i + 1] = stack->grArray[i];
+  }
+  stack->count++;
+  stack->grArray[position + 1] = symbol;
+}
+
 TPStack TPStack_create()
 {
   TPStack stack = mmng_safeMalloc(sizeof(struct pointerStack));

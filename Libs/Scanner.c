@@ -13,6 +13,7 @@
 
 #include "Scanner.h"
 #include "grammar.h"
+#include <stdio.h>
 
 EGrSymb tokens[] = { kwDim, ident, kwAs, dataType, eol };
 
@@ -25,4 +26,9 @@ int scan_GetNextToken(SToken *token)
   }
   token->type = tokens[pos++];
   return 1;
+}
+
+void scan_raiseCodeError(ErrorType typchyby)
+{
+  fprintf("Scanner> some error!");
 }
