@@ -105,14 +105,35 @@ void delete_comment(bool isLine)
   }
 }
 
+EGrSymb isKeyWord(char *tokenID)
+{
+  //Array of keyWords
+  char *sArray[] = {"As", "Asc", "Declare", "Dim", "Do", "Else", "End", "Function", "If", "Input", "Length", "Loop",
+  "Print", "Return", "Scope", "SubStr", "Then", "While", "And", "Continue", "Elseif", "Exit", "False", "For",
+  "Next", "Not", "Or", "Shared", "Static", "True", "To", "Until"};
+  int arrayLeght = 40;
+  int i = 18;
+  EGrSymb tokenType = ident;
+  //Compare
+  while(i++ < arrayLeght)
+  {
+    if(strcmp(tokenID, sArray[i]) == 0)
+    {
+      tokenType = i;
+      mmng_safeFree(tokenID);   
+    }
+  }
+  return tokenType;
+}
+
 //Function that return next token
 SToken scan_GetNextToken()
 {
   char *tokenID = mmng_safeMalloc(sizeof(char) * CHUNK * Scanner->lineSize);
   TSymbol symbol = NULL;
-  SymbolType type = symtUnknown;
+  tokenType type = symtUnknown;
   DataType dataType = dtUnspecified;
-  EGrSymb symbolType = eol;
+  EGrSymb tokenType = eol;
   int intVal = 0;
   double doubleVal = 0;
   char *stringVal = NULL;
@@ -127,54 +148,54 @@ SToken scan_GetNextToken()
     {
       case '=':
         allowed = true;
-        symbolType = opEq;
+        tokenType = opEq;
         mmng_safeFree(tokenID);
         break;
       case '+':
-        symbolType = opPlus;
+        tokenType = opPlus;
         if(Scanner->line[Scanner->position] == '=')
         {
-          symbolType = opPlusEq;
+          tokenType = opPlusEq;
           Scanner->position++;
         }
         allowed = true;
         mmng_safeFree(tokenID);
         break;
       case '-':
-        symbolType = opMns;
+        tokenType = opMns;
         if(Scanner->line[Scanner->position] == '=')
         {
-          symbolType = opMnsEq;
+          tokenType = opMnsEq;
           Scanner->position++;
         }
         allowed = true;
         mmng_safeFree(tokenID);
         break;
       case '*':
-        symbolType = opMul;
+        tokenType = opMul;
         if(Scanner->line[Scanner->position] == '=')
         {
-          symbolType = opMulEq;
+          tokenType = opMulEq;
           Scanner->position++;
         }
         allowed = true;
         mmng_safeFree(tokenID);
         break;
       case '/':
-        symbolType = opDiv;
+        tokenType = opDiv;
         if(Scanner->line[Scanner->position] == '\'')
         {
           position--;
           delete_comment(false);
           allowed = false;
-          symbolType = eol;
+          tokenType = eol;
         }
         else if(Scanner->line[Scanner->position] == '=')
         {
           tokenID[position++] = Scanner->line[Scanner->position++];
           tokenID[position] = '\0';
           allowed = true;
-          symbolType = opDivEq;
+          tokenType = opDivEq;
           mmng_safeFree(tokenID);
         }
         else
@@ -183,59 +204,59 @@ SToken scan_GetNextToken()
         }
         break;
       case '\\':
-        symbolType = opDivFlt;
+        tokenType = opDivFlt;
         if(Scanner->line[Scanner->position] == '=')
         {
-          symbolType = opDivFltEq;
+          tokenType = opDivFltEq;
           Scanner->position++;
         }
         mmng_safeFree(tokenID);
         allowed = true;
         break;
       case '<':
-        symbolType = opLes;
+        tokenType = opLes;
         if(Scanner->line[Scanner->position] == '=')
         {
-          symbolType = opLessEq;
+          tokenType = opLessEq;
           Scanner->position++;
         }
         mmng_safeFree(tokenID);
         allowed = true;
         break;
       case '>':
-        symbolType = opGrt;
+        tokenType = opGrt;
         if(Scanner->line[Scanner->position] == '=')
         {
-          symbolType = opGrtEq;
+          tokenType = opGrtEq;
           Scanner->position++;
         }
         mmng_safeFree(tokenID);
         allowed = true;
         break;
       case '(':
-        symbolType = opLeftBrc;
+        tokenType = opLeftBrc;
         mmng_safeFree(tokenID);
         allowed = true;
         break;
       case ')':
-        symbolType = opRightBrc;
+        tokenType = opRightBrc;
         mmng_safeFree(tokenID);
         allowed = true;
         break;
       case ';':
-        symbolType = opSemcol;
+        tokenType = opSemcol;
         mmng_safeFree(tokenID);
         allowed = true;
         break;
       case ',':
-        symbolType = opComma;
+        tokenType = opComma;
         mmng_safeFree(tokenID);
         allowed = true;
         break;
       case ':':
         if(Scanner->line[Scanner->position] == '=')
         {
-          symbolType = asng;
+          tokenType = asng;
           Scanner->position++;
         }
         else
@@ -305,13 +326,13 @@ SToken scan_GetNextToken()
         break;
       //End of line
       case '\0':
-        symbolType = eol;
+        tokenType = eol;
         get_line();
         allowed = true;
         break;
       //End of File
       case EOF:
-        symbolType = eof;
+        tokenType = eof;
         tokenID[position] = '\0';
         allowed = true;
         break; 
@@ -328,193 +349,13 @@ SToken scan_GetNextToken()
           }
           tokenID[position] = '\0';
           allowed = true;
-          symbolType = ident;
-          //Compare 
-          if(strcmp(tokenID, "And") == 0)
-          {
-            symbolType = kwAnd;
-            mmng_safeFree(tokenID);   
-          }
-          else if(strcmp(tokenID, "As") == 0)
-          {
-            symbolType = kwAs;
-            mmng_safeFree(tokenID);   
-          }
-          else if(strcmp(tokenID, "Asc") == 0)
-          {
-            symbolType = kwAsc;
-            mmng_safeFree(tokenID);   
-          }
-          else if(strcmp(tokenID, "Declare") == 0)
-          {
-            symbolType = kwDeclare;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Dim") == 0)
-          {
-            symbolType = kwDim;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Do") == 0)
-          {
-            symbolType = kwDo;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Double") == 0)
-          {
-            symbolType = dataType;
-            mmng_safeFree(tokenID);
-            dataType = dtFloat;  
-          }
-          else if(strcmp(tokenID, "Else") == 0)
-          {
-            symbolType = kwElse;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "End") == 0)
-          {
-            symbolType = kwEnd;
-            mmng_safeFree(tokenID);   
-          }
-          else if(strcmp(tokenID, "Chr") == 0)
-          {
-            symbolType = dataType;
-            mmng_safeFree(tokenID);
-            dataType = dtString; 
-          }
-          else if(strcmp(tokenID, "Function") == 0)
-          {
-            symbolType = kwFunction;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "If") == 0)
-          {
-            symbolType = kwIf;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Input") == 0)
-          {
-            symbolType = kwInput;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Integer") == 0)
-          {
-            symbolType = dataType;
-            mmng_safeFree(tokenID);
-            dataType = dtInt;  
-          }
-          else if(strcmp(tokenID, "Length") == 0)
-          {
-            symbolType = kwLength;
-            mmng_safeFree(tokenID); 
-          }
-          else if(strcmp(tokenID, "Loop") == 0)
-          {
-            symbolType = kwLoop;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Print") == 0)
-          {
-            symbolType = kwPrint;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Return	") == 0)
-          {
-            symbolType = kwReturn;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Scope") == 0)
-          {
-            symbolType = kwScope;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "String") == 0)
-          {
-            symbolType = dataType;
-            mmng_safeFree(tokenID);
-            dataType = dtString; 
-          }
-          else if(strcmp(tokenID, "SubStr") == 0)
-          {
-            symbolType = kwSubStr;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Then") == 0)
-          {
-            symbolType = kwThen;
-            mmng_safeFree(tokenID);   
-          }
-          else if(strcmp(tokenID, "While") == 0)
-          {
-            symbolType = kwWhile;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Boolean") == 0)
-          {
-            symbolType = dataType;
-            mmng_safeFree(tokenID);
-            dataType = dtBool; 
-          }
-          else if(strcmp(tokenID, "Continue") == 0)
-          {
-            symbolType = kwContinue;
-            mmng_safeFree(tokenID);   
-          }
-          else if(strcmp(tokenID, "Elseif") == 0)
-          {
-            symbolType = kwElseif;
-            mmng_safeFree(tokenID);   
-          }
-          else if(strcmp(tokenID, "Exit") == 0)
-          {
-            symbolType = kwExit;
-            mmng_safeFree(tokenID);   
-          }
-          else if(strcmp(tokenID, "False") == 0)
-          {
-            symbolType = kwFalse;
-            mmng_safeFree(tokenID);   
-          }
-          else if(strcmp(tokenID, "For") == 0)
-          {
-            symbolType = kwFor;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Next") == 0)
-          {
-            symbolType = kwNext;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Not") == 0)
-          {
-            symbolType = kwNot;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Or") == 0)
-          {
-            symbolType = kwOr;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Shared") == 0)
-          {
-            symbolType = kwShared;
-            mmng_safeFree(tokenID);  
-          }
-          else if(strcmp(tokenID, "Static") == 0)
-          {
-            symbolType = kwStatic;
-            mmng_safeFree(tokenID);   
-          }
-          else if(strcmp(tokenID, "True") == 0)
-          {
-            symbolType = kwTrue;
-            mmng_safeFree(tokenID);  
-          }
+          //Compare
+          tokenType = isKeyWord(tokenID);
         }
         //Numbers
         else if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)
         {
-        symbolType = ident;
+        tokenType = ident;
           while((Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58) 
           || Scanner->line[Scanner->position - 1] == 46)
           {
@@ -561,7 +402,7 @@ SToken scan_GetNextToken()
         }
     }
   }
-  if(symbolType == ident)
+  if(tokenType == ident)
   {
     symbol = symbt_findOrInsertSymb(tokenID);
     symbol->type = type;
@@ -572,7 +413,7 @@ SToken scan_GetNextToken()
   }
   SToken token;
   token.dataType = dataType;
-  token.type = symbolType;
+  token.type = tokenType;
   token.symbol = symbol;
   return token;
 }
