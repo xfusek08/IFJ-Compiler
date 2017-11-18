@@ -74,7 +74,7 @@ void get_line()
   int charCounter = 0;
   while(((Scanner->line[charCounter] = getchar()) != '\n'))
   {
-    if(charCounter == (Scanner->lineSize * CHUNK - 1))
+    if(charCounter == (Scanner->lineSize * CHUNK - 2))
     {
       Scanner->lineSize++;
       Scanner->line = mmng_safeRealloc(Scanner->line, sizeof(char) * Scanner->lineSize * CHUNK);//Mozna chyba
@@ -83,7 +83,7 @@ void get_line()
       break;
     charCounter++;
   }
-  Scanner->line[charCounter] = '\0';
+  Scanner->line[++charCounter] = '\0';
   Scanner->position = 0;
 }
 
@@ -127,7 +127,7 @@ EGrSymb isKeyWord(char *tokenID)
   //Compare
   while(i++ < arrayLeght)
   {
-    if(strcmp(tokenID, sArray[i]) == 0)
+    if(strcmp(tokenID, sArray[i]) == 0) //maybe as long as != Until
     {
       tokenType = i;
       mmng_safeFree(tokenID);   
@@ -339,9 +339,8 @@ SToken scan_GetNextToken()
         allowed = true;
         break;
       //End of line
-      case '\0':
+      case '\n':
         tokenType = eol;
-        get_line();
         allowed = true;
         break;
       //End of File
@@ -349,6 +348,10 @@ SToken scan_GetNextToken()
         tokenType = eof;
         tokenID[position] = '\0';
         allowed = true;
+        break;
+      case '\0':
+        allowed = false;
+        get_line();
         break; 
       default:
         //Identifires
