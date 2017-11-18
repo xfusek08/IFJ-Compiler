@@ -289,7 +289,9 @@ SToken scan_GetNextToken()
         while(!(Scanner->line[Scanner->position] == '\"' && Scanner->line[Scanner->position - 1] != '!' 
         && Scanner->line[Scanner->position - 1] != '\\'))
         {
+          bool escNum = false;
           tokenID[position++] = Scanner->line[Scanner->position++];
+          //Escape sequence
           if(tokenID[position - 1] == '\\')
           {
             switch(Scanner->line[Scanner->position])
@@ -311,22 +313,24 @@ SToken scan_GetNextToken()
                 Scanner->position++;
                 break;
               default:
-                if(Scanner->line[Scanner->position] > 47 && Scanner->line[Scanner->position] < 58
-                && Scanner->line[Scanner->position + 1] > 47 && Scanner->line[Scanner->position + 1] < 58
-                && Scanner->line[Scanner->position + 2] > 47 && Scanner->line[Scanner->position + 2] < 58)
+                if(Scanner->line[Scanner->position] > 47 && Scanner->line[Scanner->position] < 58)
                 {
-                  //Getting value of a number after '\\'
-                  char cNumber = 100 * (Scanner->line[Scanner->position] - '0') + 
-                  10 * (Scanner->line[Scanner->position + 1] - '0') +
-                  (Scanner->line[Scanner->position + 2] - '0');
-                  tokenID[position - 1] = cNumber;
-                  Scanner->position = Scanner->position + 3;
+                  escNum = true;
                 }
-                else
-                {
-                  tokenID[position - 1] = Scanner->line[Scanner->position];
-                  Scanner->position++;
-                }
+            }
+            // \xxx
+            if(tokenID[position - 3] > 47 && tokenID[position - 3] < 58
+            && tokenID[position - 2] > 47 && tokenID[position - 2] < 58
+            && tokenID[position - 1] > 47 && tokenID[position - 1] < 58
+            && escNum && position > 4)
+            {
+              //Getting value of a number after '\\'
+              char cNumber = 100 * (tokenID[position - 3] - '0') + 
+              10 * (tokenID[position - 2] - '0') +
+              (tokenID[position - 1] - '0');
+              position -= 4;
+              tokenID[position] = cNumber;
+              escNum = false;
             }
           }
         }
@@ -410,6 +414,7 @@ SToken scan_GetNextToken()
         }
     }
   }
+  //Filing returning token with values
   if(tokenType == ident)
   {
     symbol = symbt_findOrInsertSymb(tokenID);
