@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include "Scanner.h"
 #include "symtable.h"
 #include "MMng.h"
@@ -105,6 +106,7 @@ void delete_comment(bool isLine)
   }
 }
 
+//Comparing given string with keyWords
 EGrSymb isKeyWord(char *tokenID)
 {
   //Array of keyWords
@@ -131,7 +133,7 @@ SToken scan_GetNextToken()
 {
   char *tokenID = mmng_safeMalloc(sizeof(char) * CHUNK * Scanner->lineSize);
   TSymbol symbol = NULL;
-  tokenType type = symtUnknown;
+  SymbolType type = symtUnknown;
   DataType dataType = dtUnspecified;
   EGrSymb tokenType = eol;
   int intVal = 0;
@@ -355,42 +357,26 @@ SToken scan_GetNextToken()
         //Numbers
         else if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)
         {
-        tokenType = ident;
+          tokenType = ident;
+          type = symtConstant;
+          bool siInt = true;
           while((Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58) 
           || Scanner->line[Scanner->position - 1] == 46)
           {
-            tokenID[position++] = Scanner->line[Scanner->position++];  
+            tokenID[position++] = Scanner->line[Scanner->position++];
+            if(tokenID[position - 1] == 46)
+              siInt = false; 
           }
           tokenID[position] = '\0';
           allowed = true;
           //Getting value
-          if(tokenID[0] > 47 && tokenID[0] < 58)
-          {
-            bool siInt = true;
-            int amount = 0;
-            while(tokenID[amount] != '\0')
-            {
-              if(tokenID[amount] == 46)
-              {
-                siInt = false;
-              }
-              amount++;
-            }
-            if(!siInt)
-            {
-              doubleVal = strtod(tokenID, NULL);
-              type = symtConstant; 
-            }
-            else
-            {
-              intVal = strtol(tokenID, NULL, 10);
-              type = symtConstant;
-            }
-          }
+          if(!siInt)
+            doubleVal = strtod(tokenID, NULL); 
+          else
+            intVal = strtol(tokenID, NULL, 10);
         }
         //Space,...
-        else if(Scanner->line[Scanner->position - 1] == 9 || Scanner->line[Scanner->position - 1] == 32
-        || Scanner->line[Scanner->position - 1] == 0)
+        else if(isspace(Scanner->line[Scanner->position - 1]))
         {
           position--;
           allowed = false;
