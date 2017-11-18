@@ -26,6 +26,14 @@ struct LAnalyzer {
   char *line; 
 };
 
+typedef union {
+  bool intVal;      
+  bool doubleVal;  
+  bool stringVal;   
+  //bool boolVal;     //not sure if needed 
+  //bool SFuncData;       
+} DataSwitch;
+
 // global internal instance of lexical analyzer
 TLAnalyzer Scanner;
 
@@ -136,10 +144,13 @@ SToken scan_GetNextToken()
   SymbolType type = symtUnknown;
   DataType dataType = dtUnspecified;
   EGrSymb tokenType = eol;
+  //Data and DataSwitch
+  DataSwitch dataSwitch;
   int intVal = 0;
   double doubleVal = 0;
   char *stringVal = NULL;
-  bool boolVal = true;
+  //bool boolVal = true;  //not sure if needed
+  //helping variables
   int position = 0;
   bool allowed = false;
   //Getting next token (retezec)
@@ -321,6 +332,7 @@ SToken scan_GetNextToken()
         }
         type = symtConstant;
         stringVal = tokenID;
+        dataSwitch.stringVal = true;
         Scanner->position++;
         tokenID[position++] = '\"';
         tokenID[position] = '\0';
@@ -359,21 +371,28 @@ SToken scan_GetNextToken()
         {
           tokenType = ident;
           type = symtConstant;
-          bool siInt = true;
+          bool isInt = true;
           while((Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58) 
           || Scanner->line[Scanner->position - 1] == 46)
           {
             tokenID[position++] = Scanner->line[Scanner->position++];
+            //Checking for '.'
             if(tokenID[position - 1] == 46)
-              siInt = false; 
+              isInt = false; 
           }
           tokenID[position] = '\0';
           allowed = true;
           //Getting value
-          if(!siInt)
-            doubleVal = strtod(tokenID, NULL); 
+          if(!isInt)
+          {
+            doubleVal = strtod(tokenID, NULL);
+            dataSwitch.doubleVal = true; 
+          }
           else
+          {
             intVal = strtol(tokenID, NULL, 10);
+            dataSwitch.intVal = true;
+          }
         }
         //Space,...
         else if(isspace(Scanner->line[Scanner->position - 1]))
@@ -392,10 +411,19 @@ SToken scan_GetNextToken()
   {
     symbol = symbt_findOrInsertSymb(tokenID);
     symbol->type = type;
-    symbol->data.intVal = intVal;
-    symbol->data.doubleVal = doubleVal;
-    symbol->data.stringVal = stringVal;
-    symbol->data.boolVal = boolVal;
+    //symbol->data.boolVal = boolVal;  //not sure if needed
+    if(dataSwitch.intVal)
+    {
+      symbol->data.intVal = intVal;
+    }
+    else if(symbol->data.doubleVal)
+    {
+      symbol->data.doubleVal = doubleVal;
+    }
+    else if(symbol->data.stringVal)
+    {
+      symbol->data.stringVal = stringVal;
+    }
   }
   SToken token;
   token.dataType = dataType;
