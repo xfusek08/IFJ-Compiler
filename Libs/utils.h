@@ -5,7 +5,7 @@
  * \brief   Liblary providing supportive function and types for the project
  *
  * \author  Petr Fusek (xfusek08)
- * \date    13.11.2017 - Petr Fusek
+ * \date    14.11.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -28,5 +28,10 @@ typedef enum {
  * \note Memory is allocated here and free has to be called.
  */
 char *util_StrHardCopy(const char *str);
+
+/**
+ * Fuction converts data type enum to constant string
+ */
+const char *util_dataTypeToString(const DataType dataType);
 
 #endif // _utils

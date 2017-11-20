@@ -4,7 +4,7 @@
  * \file    symtable.c
  * \brief   Symbol table implementation
  * \author  Petr Fusek (xfusek08)
- * \date    10.11.2017 - Petr Fusek
+ * \date    15.11.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -58,7 +58,21 @@ TSymbol TSymbol_create(char *ident)
 void TSymbol_destroy(TSymbol symbol)
 {
   if (symbol != NULL)
+  {
+    if (symbol->type == symtFuction)
+    {
+      if (symbol->data.funcData.arguments != NULL)
+        mmng_safeFree(symbol->data.funcData.arguments);
+      if (symbol->data.funcData.label != NULL)
+        mmng_safeFree(symbol->data.funcData.arguments);
+    }
+    else if (symbol->type == symtConstant || symbol->dataType == dtString)
+    {
+      if (symbol->data.stringVal != NULL)
+        mmng_safeFree(symbol->data.stringVal);
+    }
     mmng_safeFree(symbol);
+  }
 }
 
 // =============================================================================
@@ -87,13 +101,11 @@ void TSTNode_destroy(TSTNode node, bool recursively)
   if (node == NULL)
     return;
 
+  // delete subtrees recursively
   if (recursively)
   {
-    // delete subtrees recursively
-    if (node->left != NULL)
-      TSTNode_destroy(node->left, true);
-    if (node->right != NULL)
-      TSTNode_destroy(node->right, true);
+    TSTNode_destroy(node->left, true);
+    TSTNode_destroy(node->right, true);
   }
 
   // destroy symbol
@@ -109,15 +121,8 @@ int TSTNode_height(TSTNode self)
 {
   if (self == NULL)
     return 0;
-  if (self->symbol == NULL)
-    return 0;
-  int height_left = 1;
-  int height_right = 1;
-  if (self->right != NULL)
-    height_left += TSTNode_height(self->right);
-  if (self->left != NULL)
-    height_right += TSTNode_height(self->left);
-
+  int height_left = 1 + TSTNode_height(self->right);
+  int height_right = 1 + TSTNode_height(self->left);
   // return bigger of heights
   return (height_left > height_right) ? height_left : height_right;
 }
@@ -225,23 +230,21 @@ void TSTNode_balanceFromBottom(TSTNode node)
 // Finds symbol with corresponding key, NULL if not found
 TSTNode TSTNode_find(TSTNode self, char *key)
 {
-  if (self == NULL || key == NULL)
+  if (key == NULL)
     apperr_runtimeError("Symbol table: NULL parameter while calling find method.");
+
+  if (self == NULL)
+    return NULL;
 
   int compRes = strcmp(self->key, key);
 
   // key is self
   if (compRes == 0)
     return self;
-
-  // key is smaller than self key
-  else if (compRes > 0 && self->left != NULL)
+  else if (compRes > 0) // key is smaller than self key
     return TSTNode_find(self->left, key);
-
-  // key is greater than self key
-  else if (self->right != NULL)
+  else  // key is greater than self key
     return TSTNode_find(self->right, key);
-
   return NULL;
 }
 
@@ -288,9 +291,9 @@ TSTNode TSTNode_insert(TSTNode self, char *key)
   return newNode;
 }
 
-// Insert into tree new symbol with key ident, return pointer to that symbol NULL if this key exists
-// Returns self, if self is deleted, returns new root of whole tree
-TSTNode TSTNode_delete(TSTNode self, char *key)
+// Delete node with key ident
+// Returns self, but if self is deleted, returns new root of whole tree
+TSTNode TSTNode_delete(TSTNode self, char *key, bool *deleted)
 {
   if (self == NULL || key == NULL)
     apperr_runtimeError("Symbol table: NULL parameter while calling node delete method.");
@@ -299,7 +302,10 @@ TSTNode TSTNode_delete(TSTNode self, char *key)
   TSTNode toDelNode = TSTNode_find(self, key);
 
   if (toDelNode == NULL)
-    return NULL;
+  {
+    *deleted = false;
+    return self;
+  }
 
   TSTNode kritNode = NULL;
 
@@ -515,11 +521,13 @@ void symbt_deleteSymb(char *ident)
     TSTNode actTable = GLBSymbTabStack->ptArray[i];
     if (actTable != NULL)
     {
+      bool deleted;
       // Delete function returns new root of tree because order of nodes could be changed for balance
       // and act root node could be deleted of shifted deeper into the tree
       // or node on top could be only one in table in that case null is returned.
-      GLBSymbTabStack->ptArray[i] = TSTNode_delete(actTable, ident);
-      return;
+      GLBSymbTabStack->ptArray[i] = TSTNode_delete(actTable, ident, &deleted);
+      if (deleted)
+        return;
     }
   }
 }
@@ -564,24 +572,47 @@ void symbt_printSymb(TSymbol symbol)
   char *stype;
   switch(symbol->type)
   {
-    case symtUnknown:     stype = "unspecified"; break;
-    case symtFuction:     stype = "function"; break;
-    case symtInt:         stype = "integer variable"; break;
-    case symtFloat:       stype = "floating point variable "; break;
-    case symtString:      stype = "string variable"; break;
-    case symtBool:        stype = "boolean variable"; break;
-    case symtConstInt:    stype = "integer constant"; break;
-    case symtConstDouble: stype = "floating point constant"; break;
-    case symtConstString: stype = "string constant"; break;
-    case symtConstBool:   stype = "boolean constant"; break;
+    case symtUnknown:  stype = "unspecified"; break;
+    case symtFuction:  stype = "function"; break;
+    case symtVariable: stype = "floating point constant"; break;
+    case symtConstant: stype = "string constant"; break;
   }
   printf("Symbol: %p\n", symbol);
   printf("  identifier:   %s\n", symbol->ident);
   printf("  type:         %s\n", stype);
-  printf("  data:\n");
-  printf("    integer value:  %d\n", symbol->value.intVal);
-  printf("    double value:   %lf\n", symbol->value.doubleVal);
-  printf("    string value:   %s\n", symbol->value.stringVal);
-  printf("    bool value:     %s\n", (symbol->value.boolVal) ? "True" : "False");
+  printf("  data type:    %s\n", util_dataTypeToString(symbol->dataType));
+  printf("  data: ");
+  switch(symbol->type)
+  {
+    case symtUnknown:
+    case symtVariable:
+      printf("NULL\n");
+      break;
+    case symtConstant:
+      switch(symbol->dataType)
+      {
+        case dtUnspecified: printf("NULL\n"); break;
+        case dtInt: printf("%d (integer) \n", symbol->data.intVal); break;
+        case dtFloat: printf("%lf (double)\n", symbol->data.doubleVal); break;
+        case dtString: printf("\"%s\" (string)\n", symbol->data.stringVal); break;
+        case dtBool: printf("%s (boolean)\n", (symbol->data.boolVal) ? "True" : "False"); break;
+      }
+      break;
+    case symtFuction:
+      printf(" Function:\n");
+      printf("\n    Label: \"%s\"\n", symbol->data.funcData.label);
+      printf("    return type: %s\n", util_dataTypeToString(symbol->data.funcData.returnType));
+      printf("    Argument count: %d\n", symbol->data.funcData.argumentCount);
+      printf("    Arguments: [");
+      for (int i = 0; i < symbol->data.funcData.argumentCount; i++)
+      {
+        printf("%s", util_dataTypeToString(symbol->data.funcData.arguments[i]));
+        if (i + 1 < symbol->data.funcData.argumentCount)
+          printf(", ");
+      }
+      printf("]\n");
+      printf("    Defined: %s\n", (symbol->data.funcData.returnType) ? "True" : "False");
+      break;
+  }
 }
 #endif // DEBUG
