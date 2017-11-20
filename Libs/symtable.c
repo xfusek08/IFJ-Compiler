@@ -58,7 +58,21 @@ TSymbol TSymbol_create(char *ident)
 void TSymbol_destroy(TSymbol symbol)
 {
   if (symbol != NULL)
+  {
+    if (symbol->type == symtFuction)
+    {
+      if (symbol->data.funcData.arguments != NULL)
+        mmng_safeFree(symbol->data.funcData.arguments);
+      if (symbol->data.funcData.label != NULL)
+        mmng_safeFree(symbol->data.funcData.arguments);
+    }
+    else if (symbol->type == symtConstant || symbol->dataType == dtString)
+    {
+      if (symbol->data.stringVal != NULL)
+        mmng_safeFree(symbol->data.stringVal);
+    }
     mmng_safeFree(symbol);
+  }
 }
 
 // =============================================================================
