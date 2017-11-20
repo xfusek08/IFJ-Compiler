@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     {
       printf("Identifikator symbolu: %s \n",token.symbol->ident);
       printf("Typ symbolu: %d \n",token.symbol->type);
-      symbt_print();
+      //symbt_print();
     }
     //printf("Datovy typ: %d \n",token.dataType);
     printf("--------------------------------- \n");

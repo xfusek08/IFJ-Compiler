@@ -1,5 +1,5 @@
 /******************************************************************************/
-/**
+/**                           
  * \project IFJ-Compiler
  * \file    Scanner.c
  * \brief   Lexical analyzer
@@ -139,7 +139,7 @@ EGrSymb isKeyWord(char *tokenID)//Change name
     }
     i++;
   }
-  mmng_safeFree(str);
+  //mmng_safeFree(str);
   return tokenType;
 }
 
@@ -431,13 +431,13 @@ SToken scan_GetNextToken()
   token.dataType = dataType;
   token.type = tokenType;
   token.symbol = symbol;
-  mmng_safeFree(tokenID);
+  //mmng_safeFree(tokenID);
   return token;
 }
 
 //destructor of LAnalyzer
 void Scanner_destroy()
 {
-  if (Scanner != NULL)
-    mmng_safeFree(Scanner);
+  //if (Scanner != NULL)
+    //mmng_safeFree(Scanner);
 }
