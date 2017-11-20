@@ -16,22 +16,129 @@
  */
 /******************************************************************************/
 
-// #include "lexical analyzer"
+#include <stdlib.h>
+#include "appErr.h"
+#include "utils.h"
+#include "Scanner.h"
 #include "symtable.h"
 #include "grammar.h"
 #include "rParser.h"
 
 // =============================================================================
-// ====================== Interface implementation =============================
+// ====================== Supportive function macros  ==========================
 // =============================================================================
 
-void rparser_processProgram()
-{
+#define NEXT_TOKEN(T) *T = scan_GetNextToken()
+#define CHECK_TOKEN(T, S) if (T->type != S) scan_raiseCodeError(syntaxErr)
+#define NEXT_CHECK_TOKEN(T, S) NEXT_TOKEN(T); CHECK_TOKEN(T, S)
 
+
+// =============================================================================
+// ========== Declaration of recursive Grammar NON-terminal functions ==========
+// =============================================================================
+void ck_NT_PROG(SToken *actToken); 					// Program - staritng non-terminal
+void ck_NT_DD(SToken *actToken); 						// definitions and declarations section
+void ck_NT_ASSINGEXT(SToken *actToken); 		// Assignement (...  [as datatype])
+void ck_NT_SCOPE(SToken *actToken); 				// Scope statement where local variables can be owerriten.
+void ck_NT_PARAM_LIST(                      // list of parameters for function
+  SToken *actToken,
+  int *parCnt,
+  DataType **params);
+void ck_NT_PARAM(SToken *actToken); 				// one parameter
+void ck_NT_PARAM_EXT(SToken *actToken); 		// continue of param list
+void ck_NT_STAT_LIST(SToken *actToken); 		// list of statements
+void ck_NT_STAT(SToken *actToken); 					// one statement
+void ck_NT_DOIN(SToken *actToken); 					// body of do..loop statement
+void ck_NT_DOIN_WU(SToken *actToken); 			// until or while neterminal
+void ck_NT_FORSTEP(SToken *actToken); 			// step of for
+void ck_NT_INIF_EXT(SToken *actToken); 			// extension of body of if statement
+void ck_NT_EXPR_LIST(SToken *actToken); 		// list of expression for print function
+void ck_NT_EXPR(SToken *actToken); 					// one expresion
+void ck_NT_ARGUMENT_LIS(SToken *actToken); 	// list of expression separated by comma
+
+
+// =============================================================================
+// ========================== Support functions  ===============================
+// =============================================================================
+
+// Checks equality of valuse in datatype array
+bool areDTArrayEqual(DataType *arr1, DataType *arr2, int count)
+{
+  for (int i = 0; i < count; i++)
+  {
+    if (arr1[i] != arr2[i])
+      return false;
+  }
+  return true;
+}
+
+// function for defining function
+// 3. NT_DD -> kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_STAT_LIST kwEnd kwFunction eol NT_DD
+void checkFunctionDefinition(SToken *actToken)
+{
+  bool isDeclared = false;
+  int parCnt = 0;
+  DataType *params = NULL;
+  DataType retType = dtUnspecified;
+  TSymbol actSymbol = NULL;
+
+  NEXT_CHECK_TOKEN(actToken, kwFunction);
+  NEXT_CHECK_TOKEN(actToken, ident);
+
+  // load ident to symbtable
+  actSymbol = actToken->symbol;
+  if (actSymbol->type == symtUnknown)
+  {
+    actSymbol->type = symtFuction;
+    actSymbol->data.funcData.label = util_StrHardCopy(actSymbol->ident); // TODO: prefix ?
+  }
+  else if (actSymbol->type == symtFuction)
+  {
+    isDeclared = true;
+    if (actSymbol->data.funcData.isDefined) // redefinition is not allowed
+      scan_raiseCodeError(semanticErr);
+  }
+  else // attempt of redeclaration
+    scan_raiseCodeError(semanticErr);
+
+  NEXT_CHECK_TOKEN(actToken, opLeftBrc);
+  NEXT_TOKEN(actToken);
+  // checks params of function
+  ck_NT_PARAM_LIST(actToken, &parCnt, &params);
+  CHECK_TOKEN(actToken, opRightBrc); // param list ends on right bracket
+  NEXT_CHECK_TOKEN(actToken, kwAs);
+  NEXT_CHECK_TOKEN(actToken, dataType);
+  retType = actToken->dataType; // token is return type
+  NEXT_CHECK_TOKEN(actToken, eol);
+
+  if (isDeclared)
+  {
+    // check if definition responds to declaration
+    if (parCnt != actSymbol->data.funcData.argumentCount ||
+        retType != actSymbol->data.funcData.returnType ||
+        !areDTArrayEqual(params, actSymbol->data.funcData.arguments, parCnt))
+      scan_raiseCodeError(semanticErr);
+  }
+  else
+  {
+    actSymbol->data.funcData.argumentCount = parCnt;
+    actSymbol->data.funcData.returnType = retType;
+    actSymbol->data.funcData.arguments = params;
+  }
+  actSymbol->data.funcData.isDefined = true;
+
+  // body of funtion
+  symbt_pushFrame(); // lets create local variable frame for function
+  NEXT_TOKEN(actToken);
+  ck_NT_STAT_LIST(actToken);
+  CHECK_TOKEN(actToken, kwEnd); // statement list must ends on end key word
+  NEXT_CHECK_TOKEN(actToken, kwFunction);
+  NEXT_CHECK_TOKEN(actToken, eol);
+  symbt_popFrame();
 }
 
 // =============================================================================
-// ========== Series Of recursive Grammar NON-terminal functions ===============
+// ========== Definition of recursive Grammar NON-terminal functions ===========
 // =============================================================================
 
 /**
@@ -40,79 +147,113 @@ void rparser_processProgram()
  */
 
 // Program - staritng non-terminal
-SToken ck_NT_PROG(SToken actToken)
+void ck_NT_PROG(SToken *actToken)
 {
   // 1. NT_PROG -> NT_DD NT_SCOPE eof
-  actToken = ck_NT_DD(actToken);
-  actToken = ck_NT_SCOPE(actToken);
-  if (actToken->type != eof)
-    // lexical code error unexpected token (after main scope, expected token EOF)
+  ck_NT_DD(actToken);
+  ck_NT_SCOPE(actToken);
+  CHECK_TOKEN(actToken, eof);
 }
 
 // definitions and declarations section
 // first(NT_DD) = { kwDeclare -> (2); kwFunction -> (3);  kwStatic -> (4); else -> (5 [epsilon]) }
-SToken ck_NT_DD(SToken actToken)
+void ck_NT_DD(SToken *actToken)
 {
+  TSymbol actSymbol = NULL;
   switch (actToken->type)
   {
     // 2. NT_DD -> kwDeclare kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_DD
     case kwDeclare:
-      actToken = /* get nest token */
-      if (actToken->type == kwFunction) ...
+      NEXT_CHECK_TOKEN(actToken, kwFunction);
+      NEXT_CHECK_TOKEN(actToken, ident);
+
+      // load ident to symbtable
+      actSymbol = actToken->symbol;
+      if (actSymbol->type == symtUnknown)
+        actSymbol->type = symtFuction;
+      else // attempt of redeclaration
+        scan_raiseCodeError(semanticErr);
+
+      actSymbol->data.funcData.label = util_StrHardCopy(actSymbol->ident); // TODO: prefix ?
+      actSymbol->data.funcData.isDefined = false;
+
+      NEXT_CHECK_TOKEN(actToken, opLeftBrc);
+      NEXT_TOKEN(actToken);
+      // checks params of function
+      ck_NT_PARAM_LIST(actToken, &(actSymbol->data.funcData.argumentCount), &(actSymbol->data.funcData.arguments));
+      CHECK_TOKEN(actToken, opRightBrc); // param list ends on right bracket
+      NEXT_CHECK_TOKEN(actToken, kwAs);
+      NEXT_CHECK_TOKEN(actToken, dataType);
+      actSymbol->data.funcData.returnType = actToken->dataType; // token is return type
+      NEXT_CHECK_TOKEN(actToken, eol);
+      ck_NT_DD(actToken);
       break;
     // 3. NT_DD -> kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_STAT_LIST kwEnd kwFunction eol NT_DD
     case kwFunction:
+      checkFunctionDefinition(actToken);
+      ck_NT_DD(actToken);
       break;
     // 4. NT_DD -> kwStatic kwShared ident kwAs dataType NT_ASSINGEXT
     case kwStatic:
       break;
     // 5. NT_DD -> (epsilon)
     default:
+      break;
   }
 }
 
 // Assignement (...  [as datatype])
 // first(NT_ASSINGEXT) = { asgn -> (6); else -> (7 [epsilon]) }
-SToken ck_NT_ASSINGEXT(SToken actToken)
+void ck_NT_ASSINGEXT(SToken *actToken)
 {
+  (void)actToken;
   // 6. NT_ASSINGEXT -> asgn NT_EXPR
   // 7. NT_ASSINGEXT -> (epsilon)
 }
 
 // Scope statement where local variables can be owerriten.
 // first(NT_SCOPE) = { kwScope -> (8); else -> (error) }
-SToken ck_NT_SCOPE(SToken actToken)
+void ck_NT_SCOPE(SToken *actToken)
 {
+  (void)actToken;
   // 8. NT_SCOPE -> kwScope NT_STAT_LIST kwEnd kwScope eol
 }
 
-// list of parameters
+// list of parameters for function
+// int *parCnt - number of parametrs
+// DataType **params - pointer to pointer to array of types of parametrs, array size is parCnt
 // first(NT_PARAM_LIST) = { first(NT_PARAM) -> (9); else -> (10 [epsilon]) }
-SToken ck_NT_PARAM_LIST(SToken actToken)
+void ck_NT_PARAM_LIST(SToken *actToken, int *parCnt, DataType **params)
 {
+  (void)actToken;
+  (void)parCnt;
+  (void)params;
   // 9.  NT_PARAM_LIST -> NT_PARAM
   // 10. NT_PARAM_LIST -> (epsilon)
 }
 
 // one parameter
 // first(NT_PARAM) = { ident -> (11); else -> (error) }
-SToken ck_NT_PARAM(SToken actToken)
+void ck_NT_PARAM(SToken *actToken)
 {
+  (void)actToken;
   // 11. NT_PARAM -> ident kwAs dataType NT_PARAM_EXT
 }
 
 // continue of param list
 // first(NT_PARAM_EXT) = { opComma -> (12); else -> (13 [epsilon]) }
-SToken ck_NT_PARAM_EXT(SToken actToken)
+void ck_NT_PARAM_EXT(SToken *actToken)
 {
+  (void)actToken;
   // 12. NT_PARAM_EXT -> opComma NT_PARAM
   // 13. NT_PARAM_EXT -> (epsilon)
 }
 
 // list of statements
 // first(NT_STAT_LIST) = { first(NT_STAT) -> (14); else -> (15 [epsilon]) }
-SToken ck_NT_STAT_LIST(SToken actToken)
+void ck_NT_STAT_LIST(SToken *actToken)
 {
+  (void)actToken;
   // 14. NT_STAT_LIST -> NT_STAT eol NT_STAT_LIST
   // 15. NT_STAT_LIST -> (epsilon)
 }
@@ -131,8 +272,9 @@ SToken ck_NT_STAT_LIST(SToken actToken)
 //   kwDo -> (25);
 //   kwFor -> (26);
 //   else -> (error) }
-SToken ck_NT_STAT(SToken actToken)
+void ck_NT_STAT(SToken *actToken)
 {
+  (void)actToken;
   // 16. NT_STAT -> kwInput ident
   // 17. NT_STAT -> kwPrint NT_EXPR_LIST
   // 18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf eol
@@ -148,32 +290,36 @@ SToken ck_NT_STAT(SToken actToken)
 
 // body of do..loop statement
 // first(NT_DOIN) = { first(NT_DOIN_WU) -> (27); eol -> (28) else -> (error)}
-SToken ck_NT_DOIN(SToken actToken)
+void ck_NT_DOIN(SToken *actToken)
 {
+  (void)actToken;
   // 27. NT_DOIN -> NT_DOIN_WU NT_EXPR eol NT_STAT_LIST
   // 28. NT_DOIN -> eol NT_STAT_LIST NT_DOIN_WU NT_EXPR
 }
 
 // until or while neterminal
 // first(NT_DOIN_WU) = { kwWhile -> (29); kwUntil -> (30); else -> (error) }
-SToken ck_NT_DOIN_WU(SToken actToken)
+void ck_NT_DOIN_WU(SToken *actToken)
 {
+  (void)actToken;
   // 29. NT_DOIN_WU -> kwWhile
   // 30. NT_DOIN_WU -> kwUntil
 }
 
 // step of for
 // first(NT_FORSTEP) = { kwStep -> (31); else -> (32 [epsilon]) }
-SToken ck_NT_FORSTEP(SToken actToken)
+void ck_NT_FORSTEP(SToken *actToken)
 {
+  (void)actToken;
   // 31. NT_FORSTEP -> kwStep NT_EXPR
   // 32. NT_FORSTEP -> (epsilon)
 }
 
 // extension of body of if statement
 // first(NT_INIF_EXT) = { kwElsif -> (33); kwElse -> (34); else -> (35 [epsilon]) }
-SToken ck_NT_INIF_EXT(SToken actToken)
+void ck_NT_INIF_EXT(SToken *actToken)
 {
+  (void)actToken;
   // 33. NT_INIF_EXT -> kwElsif NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT
   // 34. NT_INIF_EXT -> kwElse eol NT_STAT_LIST
   // 35. NT_INIF_EXT -> (epsilon)
@@ -181,8 +327,19 @@ SToken ck_NT_INIF_EXT(SToken actToken)
 
 // list of expression for print function
 // first(NT_EXPR_LIST) = { first(NT_EXPR) -> (36); else -> (37 [epsilon]) }
-SToken ck_NT_EXPR_LIST(SToken actToken)
+void ck_NT_EXPR_LIST(SToken *actToken)
 {
+  (void)actToken;
   // 36. NT_EXPR_LIST -> NT_EXPR opSemcol NT_EXPR_LIST
   // 37. NT_EXPR_LIST -> (epsilon)
+}
+
+// =============================================================================
+// ====================== Interface implementation =============================
+// =============================================================================
+
+void rparser_processProgram()
+{
+  SToken token = scan_GetNextToken();
+  ck_NT_PROG(&token);
 }

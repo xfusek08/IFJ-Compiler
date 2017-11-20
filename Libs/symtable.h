@@ -34,7 +34,7 @@ typedef struct {
   char *label;          /*!< label of function used in outbut code */
   DataType returnType;  /*!< return type of function */
   int argumentCount;    /*!< number of arguments */
-  DataType *arguments;  /*!< array of arguments required by function in order. Lenght of array is equal to argumentCount */
+  DataType *arguments;  /*!< pointer to first item of array of arguments required by function in order. Lenght of array is equal to argumentCount */
   bool isDefined;       /*!< flag, true if function has been defined */
 } SFuncData;
 

@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
   mmng_init();
   symbt_init();
 
-  rparser_processProgram()
+  rparser_processProgram();
 
   symbt_destroy();
   mmng_freeAll();

@@ -30,14 +30,14 @@ typedef enum
   kwNext, kwNot, kwOr, kwShared, kwStatic, kwTrue, kwTo, kwUntil,
 
   /* other */
-  ident, asng, eol, dataType, eof
+  ident, asng, eol, dataType, eof,
 
   /* NON-TERMINALS */
   NT_PROG,          // Program - staritng non-terminal
   NT_DD,            // definitions and declarations section
   NT_ASSINGEXT,     // Assignement (...  [as datatype])
   NT_SCOPE,         // Scope statement where local variables can be owerriten.
-  NT_PARAM_LIST,    // list of parameters
+  NT_PARAM_LIST,    // list of parameters for function
   NT_PARAM,         // one parameter
   NT_PARAM_EXT,     // continue of param list
   NT_STAT_LIST,     // list of statements
