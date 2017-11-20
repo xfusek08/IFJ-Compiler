@@ -121,17 +121,18 @@ EGrSymb isKeyWord(char *tokenID)
   char *sArray[] = {"As", "Asc", "Declare", "Dim", "Do", "Else", "End", "Function", "If", "Input", "Length", "Loop",
   "Print", "Return", "Scope", "SubStr", "Then", "While", "And", "Continue", "Elseif", "Exit", "False", "For",
   "Next", "Not", "Or", "Shared", "Static", "True", "To", "Until"};
-  int arrayLeght = 40;
-  int i = 18;
+  int arrayLeght = 32;
+  int i = 0;
   EGrSymb tokenType = ident;
   //Compare
-  while(i++ < arrayLeght)
+  while(i < arrayLeght)
   {
     if(strcmp(tokenID, sArray[i]) == 0) //maybe as long as != Until
     {
-      tokenType = i;
+      tokenType = i + 40;
       mmng_safeFree(tokenID);   
     }
+    i++;
   }
   return tokenType;
 }
