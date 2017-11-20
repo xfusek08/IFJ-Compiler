@@ -51,6 +51,10 @@ typedef enum
 }EGrSymb;
 
 
+typedef struct {
+  EGrSymb type; // typ tokenu
+
+} SToken;
 
 /*
 

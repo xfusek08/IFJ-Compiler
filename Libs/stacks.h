@@ -15,6 +15,7 @@
 #define _STACKSLIB
 
 #include "grammar.h"
+
 /*Capacity of newly initialized stack*/
 #define STACK_INITIAL_SIZE 30
 /*Indicates how much space stack realloc when its full.
@@ -23,27 +24,45 @@ new_size = old_size + old_size * STACK_REALLOC_MULTIPLIER)
 #define STACK_REALLOC_MULTIPLIER 2
 
 
-typedef struct grammarStack *TGrStack;
+typedef struct tokenListItem {
+  struct tokenListItem *prev;
+  struct tokenListItem *next;
+  SToken token;
+}TTkListItem;
+
+typedef struct tokenList *TTkList;
 
 /**
-* Grammar Stack
+* Token list
 *
-* Each item contains one grammar enum variable.
+* Each item contains one token.
 */
-struct grammarStack{
-  /** insert value on top */
-  void (*push)(TGrStack , EGrSymb);
-  /** remove item on top */
-  void (*pop)(TGrStack);
-  /** returns data of item on top */
-  EGrSymb (*top)(TGrStack);
-  /** safe destruction of stack. If stack is not empty, throw error. */
-  void(*destroy)(TGrStack);
-  /** Number of items in stack. */
-  int count;
-  /** Capacity of stack. */
-  int size;
-  EGrSymb *grArray;
+struct tokenList{
+  /** insert token at the end */
+  void(*insertLast)(TTkList, SToken *);
+  /** remove token at the end */
+  void(*deleteLast)(TTkList);
+  /** returns pointer to last token */
+  SToken *(*getLast)(TTkList);
+  /** returns non zero value, if list is empty. */
+  int(*isEmpty)(TTkList);
+  /** set last item as active */
+  void(*activate)(TTkList);
+  /** set previous item as active*/
+  void(*prev)(TTkList);
+  /** set next item as active*/
+  void(*next)(TTkList);
+  /** returns pointer to active token */
+  SToken *(*getActive)(TTkList);
+  /** insert token after active item */
+  void(*postInsert)(TTkList, SToken *);
+  /** delete token after active item */
+  void(*postDelete)(TTkList);
+  /** safe destruction of list. If list is not empty, throw error. */
+  void(*destroy)(TTkList);
+  TTkListItem *first;
+  TTkListItem *last;
+  TTkListItem *active;
 };
 
 typedef struct pointerStack *TPStack;
@@ -67,17 +86,9 @@ struct pointerStack{
 };
 
 /**
-* Initialize empty integer stack and returns its pointer.
+* Initialize empty token list returns its pointer.
 */
-TGrStack TGrStack_create();
-
-/**
-* Adds symbol after specified position. Position zero equals bottom of the stack.
-* \param stack Valid stack. can`t be empty.
-* \param position must be valid index of existing element.
-* \param symbol is added after element on position.
-*/
-void TGrStack_postInsert(TGrStack stack, int position, EGrSymb symbol);
+TTkList TTkList_create();
 
 /**
 * Initialize empty pointer stack and returns its pointer.
