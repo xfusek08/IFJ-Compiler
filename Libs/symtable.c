@@ -574,8 +574,8 @@ void symbt_printSymb(TSymbol symbol)
   {
     case symtUnknown:  stype = "unspecified"; break;
     case symtFuction:  stype = "function"; break;
-    case symtVariable: stype = "floating point constant"; break;
-    case symtConstant: stype = "string constant"; break;
+    case symtVariable: stype = "variable"; break;
+    case symtConstant: stype = "constant"; break;
   }
   printf("Symbol: %p\n", symbol);
   printf("  identifier:   %s\n", symbol->ident);
