@@ -15,6 +15,7 @@
 #include "Libs/MMng.h"
 #include "Libs/stacks.h"
 #include "Libs/symtable.h"
+#include "Libs/Scanner.h"
 
 int main(int argc, char *argv[])
 {
@@ -23,7 +24,26 @@ int main(int argc, char *argv[])
 
   mmng_init();
   symbt_init();
-
+  Scanner_init();
+  
+  int i = 0;
+  SToken token;
+  while(i < 20)
+  {
+    printf("-----------Dalsi token----------- \n");
+    token = scan_GetNextToken();
+    printf("Typ tokenu: %d \n",token.type);
+    if(token.type == 51)
+    {
+      printf("Identifikator symbolu: %s \n",token.symbol->ident);
+      printf("Typ symbolu: %d \n",token.symbol->type);
+      symbt_print();
+    }
+    //printf("Datovy typ: %d \n",token.dataType);
+    printf("--------------------------------- \n");
+    i++;
+  }
+  Scanner_destroy();
   symbt_destroy();
   mmng_freeAll();
   return 0;

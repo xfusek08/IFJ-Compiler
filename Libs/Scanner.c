@@ -41,16 +41,12 @@ TLAnalyzer Scanner;
 TLAnalyzer Scanner_create()
 {
   TLAnalyzer newScanner = (TLAnalyzer)mmng_safeMalloc(sizeof(struct LAnalyzer));
-  if (newScanner == NULL)
-    apperr_runtimeError("Allocation error in Scanner");
 
   newScanner->curentLine = 0;
   newScanner->position = 0;
   newScanner->lineSize = 1;
   newScanner->line = mmng_safeMalloc(sizeof(char) * CHUNK * newScanner->lineSize);
   newScanner->line[0] = '\0';
-  if (newScanner->line == NULL)
-    apperr_runtimeError("Allocation error in Scanner");
 
   return newScanner;
 }
@@ -116,25 +112,34 @@ void delete_comment(bool isLine)
 }
 
 //Comparing given string with keyWords
-EGrSymb isKeyWord(char *tokenID)
+EGrSymb isKeyWord(char *tokenID)//Change name
 {
   //Array of keyWords
-  char *sArray[] = {"As", "Asc", "Declare", "Dim", "Do", "Else", "End", "Function", "If", "Input", "Length", "Loop",
-  "Print", "Return", "Scope", "SubStr", "Then", "While", "And", "Continue", "Elseif", "Exit", "False", "For",
-  "Next", "Not", "Or", "Shared", "Static", "True", "To", "Until"};
+  char *sArray[] = {"as", "asc", "declare", "dim", "do", "else", "end", "function", "if", "input", "length", "loop",
+  "print", "return", "scope", "subStr", "then", "while", "and", "continue", "elseif", "exit", "false", "for",
+  "next", "not", "or", "shared", "static", "true", "to", "until"};
   int arrayLeght = 32;
   int i = 0;
   EGrSymb tokenType = ident;
+  //ToLower
+  char *str = mmng_safeMalloc(sizeof(char) * CHUNK * Scanner->lineSize);
+  int k = 0;
+  while(tokenID[k] != '\0')
+  {
+    str[k] = tolower(tokenID[k]);
+    k++;
+  }
+  str[k] = '\0';
   //Compare
   while(i < arrayLeght)
   {
-    if(strcmp(tokenID, sArray[i]) == 0) //maybe as long as != Until
+    if(strcmp(str, sArray[i]) == 0) //maybe as long as != Until
     {
-      tokenType = i + 40;
-      mmng_safeFree(tokenID);   
+      tokenType = i + 40;   
     }
     i++;
   }
+  mmng_safeFree(str);
   return tokenType;
 }
 
@@ -165,7 +170,6 @@ SToken scan_GetNextToken()
       case '=':
         allowed = true;
         tokenType = opEq;
-        mmng_safeFree(tokenID);
         break;
       case '+':
         tokenType = opPlus;
@@ -175,7 +179,6 @@ SToken scan_GetNextToken()
           Scanner->position++;
         }
         allowed = true;
-        mmng_safeFree(tokenID);
         break;
       case '-':
         tokenType = opMns;
@@ -185,7 +188,6 @@ SToken scan_GetNextToken()
           Scanner->position++;
         }
         allowed = true;
-        mmng_safeFree(tokenID);
         break;
       case '*':
         tokenType = opMul;
@@ -195,7 +197,6 @@ SToken scan_GetNextToken()
           Scanner->position++;
         }
         allowed = true;
-        mmng_safeFree(tokenID);
         break;
       case '/':
         tokenType = opDiv;
@@ -212,11 +213,6 @@ SToken scan_GetNextToken()
           tokenID[position] = '\0';
           allowed = true;
           tokenType = opDivEq;
-          mmng_safeFree(tokenID);
-        }
-        else
-        {
-          mmng_safeFree(tokenID);
         }
         break;
       case '\\':
@@ -226,7 +222,6 @@ SToken scan_GetNextToken()
           tokenType = opDivFltEq;
           Scanner->position++;
         }
-        mmng_safeFree(tokenID);
         allowed = true;
         break;
       case '<':
@@ -236,7 +231,6 @@ SToken scan_GetNextToken()
           tokenType = opLessEq;
           Scanner->position++;
         }
-        mmng_safeFree(tokenID);
         allowed = true;
         break;
       case '>':
@@ -246,27 +240,22 @@ SToken scan_GetNextToken()
           tokenType = opGrtEq;
           Scanner->position++;
         }
-        mmng_safeFree(tokenID);
         allowed = true;
         break;
       case '(':
         tokenType = opLeftBrc;
-        mmng_safeFree(tokenID);
         allowed = true;
         break;
       case ')':
         tokenType = opRightBrc;
-        mmng_safeFree(tokenID);
         allowed = true;
         break;
       case ';':
         tokenType = opSemcol;
-        mmng_safeFree(tokenID);
         allowed = true;
         break;
       case ',':
         tokenType = opComma;
-        mmng_safeFree(tokenID);
         allowed = true;
         break;
       case ':':
@@ -279,7 +268,6 @@ SToken scan_GetNextToken()
         {
           //error
         }
-        mmng_safeFree(tokenID);
         allowed = true;
         break;
       case '\'':
@@ -443,6 +431,7 @@ SToken scan_GetNextToken()
   token.dataType = dataType;
   token.type = tokenType;
   token.symbol = symbol;
+  mmng_safeFree(tokenID);
   return token;
 }
 
