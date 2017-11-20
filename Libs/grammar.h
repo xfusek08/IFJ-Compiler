@@ -47,7 +47,7 @@ typedef enum
   NT_INIF,           // body of if statement
 
   /* Precedence table symbols */
-  priorLess, priorEq, priorGrt
+  procLess, procEq, procGrt
 }EGrSymb;
 
 
