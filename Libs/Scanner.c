@@ -48,6 +48,7 @@ TLAnalyzer Scanner_create()
   newScanner->position = 0;
   newScanner->lineSize = 1;
   newScanner->line = mmng_safeMalloc(sizeof(char) * CHUNK * newScanner->lineSize);
+  newScanner->line[0] = '\0';
   if (newScanner->line == NULL)
     apperr_runtimeError("Allocation error in Scanner");
 
@@ -356,6 +357,7 @@ SToken scan_GetNextToken()
         break;
       case '\0':
         allowed = false;
+        position--;
         get_line();
         break; 
       default:
@@ -364,8 +366,8 @@ SToken scan_GetNextToken()
         if((Scanner->line[Scanner->position - 1] > 64 && Scanner->line[Scanner->position - 1] < 91)
         || (Scanner->line[Scanner->position - 1] > 96 && Scanner->line[Scanner->position - 1] < 123))
         {
-          while((Scanner->line[Scanner->position - 1] > 64 && Scanner->line[Scanner->position - 1] < 91)
-          || (Scanner->line[Scanner->position - 1] > 96 && Scanner->line[Scanner->position - 1] < 123))
+          while((Scanner->line[Scanner->position] > 64 && Scanner->line[Scanner->position] < 91)
+          || (Scanner->line[Scanner->position] > 96 && Scanner->line[Scanner->position] < 123))
           {
             tokenID[position++] = Scanner->line[Scanner->position++];  
           }
