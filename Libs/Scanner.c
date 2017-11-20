@@ -155,6 +155,7 @@ SToken scan_GetNextToken()
   //helping variables
   int position = 0;
   bool allowed = false;
+  bool escNum = false;
   //Getting next token (retezec)
   while(!allowed)
   {
@@ -289,9 +290,8 @@ SToken scan_GetNextToken()
       //String  
       case '!':
         while(!(Scanner->line[Scanner->position] == '\"' && Scanner->line[Scanner->position - 1] != '!' 
-        && Scanner->line[Scanner->position - 1] != '\\'))
+        && Scanner->line[Scanner->position - 1] != '\\') && Scanner->line[Scanner->position] != EOF)
         {
-          bool escNum = false;
           tokenID[position++] = Scanner->line[Scanner->position++];
           //Escape sequence
           if(tokenID[position - 1] == '\\')
@@ -320,22 +320,25 @@ SToken scan_GetNextToken()
                   escNum = true;
                 }
             }
-            // \xxx
+          }
+          // \xxx
+          if(position > 4 && escNum)
+          {
             if(tokenID[position - 3] > 47 && tokenID[position - 3] < 58
             && tokenID[position - 2] > 47 && tokenID[position - 2] < 58
-            && tokenID[position - 1] > 47 && tokenID[position - 1] < 58
-            && escNum && position > 4)
+            && tokenID[position - 1] > 47 && tokenID[position - 1] < 58)
             {
               //Getting value of a number after '\\'
               char cNumber = 100 * (tokenID[position - 3] - '0') + 
               10 * (tokenID[position - 2] - '0') +
               (tokenID[position - 1] - '0');
               position -= 4;
-              tokenID[position] = cNumber;
+              tokenID[position++] = cNumber;
               escNum = false;
             }
           }
         }
+        tokenType = ident;
         type = symtConstant;
         stringVal = tokenID;
         dataSwitch.stringVal = true;
