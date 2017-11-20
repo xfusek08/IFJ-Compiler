@@ -26,14 +26,6 @@ struct LAnalyzer {
   char *line; 
 };
 
-typedef union {
-  bool intVal;      
-  bool doubleVal;  
-  bool stringVal;   
-  //bool boolVal;     //not sure if needed 
-  //bool SFuncData;       
-} DataSwitch;
-
 // global internal instance of lexical analyzer
 TLAnalyzer Scanner;
 
@@ -139,7 +131,7 @@ EGrSymb isKeyWord(char *tokenID)//Change name
     }
     i++;
   }
-  //mmng_safeFree(str);
+  mmng_safeFree(str);
   return tokenType;
 }
 
@@ -151,16 +143,16 @@ SToken scan_GetNextToken()
   SymbolType type = symtUnknown;
   DataType dataType = dtUnspecified;
   EGrSymb tokenType = eol;
-  //Data and DataSwitch
-  DataSwitch dataSwitch;
+  //Data
   int intVal = 0;
   double doubleVal = 0;
   char *stringVal = NULL;
   //bool boolVal = true;  //not sure if needed
   //helping variables
+  char digVal = 0;
+  int state = 0;
   int position = 0;
   bool allowed = false;
-  bool escNum = false;
   //Getting next token (retezec)
   while(!allowed)
   {
@@ -277,61 +269,106 @@ SToken scan_GetNextToken()
         break;
       //String  
       case '!':
-        while(!(Scanner->line[Scanner->position] == '\"' && Scanner->line[Scanner->position - 1] != '!' 
-        && Scanner->line[Scanner->position - 1] != '\\') && Scanner->line[Scanner->position] != EOF)
+        state = 0;
+        if(Scanner->line[Scanner->position] == '\"')
         {
+          state = 1;
           tokenID[position++] = Scanner->line[Scanner->position++];
-          //Escape sequence
-          if(tokenID[position - 1] == '\\')
+          while(state != 5)
           {
-            switch(Scanner->line[Scanner->position])
+            switch(state)
             {
-              case '\"':
-                tokenID[position - 1] = '\"';
-                Scanner->position++;
-                break;
-              case 'n':
-                tokenID[position - 1] = '\n';
-                Scanner->position++;
-                break;
-              case 't':
-                tokenID[position - 1] = '\t';
-                Scanner->position++;
-                break;
-              case '\\':
-                tokenID[position - 1] = '\\';
-                Scanner->position++;
-                break;
-              default:
-                if(Scanner->line[Scanner->position] > 47 && Scanner->line[Scanner->position] < 58)
+              case 1:
+              tokenID[position++] = Scanner->line[Scanner->position++];
+                if((tokenID[position - 1]) == '\"'  || (tokenID[position - 1]) == EOF)
                 {
-                  escNum = true;
+                  state = 5;
                 }
-            }
+                else if((tokenID[position - 1]) == '\\')
+                {
+                  state = 2;
+                  position--;
+                }
+                else
+                {
+                  state = 1;
+                }
+                break;
+              case 2:
+                tokenID[position++] = Scanner->line[Scanner->position++];
+                if(isdigit(tokenID[position - 1]))
+                {
+                  state = 3;
+                  digVal = 100 * (tokenID[position - 1] - '0');
+                }
+                else if(tokenID[position - 1] == 'n' || tokenID[position - 1] == 't' ||
+                tokenID[position - 1] == '\"' || tokenID[position - 1] == '\\')
+                {
+                  switch(tokenID[position - 1])
+                    case 'n':
+                      tokenID[position - 1] = '\n';
+                      state = 1;
+                      break;
+                    case 't':
+                      tokenID[position - 1] = '\t';
+                      state = 1;
+                      break;
+                    case '\"':
+                      tokenID[position - 1] = '\"';
+                      state = 1;
+                      break;
+                    case '\\':
+                      tokenID[position - 1] = '\\';
+                      state = 1;
+                      break; 
+                }
+                else
+                {
+                  //ERROR
+                  printf("ERROR \n");
+                  state = 5;
+                }
+                break;
+              case 3:
+                tokenID[position] = Scanner->line[Scanner->position++];
+                if(isdigit(tokenID[position]))
+                {
+                  digVal += 10 * (tokenID[position] - '0');
+                  state = 4;
+                }
+                else
+                {
+                  //ERROR
+                  printf("ERROR \n");
+                  state = 5;
+                }
+                break;
+              case 4:
+                tokenID[position] = Scanner->line[Scanner->position++];
+                if(isdigit(tokenID[position]))
+                {
+                  digVal += 1 * (tokenID[position] - '0');
+                  tokenID[position - 1] = digVal;
+                  state = 1;
+                }
+                else
+                {
+                  //ERROR
+                  printf("ERROR \n");
+                  state = 5;
+                }
+                break; 
+            }    
           }
-          // \xxx
-          if(position > 4 && escNum)
-          {
-            if(tokenID[position - 3] > 47 && tokenID[position - 3] < 58
-            && tokenID[position - 2] > 47 && tokenID[position - 2] < 58
-            && tokenID[position - 1] > 47 && tokenID[position - 1] < 58)
-            {
-              //Getting value of a number after '\\'
-              char cNumber = 100 * (tokenID[position - 3] - '0') + 
-              10 * (tokenID[position - 2] - '0') +
-              (tokenID[position - 1] - '0');
-              position -= 4;
-              tokenID[position++] = cNumber;
-              escNum = false;
-            }
-          }
+        }
+        else
+        {
+          //ERROR
         }
         tokenType = ident;
         type = symtConstant;
         stringVal = tokenID;
-        dataSwitch.stringVal = true;
-        Scanner->position++;
-        tokenID[position++] = '\"';
+        dataType = dtString;
         tokenID[position] = '\0';
         allowed = true;
         break;
@@ -364,6 +401,7 @@ SToken scan_GetNextToken()
           }
           tokenID[position] = '\0';
           allowed = true;
+          type = symtVariable;
           //Compare
           tokenType = isKeyWord(tokenID);
         }
@@ -387,12 +425,12 @@ SToken scan_GetNextToken()
           if(!isInt)
           {
             doubleVal = strtod(tokenID, NULL);
-            dataSwitch.doubleVal = true; 
+            dataType = dtFloat; 
           }
           else
           {
             intVal = strtol(tokenID, NULL, 10);
-            dataSwitch.intVal = true;
+            dataType = dtInt;
           }
         }
         //Space,...
@@ -414,15 +452,15 @@ SToken scan_GetNextToken()
     symbol = symbt_findOrInsertSymb(tokenID);
     symbol->type = type;
     //symbol->data.boolVal = boolVal;  //not sure if needed
-    if(dataSwitch.intVal)
+    if(dataType == dtInt)
     {
       symbol->data.intVal = intVal;
     }
-    else if(symbol->data.doubleVal)
+    else if(dataType == dtFloat)
     {
       symbol->data.doubleVal = doubleVal;
     }
-    else if(symbol->data.stringVal)
+    else if(dataType == dtString)
     {
       symbol->data.stringVal = stringVal;
     }
@@ -431,13 +469,14 @@ SToken scan_GetNextToken()
   token.dataType = dataType;
   token.type = tokenType;
   token.symbol = symbol;
-  //mmng_safeFree(tokenID);
+  mmng_safeFree(tokenID);
   return token;
 }
 
 //destructor of LAnalyzer
 void Scanner_destroy()
 {
-  //if (Scanner != NULL)
-    //mmng_safeFree(Scanner);
+  mmng_safeFree(Scanner->line);
+  if (Scanner != NULL)
+    mmng_safeFree(Scanner);
 }
