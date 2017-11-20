@@ -8,6 +8,10 @@ OBJS = $(patsubst %.c,%.o,$(SOURCES))
 
 all: $(EXECUTABLE) clean
 
+#setting debug flags
+debug: CFLAGS += -g -DDEBUG -DST_DEBUG
+debug: $(EXECUTABLE) clean
+
 %.o : %.c
 	gcc $(CFLAGS) -c $< -o $@
 
@@ -16,4 +20,3 @@ $(EXECUTABLE): $(OBJS)
 
 clean:
 	-rm *.o */*.o
-
