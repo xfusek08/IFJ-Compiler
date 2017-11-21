@@ -7,7 +7,7 @@
 * This file contains enummeration of grammar (terminal + non-terminals) and definition of token provided by scanner and processed by parsers.
 *
 * \author  Pavel Vosyka (xvosyk00)
-* \date    13.11.2017 - Petr Fusek
+* \date    21.11.2017 - Pavel Vosyka
 */
 /******************************************************************************/
 
@@ -37,7 +37,7 @@ typedef enum
   dataType,
 
   /* NON-TERMINALS */
-  NT_PROG,          // Program - staritng non-terminal
+  NT_PROG = 1000,          // Program - staritng non-terminal
   NT_DD,            // definitions and declarations section
   NT_ASSINGEXT,     // Assignement (...  [as datatype])
   NT_SCOPE,         // Scope statement where local variables can be owerriten.

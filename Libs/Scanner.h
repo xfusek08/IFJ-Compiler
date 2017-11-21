@@ -15,14 +15,10 @@
 #define _SCANNER
 
 #include "grammar.h"
-
-typedef struct {
-  EGrSymb type; // typ tokenu
-
-} SToken;
+#include "appErr.h"
 
 int scan_GetNextToken(SToken *token);
-
+void scan_raiseCodeError(ErrType typchyby);
 
 
 
