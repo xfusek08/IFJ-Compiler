@@ -377,48 +377,147 @@ SToken scan_GetNextToken()
         break; 
       default:
         //Identifires
-        //value of a-Z
-        if((Scanner->line[Scanner->position - 1] > 64 && Scanner->line[Scanner->position - 1] < 91)
-        || (Scanner->line[Scanner->position - 1] > 96 && Scanner->line[Scanner->position - 1] < 123))
+        if((Scanner->line[Scanner->position - 1] > 64 && Scanner->line[Scanner->position - 1] < 91) //value of a-z
+        || (Scanner->line[Scanner->position - 1] > 96 && Scanner->line[Scanner->position - 1] < 123)) //value of A-Z
         {
-          while((Scanner->line[Scanner->position] > 64 && Scanner->line[Scanner->position] < 91)
-          || (Scanner->line[Scanner->position] > 96 && Scanner->line[Scanner->position] < 123))
+          state = 0;
+          while(state != 5)
           {
-            tokenID[position++] = Scanner->line[Scanner->position++];  
-          }
-          tokenID[position] = '\0';
-          allowed = true;
-          type = symtVariable;
-          //Compare
-          tokenType = isKeyWord(tokenID);
+            tokenID[position++] = Scanner->line[Scanner->position++];
+            switch(state)
+            {
+              case 0:
+                if(Scanner->line[Scanner->position - 1] == '@')
+                {
+                  state = 1;
+                }
+                else if((Scanner->line[Scanner->position - 1] > 64 && Scanner->line[Scanner->position - 1] < 91) //value of a-z
+                || (Scanner->line[Scanner->position - 1] > 96 && Scanner->line[Scanner->position - 1] < 123) //value of A-Z
+                || ((Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)) //value of 0-9
+                || Scanner->line[Scanner->position - 1] == '_')
+                {
+                  state = 0;
+                }
+                else if(Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-'
+                || isspace(Scanner->line[Scanner->position - 1]) || Scanner->line[Scanner->position - 1] == '*'
+                || Scanner->line[Scanner->position - 1] == '/' || Scanner->line[Scanner->position - 1] == '\\'
+                || Scanner->line[Scanner->position - 1] == '=' || Scanner->line[Scanner->position - 1] == EOF)
+                {
+                  position--;
+                  state = 5;
+                  tokenID[position] = '\0';
+                  tokenType = isKeyWord(tokenID);
+                  type = symtVariable;
+                }
+                else
+                {
+                  //ERROR
+                  printf("ERROR 1");
+                  state = 5;
+                }
+                break;
+              case 1:
+                if((Scanner->line[Scanner->position - 1] > 64 && Scanner->line[Scanner->position - 1] < 91) //value of a-z
+                || (Scanner->line[Scanner->position - 1] > 96 && Scanner->line[Scanner->position - 1] < 123) //value of A-Z)
+                || Scanner->line[Scanner->position - 1] == '\\') 
+                {
+                  state = 4;
+                }
+                else if(((Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)) //value of 0-9
+                || Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-')
+                {
+                  state = 2;
+                }
+                else
+                {
+                  //ERROR
+                  printf("ERROR 2");
+                  state = 5;
+                }
+                break;
+              case 2:
+                if(Scanner->line[Scanner->position - 1] == '.') //value of A-Z)
+                {
+                  state = 3;
+                }
+                else if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58) //value of 0-9
+                {
+                  state = 2;
+                }
+                else if(Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-'
+                || isspace(Scanner->line[Scanner->position - 1]) || Scanner->line[Scanner->position - 1] == '*'
+                || Scanner->line[Scanner->position - 1] == '/' || Scanner->line[Scanner->position - 1] == '\\'
+                || Scanner->line[Scanner->position - 1] == '=')
+                {
+                  position--;
+                  state = 5;
+                  tokenType = ident;
+                  type = symtConstant;
+                  tokenID[position] = '\0';
+                }
+                else
+                {
+                  //ERROR
+                  printf("ERROR 3");
+                  state = 5;
+                }
+                break;
+              case 3:
+                if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58) //value of 0-9
+                {
+                  state = 3;
+                }
+                else if(Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-'
+                || isspace(Scanner->line[Scanner->position - 1]) || Scanner->line[Scanner->position - 1] == '*'
+                || Scanner->line[Scanner->position - 1] == '/' || Scanner->line[Scanner->position - 1] == '\\'
+                || Scanner->line[Scanner->position - 1] == '=')
+                {
+                  position--;
+                  state = 5;
+                  tokenID[position] = '\0';
+                  tokenType = ident;
+                  type = symtConstant;
+                }
+                else
+                {
+                  //ERROR
+                  printf("ERROR 4");
+                  state = 5;
+                }
+                break;
+              case 4:
+                if((Scanner->line[Scanner->position - 1] > 64 && Scanner->line[Scanner->position - 1] < 91) //value of a-z
+                || (Scanner->line[Scanner->position - 1] > 96 && Scanner->line[Scanner->position - 1] < 123) //value of A-Z
+                || ((Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)) //value of 0-9
+                || Scanner->line[Scanner->position - 1] == '_' || Scanner->line[Scanner->position - 1] == '\\')
+                {
+                  state = 4;
+                }
+                else if(Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-'
+                || isspace(Scanner->line[Scanner->position - 1]) || Scanner->line[Scanner->position - 1] == '*'
+                || Scanner->line[Scanner->position - 1] == '/' || Scanner->line[Scanner->position - 1] == '=')
+                {
+                  position--;
+                  state = 5;
+                  tokenID[position] = '\0';
+                  tokenType = ident;
+                  type = symtConstant;
+                }
+                else
+                {
+                  //ERROR
+                  printf("ERROR 5");
+                  state = 5;
+                }
+                break;
+            }
+            allowed = true;
+          }   
         }
         //Numbers
         else if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)
         {
-          tokenType = ident;
-          type = symtConstant;
-          bool isInt = true;
-          while((Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58) 
-          || Scanner->line[Scanner->position - 1] == 46)
-          {
-            tokenID[position++] = Scanner->line[Scanner->position++];
-            //Checking for '.'
-            if(tokenID[position - 1] == 46)
-              isInt = false; 
-          }
-          tokenID[position] = '\0';
-          allowed = true;
-          //Getting value
-          if(!isInt)
-          {
-            doubleVal = strtod(tokenID, NULL);
-            dataType = dtFloat; 
-          }
-          else
-          {
-            intVal = strtol(tokenID, NULL, 10);
-            dataType = dtInt;
-          }
+          
         }
         //Space,...
         else if(isspace(Scanner->line[Scanner->position - 1]))
