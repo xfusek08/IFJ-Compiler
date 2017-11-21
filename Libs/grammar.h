@@ -23,6 +23,8 @@ typedef enum
   /* operators */
   opPlus, opMns, opMul, opDiv, opDivFlt, opPlusEq, opMnsEq, opMulEq, opDivEq, opDivFltEq, opEq, opNotEq, opLes, opGrt,
   opLessEq, opGrtEq, opLeftBrc, opRightBrc, opSemcol, opComma,
+  /*boolean operators*/
+  opBoolNot, opBoolAnd, opBoolOr,
 
   /* key words */
   kwAs, kwAsc, kwDeclare, kwDim, kwDo, kwElse, kwEnd, kwFunction, kwIf, kwInput, kwLength, kwLoop,
