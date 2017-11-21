@@ -86,7 +86,7 @@ TSTNode TSTNode_create(char *key)
   TSTNode newNode = (TSTNode)mmng_safeMalloc(sizeof(struct STNode));
   newNode->balance = 0;
   newNode->key = util_StrHardCopy(key); // new hard copy of string
-  newNode->symbol = TSymbol_create(key);
+  newNode->symbol = TSymbol_create(newNode->key);
   newNode->parent = NULL;
   newNode->left = NULL;
   newNode->right = NULL;
@@ -572,8 +572,8 @@ void symbt_printSymb(TSymbol symbol)
   {
     case symtUnknown:  stype = "unspecified"; break;
     case symtFuction:  stype = "function"; break;
-    case symtVariable: stype = "floating point constant"; break;
-    case symtConstant: stype = "string constant"; break;
+    case symtVariable: stype = "variable"; break;
+    case symtConstant: stype = "constant"; break;
   }
   printf("Symbol: %p\n", symbol);
   printf("  identifier:   %s\n", symbol->ident);
