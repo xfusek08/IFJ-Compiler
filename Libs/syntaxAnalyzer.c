@@ -22,14 +22,16 @@ TGrStack statStack; //stack used in syntx_statAnalyze()
 
 //radim******
 /**
-* Returns precUnd if symbol is not defined, otherwise precLes, precEq, precGrt
+* Returns 0 if symbols are out of range or relation between symbols is not defined, otherwise 1
 * stackSymb symbol on top of stack
 * inputSymb symbol from end of expression
+* precRtrn returns precedence between two symbols (vals: precLes, precEq, precGrt)
 */
-int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb)
+int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn)
 {
+  // check range
   if(stackSymb > 21 || inputSymb > 21){
-    scan_raiseCodeError(syntaxErr);
+    return 0;
   }
 
   EGrSymb precTable[22][22] = {
@@ -58,11 +60,14 @@ int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb)
     /* $  */ {precLes, precLes, precLes, precLes, precLes, precLes, precUnd, precLes, precLes, precLes, precLes, /* $  */ precLes, precLes, precLes, precLes, precLes, precLes, precLes, precLes, precLes, precLes, precUnd}
   };
 
+  // check symbols relation
   if(precTable[stackSymb][inputSymb] == precUnd){
-    scan_raiseCodeError(syntaxErr);
+    return 0;
   }
 
-  return precTable[stackSymb][inputSymb];
+  precRtrn = precTable[stackSymb][inputSymb]; // save to reference variable
+
+  return 1;
 }
 //radim konec*************
 
