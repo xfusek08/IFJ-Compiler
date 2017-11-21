@@ -38,6 +38,73 @@ struct STNode {
 TPStack GLBSymbTabStack;
 
 // =============================================================================
+// ====================== TArgument implementation ==============================
+// =============================================================================
+
+// constructor of TArgList
+TArgument TArgument_create(const char *ident, DataType dataType)
+{
+  TArgument newArg = (TArgument)mmng_safeMalloc(sizeof(struct Argument));
+  newArg->ident = util_StrHardCopy(ident);
+  newArg->dataType = dataType;
+  newArg->next = NULL;
+  return newArg;
+}
+
+// destructor of TArgument
+void TArgument_destroy(TArgument self)
+{
+  mmng_safeFree(self->ident);
+  mmng_safeFree(self);
+}
+
+// =============================================================================
+// ====================== TArgList implementation ==============================
+// =============================================================================
+
+// destructor of TArgList
+void TArgList_destroy(TArgList self)
+{
+  TArgument actArg = self->head;
+  while (actArg != NULL)
+  {
+    TArgument toDelArg = actArg;
+    actArg = actArg->next;
+    TArgument_destroy(toDelArg);
+  }
+  mmng_safeFree(self);
+}
+
+TArgument TArgList_get(TArgList self, int index)
+{
+  TArgument actArg = self->head;
+  for (; index >= 0 && actArg != NULL; index--)
+    actArg = actArg->next;
+  return actArg;
+}
+
+TArgument TArgList_insert(TArgList self, const char *ident, DataType dataType)
+{
+  TArgument newArg = TArgument_create(ident, dataType);
+  self->tail->next = newArg;
+  self->tail = newArg;
+  self->count++;
+  return newArg;
+}
+
+// constructor of TArgList
+TArgList TArgList_create()
+{
+  TArgList newArgList = (TArgList)mmng_safeMalloc(sizeof(struct ArgList));
+  newArgList->count = 0;
+  newArgList->head = NULL;
+  newArgList->tail = NULL;
+  newArgList->get = TArgList_get;
+  newArgList->insert = TArgList_insert;
+  return newArgList;
+}
+
+// =============================================================================
 // ======================= TSymbol implementation ==============================
 // =============================================================================
 
