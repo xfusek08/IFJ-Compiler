@@ -4,7 +4,7 @@
  * \file    Scanner.c
  * \brief   Lexical analyzer
  * \author  Jaromír Franěk (xfrane16)
- * \date    18.11.2017 - Jaromír Franěk
+ * \date    21.11.2017 - Jaromír Franěk
  */
 /******************************************************************************/
 
@@ -149,7 +149,6 @@ SToken scan_GetNextToken()
   char *stringVal = NULL;
   //bool boolVal = true;  //not sure if needed
   //helping variables
-  char digVal = 0;
   int state = 0;
   int position = 0;
   bool allowed = false;
@@ -270,10 +269,11 @@ SToken scan_GetNextToken()
       //String  
       case '!':
         state = 0;
+        position--;
         if(Scanner->line[Scanner->position] == '\"')
         {
           state = 1;
-          tokenID[position++] = Scanner->line[Scanner->position++];
+          tokenID[position] = Scanner->line[Scanner->position++];
           while(state != 5)
           {
             switch(state)
@@ -283,15 +283,22 @@ SToken scan_GetNextToken()
                 if((tokenID[position - 1]) == '\"'  || (tokenID[position - 1]) == EOF)
                 {
                   state = 5;
+                  position--;
                 }
                 else if((tokenID[position - 1]) == '\\')
                 {
                   state = 2;
-                  position--;
+                }
+                else if(isprint(tokenID[position - 1]) && !isspace(tokenID[position - 1])
+                && tokenID[position - 1] != '#')
+                {
+                  state = 1;
                 }
                 else
                 {
-                  state = 1;
+                  //ERROR
+                  printf("ERROR \n");
+                  state = 5;
                 }
                 break;
               case 2:
@@ -299,28 +306,11 @@ SToken scan_GetNextToken()
                 if(isdigit(tokenID[position - 1]))
                 {
                   state = 3;
-                  digVal = 100 * (tokenID[position - 1] - '0');
                 }
                 else if(tokenID[position - 1] == 'n' || tokenID[position - 1] == 't' ||
                 tokenID[position - 1] == '\"' || tokenID[position - 1] == '\\')
                 {
-                  switch(tokenID[position - 1])
-                    case 'n':
-                      tokenID[position - 1] = '\n';
-                      state = 1;
-                      break;
-                    case 't':
-                      tokenID[position - 1] = '\t';
-                      state = 1;
-                      break;
-                    case '\"':
-                      tokenID[position - 1] = '\"';
-                      state = 1;
-                      break;
-                    case '\\':
-                      tokenID[position - 1] = '\\';
-                      state = 1;
-                      break; 
+                  state = 1;
                 }
                 else
                 {
@@ -330,10 +320,9 @@ SToken scan_GetNextToken()
                 }
                 break;
               case 3:
-                tokenID[position] = Scanner->line[Scanner->position++];
-                if(isdigit(tokenID[position]))
+                tokenID[position++] = Scanner->line[Scanner->position++];
+                if(isdigit(tokenID[position - 1]))
                 {
-                  digVal += 10 * (tokenID[position] - '0');
                   state = 4;
                 }
                 else
@@ -344,11 +333,9 @@ SToken scan_GetNextToken()
                 }
                 break;
               case 4:
-                tokenID[position] = Scanner->line[Scanner->position++];
-                if(isdigit(tokenID[position]))
+                tokenID[position++] = Scanner->line[Scanner->position++];
+                if(isdigit(tokenID[position - 1]))
                 {
-                  digVal += 1 * (tokenID[position] - '0');
-                  tokenID[position - 1] = digVal;
                   state = 1;
                 }
                 else
@@ -367,9 +354,9 @@ SToken scan_GetNextToken()
         }
         tokenType = ident;
         type = symtConstant;
-        stringVal = tokenID;
         dataType = dtString;
         tokenID[position] = '\0';
+        stringVal = util_StrHardCopy(tokenID);
         allowed = true;
         break;
       //End of line
@@ -451,6 +438,7 @@ SToken scan_GetNextToken()
   {
     symbol = symbt_findOrInsertSymb(tokenID);
     symbol->type = type;
+    symbol->dataType = dataType;
     //symbol->data.boolVal = boolVal;  //not sure if needed
     if(dataType == dtInt)
     {
@@ -476,7 +464,8 @@ SToken scan_GetNextToken()
 //destructor of LAnalyzer
 void Scanner_destroy()
 {
-  mmng_safeFree(Scanner->line);
   if (Scanner != NULL)
+  {
     mmng_safeFree(Scanner);
+  }
 }

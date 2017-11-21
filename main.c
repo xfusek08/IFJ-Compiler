@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
   
   int i = 0;
   SToken token;
-  while(i < 20)
+  while(i < 5)
   {
     printf("-----------Dalsi token----------- \n");
     token = scan_GetNextToken();
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     {
       printf("Identifikator symbolu: %s \n",token.symbol->ident);
       printf("Typ symbolu: %d \n",token.symbol->type);
-      //symbt_print();
+      symbt_printSymb(token.symbol);
     }
     //printf("Datovy typ: %d \n",token.dataType);
     printf("--------------------------------- \n");
