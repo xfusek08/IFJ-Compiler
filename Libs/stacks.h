@@ -58,6 +58,8 @@ struct tokenList{
   void(*postInsert)(TTkList, SToken *);
   /** delete token after active item */
   void(*postDelete)(TTkList);
+  /** delete token before active item */
+  void(*preDelete)(TTkList);
   /** safe destruction of list. If list is not empty, throw error. */
   void(*destroy)(TTkList);
   TTkListItem *first;

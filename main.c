@@ -25,7 +25,9 @@ int main(int argc, char *argv[])
   mmng_init();
   symbt_init();
 
-  syntx_analyzeCode();
+  syntx_init();
+  SToken token;
+  syntx_processExpression(&token, NULL, NULL, dtUnspecified);
 
   symbt_destroy();
   mmng_freeAll();

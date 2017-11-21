@@ -15,6 +15,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define LISTP(x, y) fprintf(stderr, x); fprintf(stderr, "\n"); TTkList_print(y)
+
 // =============================================================================
 // ====================== support functions ====================================
 // =============================================================================
@@ -22,7 +24,7 @@
 
 void tknl_insertLast(TTkList list, SToken *token)
 {
-  TTkListItem *item = list->last = mmng_safeMalloc(sizeof(TTkListItem));
+  TTkListItem *item = mmng_safeMalloc(sizeof(TTkListItem));
   item->next = NULL;
   item->token = *token;
   if (list->last != NULL)
@@ -32,9 +34,10 @@ void tknl_insertLast(TTkList list, SToken *token)
   }
   else {
     list->first = item;
-    list->prev = NULL;
+    list->last = NULL;
   }
   list->last = item;
+  LISTP("TTkList: called insertLast()", list);
 }
 
 void tknl_deleteLast(TTkList list)
@@ -53,6 +56,7 @@ void tknl_deleteLast(TTkList list)
   }
   list->last = list->last->prev;
   free(item);
+  LISTP("TTkList: called deleteLast()", list);
 }
 
 int tknl_isEmpty(TTkList list)
@@ -83,16 +87,19 @@ void tknl_destroy(TTkList list)
 void tknl_activate(TTkList list)
 {
   list->active = list->last;
+  LISTP("TTkList: called activate()", list);
 }
 
 void tknl_prev(TTkList list)
 {
   list->active = list->active->prev;
+  LISTP("TTkList: called prev()", list);
 }
 
 void tknl_next(TTkList list)
 {
   list->active = list->active->next;
+  LISTP("TTkList: called next()", list);
 }
 
 SToken *tknl_getActive(TTkList list)
@@ -122,6 +129,7 @@ void tknl_postInsert(TTkList list, SToken *token)
   else {
     apperr_runtimeError("TTkList: Trying to postInsert on inactive list!");
   }
+  LISTP("TTkList: called postInsert()", list);
 }
 
 void tknl_postDelete(TTkList list)
@@ -139,15 +147,69 @@ void tknl_postDelete(TTkList list)
     list->active->next = list->active->next->next;
     free(item);
   }
+  else {
+    apperr_runtimeError("TTkList: error in postDelete() function, list is not active or active is last item.");
+  }
+  LISTP("TTkList: called postDelete()", list);
+}
+
+void tknl_preDelete(TTkList list)
+{
+  if (list->active != NULL && list->active->prev != NULL)
+  {
+    TTkListItem *item = list->active->prev;
+    if (list->active->prev->prev == NULL)
+    {
+      list->first = list->active;
+    }
+    else {
+      list->active->prev->prev->next = list->active;
+    }
+    list->active->prev = list->active->prev->prev;
+    free(item);
+  }
+  else {
+    apperr_runtimeError("TTkList: error in preDelete() function, list is not active or active is first item.");
+  }
+  LISTP("TTkList: called preDelete()", list);
 }
 
 void TTkList_print(TTkList list)
 {
   TTkListItem *item = list->first;
-  fprintf(stderr, "---");
-  while (item != NULL) {
-    fprintf(stderr, "|%d|---", item->token.type);
+  if (item == NULL) {
+    fprintf(stderr, "List is empty.\n");
+    return;
+  }
+  fprintf(stderr, "-first--");
+  while (item->next != NULL) {
+    if (item == list->active)
+    {
+      fprintf(stderr, ">>");
+    }
+    fprintf(stderr, "|%d|", item->token.type);
+    if (item == list->active)
+    {
+      fprintf(stderr, "<<--");
+    }
+    else {
+      fprintf(stderr, "----");
+    }
     item = item->next;
+  }
+  if (list->last == item)
+  {
+    if (item != list->active) {
+      fprintf(stderr, "|%d|--last-\n", item->token.type);
+    }
+    else
+    {
+      fprintf(stderr, ">>|%d|<<-last-\n", item->token.type);
+    }
+  }
+  else {
+    fprintf(stderr, "!!List is corrupted!!\n");
+    apperr_runtimeError("TTkList is corrupted!");
   }
 }
 
@@ -210,6 +272,7 @@ TTkList TTkList_create()
   List->getActive = tknl_getActive;
   List->postInsert = tknl_postInsert;
   List->postDelete = tknl_postDelete;
+  List->preDelete = tknl_preDelete;
   List->destroy = tknl_destroy;
 
   return List;

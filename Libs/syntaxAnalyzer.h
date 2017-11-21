@@ -14,8 +14,10 @@
 #ifndef _SYNTAXANALYZER
 #define _SYNTAXANALYZER
 
-void syntx_analyzeCode();
+#include "Scanner.h"
 
+void syntx_init();
+void syntx_processExpression(SToken *actToken, const char *frame, const char *ident, DataType datatype);
 
 
 
