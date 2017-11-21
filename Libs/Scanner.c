@@ -127,13 +127,25 @@ EGrSymb isKeyWord(char *tokenID)//Change name
   {
     if(strcmp(str, sArray[i]) == 0) //maybe as long as != Until
     {
-      tokenType = i + 40;   
+      tokenType = i + 20;   
     }
     i++;
   }
   mmng_safeFree(str);
   return tokenType;
 }
+
+
+bool isEndChar()
+{
+  return Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-'
+  || isspace(Scanner->line[Scanner->position - 1]) || Scanner->line[Scanner->position - 1] == '*'
+  || Scanner->line[Scanner->position - 1] == '/' || Scanner->line[Scanner->position - 1] == '\\'
+  || Scanner->line[Scanner->position - 1] == '=' || Scanner->line[Scanner->position - 1] == EOF
+  || Scanner->line[Scanner->position - 1] == 33 || Scanner->line[Scanner->position - 1] == '(' 
+  || Scanner->line[Scanner->position - 1] == ')';
+}
+
 
 //Function that return next token
 SToken scan_GetNextToken()
@@ -147,7 +159,7 @@ SToken scan_GetNextToken()
   int intVal = 0;
   double doubleVal = 0;
   char *stringVal = NULL;
-  //bool boolVal = true;  //not sure if needed
+  bool boolVal = true;
   //helping variables
   int state = 0;
   int position = 0;
@@ -347,17 +359,22 @@ SToken scan_GetNextToken()
                 break; 
             }    
           }
+          tokenType = ident;
+          type = symtConstant;
+          dataType = dtString;
+          tokenID[position] = '\0';
+          stringVal = util_StrHardCopy(tokenID);
+        }
+        else if(Scanner->line[Scanner->position] == '=')
+        {
+          allowed = true;
+          Scanner->position++;
+          tokenType = opNotEq;
         }
         else
         {
           //ERROR
         }
-        tokenType = ident;
-        type = symtConstant;
-        dataType = dtString;
-        tokenID[position] = '\0';
-        stringVal = util_StrHardCopy(tokenID);
-        allowed = true;
         break;
       //End of line
       case '\n':
@@ -381,6 +398,8 @@ SToken scan_GetNextToken()
         || (Scanner->line[Scanner->position - 1] > 96 && Scanner->line[Scanner->position - 1] < 123)) //value of A-Z
         {
           state = 0;
+          tokenType = ident;
+          type = symtConstant;
           while(state != 5)
           {
             tokenID[position++] = Scanner->line[Scanner->position++];
@@ -398,21 +417,32 @@ SToken scan_GetNextToken()
                 {
                   state = 0;
                 }
-                else if(Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-'
-                || isspace(Scanner->line[Scanner->position - 1]) || Scanner->line[Scanner->position - 1] == '*'
-                || Scanner->line[Scanner->position - 1] == '/' || Scanner->line[Scanner->position - 1] == '\\'
-                || Scanner->line[Scanner->position - 1] == '=' || Scanner->line[Scanner->position - 1] == EOF)
+                else if(isEndChar())
                 {
                   position--;
+                  Scanner->position--;
                   state = 5;
                   tokenID[position] = '\0';
                   tokenType = isKeyWord(tokenID);
-                  type = symtVariable;
+                  type = symtUnknown;
+                  if(tokenType == kwTrue || tokenType == kwFalse)
+                  {
+                    type = symtConstant;
+                    dataType = dtBool; 
+                    if(tokenType == kwTrue)
+                    {
+                      boolVal = true;
+                    }
+                    else
+                    {
+                      boolVal = false;
+                    } 
+                  }
                 }
                 else
                 {
                   //ERROR
-                  printf("ERROR 1");
+                  printf("ERROR");
                   state = 5;
                 }
                 break;
@@ -431,7 +461,7 @@ SToken scan_GetNextToken()
                 else
                 {
                   //ERROR
-                  printf("ERROR 2");
+                  printf("ERROR");
                   state = 5;
                 }
                 break;
@@ -444,21 +474,17 @@ SToken scan_GetNextToken()
                 {
                   state = 2;
                 }
-                else if(Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-'
-                || isspace(Scanner->line[Scanner->position - 1]) || Scanner->line[Scanner->position - 1] == '*'
-                || Scanner->line[Scanner->position - 1] == '/' || Scanner->line[Scanner->position - 1] == '\\'
-                || Scanner->line[Scanner->position - 1] == '=')
+                else if(isEndChar())
                 {
                   position--;
+                  Scanner->position--;
                   state = 5;
-                  tokenType = ident;
-                  type = symtConstant;
                   tokenID[position] = '\0';
                 }
                 else
                 {
                   //ERROR
-                  printf("ERROR 3");
+                  printf("ERROR");
                   state = 5;
                 }
                 break;
@@ -470,18 +496,17 @@ SToken scan_GetNextToken()
                 else if(Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-'
                 || isspace(Scanner->line[Scanner->position - 1]) || Scanner->line[Scanner->position - 1] == '*'
                 || Scanner->line[Scanner->position - 1] == '/' || Scanner->line[Scanner->position - 1] == '\\'
-                || Scanner->line[Scanner->position - 1] == '=')
+                || Scanner->line[Scanner->position - 1] == '=' || Scanner->line[Scanner->position - 1] == EOF
+                || Scanner->line[Scanner->position - 1] == 33) //!
                 {
                   position--;
                   state = 5;
                   tokenID[position] = '\0';
-                  tokenType = ident;
-                  type = symtConstant;
                 }
                 else
                 {
                   //ERROR
-                  printf("ERROR 4");
+                  printf("ERROR");
                   state = 5;
                 }
                 break;
@@ -493,20 +518,17 @@ SToken scan_GetNextToken()
                 {
                   state = 4;
                 }
-                else if(Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-'
-                || isspace(Scanner->line[Scanner->position - 1]) || Scanner->line[Scanner->position - 1] == '*'
-                || Scanner->line[Scanner->position - 1] == '/' || Scanner->line[Scanner->position - 1] == '=')
+                else if(isEndChar() && Scanner->line[Scanner->position - 1] != '\\') 
                 {
                   position--;
+                  Scanner->position--;
                   state = 5;
                   tokenID[position] = '\0';
-                  tokenType = ident;
-                  type = symtConstant;
                 }
                 else
                 {
                   //ERROR
-                  printf("ERROR 5");
+                  printf("ERROR");
                   state = 5;
                 }
                 break;
@@ -515,9 +537,80 @@ SToken scan_GetNextToken()
           }   
         }
         //Numbers
-        else if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)
+        else if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58) // 0-9
         {
-          
+          state = 0;
+          tokenType = ident;
+          type = symtConstant;
+          while(state != 3)
+          {
+            tokenID[position++] = Scanner->line[Scanner->position++];
+            switch(state)
+            {
+              case 0:
+                if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)
+                {
+                  state = 0;
+                }
+                else if(Scanner->line[Scanner->position - 1] == '.')
+                {
+                  state = 1;
+                }
+                else if(Scanner->line[Scanner->position - 1] == 'e' || Scanner->line[Scanner->position - 1] == 'E')
+                {
+                  state = 2;
+                }
+                else if(isEndChar())
+                {
+                  state = 3;
+                  Scanner->position--;
+                  tokenID[--position] = '\0';
+                  intVal = strtol(tokenID, NULL, 10);
+                  dataType = dtInt;
+                }
+                else
+                {
+                  //ERROR
+                  printf("ERROR");
+                  state = 3;
+                }
+                break;
+              case 1:
+                if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)
+                {
+                  state = 1;
+                }
+                else if(isEndChar())
+                {
+                  state = 3;
+                  Scanner->position--;
+                  tokenID[--position] = '\0';
+                  doubleVal = strtod(tokenID, NULL);
+                  dataType = dtFloat;
+                }
+                else
+                {
+                  //ERROR
+                  printf("ERROR");
+                  state = 3;
+                }
+                break;
+              case 2:
+                if((Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)
+                || Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-')
+                {
+                  state = 1;
+                }
+                else
+                {
+                  //ERROR
+                  printf("ERROR");
+                  state = 3;
+                }
+                break;
+            }
+            allowed = true;
+          }     
         }
         //Space,...
         else if(isspace(Scanner->line[Scanner->position - 1]))
@@ -533,12 +626,12 @@ SToken scan_GetNextToken()
     }
   }
   //Filing returning token with values
-  if(tokenType == ident)
+  if(tokenType == ident || tokenType == kwTrue || tokenType == kwFalse)
   {
     symbol = symbt_findOrInsertSymb(tokenID);
     symbol->type = type;
     symbol->dataType = dataType;
-    //symbol->data.boolVal = boolVal;  //not sure if needed
+    symbol->data.boolVal = boolVal;
     if(dataType == dtInt)
     {
       symbol->data.intVal = intVal;
@@ -550,6 +643,10 @@ SToken scan_GetNextToken()
     else if(dataType == dtString)
     {
       symbol->data.stringVal = stringVal;
+    }
+    else if(dataType == dtBool)
+    {
+      symbol->data.boolVal = boolVal;
     }
   }
   SToken token;

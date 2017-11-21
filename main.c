@@ -28,12 +28,12 @@ int main(int argc, char *argv[])
   
   int i = 0;
   SToken token;
-  while(i < 5)
+  while(i < 20)
   {
     printf("-----------Dalsi token----------- \n");
     token = scan_GetNextToken();
     printf("Typ tokenu: %d \n",token.type);
-    if(token.type == 51)
+    if(token.symbol != NULL)
     {
       printf("Identifikator symbolu: %s \n",token.symbol->ident);
       printf("Typ symbolu: %d \n",token.symbol->type);
