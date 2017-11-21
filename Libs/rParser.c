@@ -16,6 +16,7 @@
  */
 /******************************************************************************/
 
+#include <stdio.h>
 #include <stdlib.h>
 #include "appErr.h"
 #include "utils.h"
@@ -23,13 +24,14 @@
 #include "symtable.h"
 #include "grammar.h"
 #include "rParser.h"
+#include "syntaxAnalyzer.h"
 
 // =============================================================================
 // ====================== Supportive function macros  ==========================
 // =============================================================================
 
 #define NEXT_TOKEN(T) *T = scan_GetNextToken()
-#define CHECK_TOKEN(T, S) if (T->type != S) scan_raiseCodeError(syntaxErr)
+#define CHECK_TOKEN(T, S) if (T->type != S) scan_raiseCodeError(syntaxErr, "")
 #define NEXT_CHECK_TOKEN(T, S) NEXT_TOKEN(T); CHECK_TOKEN(T, S)
 
 
@@ -38,7 +40,11 @@
 // =============================================================================
 void ck_NT_PROG(SToken *actToken); 					// Program - staritng non-terminal
 void ck_NT_DD(SToken *actToken); 						// definitions and declarations section
-void ck_NT_ASSINGEXT(SToken *actToken); 		// Assignement (...  [as datatype])
+void ck_NT_ASSINGEXT(                            // Assignement (...  [as datatype])
+  SToken *actToken,
+  const char *frame,
+  const char *ident,
+  DataType dataType);
 void ck_NT_SCOPE(SToken *actToken); 				// Scope statement where local variables can be owerriten.
 void ck_NT_PARAM_LIST(                      // list of parameters for function
   SToken *actToken,
@@ -96,10 +102,10 @@ void checkFunctionDefinition(SToken *actToken)
   {
     isDeclared = true;
     if (actSymbol->data.funcData.isDefined) // redefinition is not allowed
-      scan_raiseCodeError(semanticErr);
+      scan_raiseCodeError(semanticErr, "Redefinition of function.");
   }
   else // attempt of redeclaration
-    scan_raiseCodeError(semanticErr);
+    scan_raiseCodeError(semanticErr, "Symbol is defined as different type.");
 
   NEXT_CHECK_TOKEN(actToken, opLeftBrc);
   NEXT_TOKEN(actToken);
@@ -117,7 +123,8 @@ void checkFunctionDefinition(SToken *actToken)
     if (parCnt != actSymbol->data.funcData.argumentCount ||
         retType != actSymbol->data.funcData.returnType ||
         !areDTArrayEqual(params, actSymbol->data.funcData.arguments, parCnt))
-      scan_raiseCodeError(semanticErr);
+      scan_raiseCodeError(semanticErr, "Function definition does not match with declaration.");
+    // TODO: specify error ... ?
   }
   else
   {
@@ -129,11 +136,17 @@ void checkFunctionDefinition(SToken *actToken)
 
   // body of funtion
   symbt_pushFrame(); // lets create local variable frame for function
+  printf("LABEL %s\n", actSymbol->data.funcData.label);
+  printf("PUSHFRAME\n");
+  printf("DEFVAR LF@%%retval\n");
   NEXT_TOKEN(actToken);
   ck_NT_STAT_LIST(actToken);
   CHECK_TOKEN(actToken, kwEnd); // statement list must ends on end key word
   NEXT_CHECK_TOKEN(actToken, kwFunction);
   NEXT_CHECK_TOKEN(actToken, eol);
+  printf("LABEL %s$epilog\n", actSymbol->data.funcData.label);
+  printf("POPFRAME\n");
+  printf("RETURN\n");
   symbt_popFrame();
 }
 
@@ -172,7 +185,7 @@ void ck_NT_DD(SToken *actToken)
       if (actSymbol->type == symtUnknown)
         actSymbol->type = symtFuction;
       else // attempt of redeclaration
-        scan_raiseCodeError(semanticErr);
+        scan_raiseCodeError(semanticErr, "Redeclaration of function is not allowed.");
 
       actSymbol->data.funcData.label = util_StrHardCopy(actSymbol->ident); // TODO: prefix ?
       actSymbol->data.funcData.isDefined = false;
@@ -190,25 +203,51 @@ void ck_NT_DD(SToken *actToken)
       break;
     // 3. NT_DD -> kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_STAT_LIST kwEnd kwFunction eol NT_DD
     case kwFunction:
-      checkFunctionDefinition(actToken);
+      checkFunctionDefinition(actToken); // too long to be here
       ck_NT_DD(actToken);
       break;
-    // 4. NT_DD -> kwStatic kwShared ident kwAs dataType NT_ASSINGEXT
+    // 4. NT_DD -> kwStatic kwShared ident kwAs dataType NT_ASSINGEXT eol NT_DD
     case kwStatic:
+      NEXT_CHECK_TOKEN(actToken, kwShared);
+      NEXT_CHECK_TOKEN(actToken, ident);
+      actSymbol = actToken->symbol;
+      if (actSymbol->type == symtUnknown)
+        actSymbol->type = symtVariable;
+      else
+        scan_raiseCodeError(semanticErr, "Redefinition of static variable is not allowed.");
+      NEXT_CHECK_TOKEN(actToken, kwAs);
+      NEXT_CHECK_TOKEN(actToken, dataType);
+      actSymbol->dataType = actToken->dataType;
+      printf("DEFVAR GF@%s\n", actSymbol->ident);
+      NEXT_TOKEN(actToken);
+      ck_NT_ASSINGEXT(actToken, "GL", actSymbol->ident, actToken->dataType);
+      NEXT_CHECK_TOKEN(actToken, eol);
+      ck_NT_DD(actToken);
       break;
     // 5. NT_DD -> (epsilon)
     default:
+      // let it be
       break;
   }
 }
 
 // Assignement (...  [as datatype])
 // first(NT_ASSINGEXT) = { asgn -> (6); else -> (7 [epsilon]) }
-void ck_NT_ASSINGEXT(SToken *actToken)
+void ck_NT_ASSINGEXT(SToken *actToken, const char *frame, const char *ident, DataType dataType)
 {
-  (void)actToken;
-  // 6. NT_ASSINGEXT -> asgn NT_EXPR
-  // 7. NT_ASSINGEXT -> (epsilon)
+  switch (actToken->type)
+  {
+    // 6. NT_ASSINGEXT -> asgn NT_EXPR
+    case asng:
+      NEXT_CHECK_TOKEN(actToken, asng);
+      NEXT_TOKEN(actToken);
+      syntx_processExpression(actToken, frame, ident, dataType);
+      break;
+    // 7. NT_ASSINGEXT -> (epsilon)
+    default:
+      // let it be
+      break;
+  }
 }
 
 // Scope statement where local variables can be owerriten.
@@ -340,6 +379,7 @@ void ck_NT_EXPR_LIST(SToken *actToken)
 
 void rparser_processProgram()
 {
+  printf(".IFJcode17\n");
   SToken token = scan_GetNextToken();
   ck_NT_PROG(&token);
 }

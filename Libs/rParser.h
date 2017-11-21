@@ -25,4 +25,4 @@
  */
 void rparser_processProgram();
 
-#endif _RParser
+#endif // _RParser

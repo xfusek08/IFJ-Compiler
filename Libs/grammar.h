@@ -67,7 +67,7 @@ typedef struct {
 first(NT_DD) = { kwDeclare -> (2); kwFunction -> (3);  kwStatic -> (4); else -> (5 [epsilon]) }
 2. NT_DD -> kwDeclare kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_DD
 3. NT_DD -> kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_STAT_LIST kwEnd kwFunction eol NT_DD
-4. NT_DD -> kwStatic kwShared ident kwAs dataType NT_ASSINGEXT
+4. NT_DD -> kwStatic kwShared ident kwAs dataType NT_ASSINGEXT eol NT_DD
 5. NT_DD -> (epsilon)
 
 first(NT_ASSINGEXT) = { asgn -> (6); else -> (7 [epsilon]) }
@@ -109,7 +109,7 @@ first(NT_STAT) = {
 17. NT_STAT -> kwPrint NT_EXPR_LIST
 18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf eol
 19. NT_STAT -> kwDim iden kwAs dataType NT_ASSINGEXT
-20. NT_STAT -> ident asng NT_EXPR
+20. NT_STAT -> NT_EXPR
 21. NT_STAT -> kwContinue
 22. NT_STAT -> kwExit
 23. NT_STAT -> NT_SCOPE
@@ -141,27 +141,28 @@ first(NT_EXPR_LIST) = { first(NT_EXPR) -> (36); else -> (37 [epsilon]) }
 // following rules does not contain epsilon rules and it will be process by another algorithm
 
 38. NT_EXPR -> ident
-39. NT_EXPR -> NT_EXPR opPlus NT_EXPR
-40. NT_EXPR -> NT_EXPR opMns NT_EXPR
-41. NT_EXPR -> NT_EXPR opMul NT_EXPR
-42. NT_EXPR -> NT_EXPR opDiv NT_EXPR
-43. NT_EXPR -> NT_EXPR opDivFlt NT_EXPR
-44. NT_EXPR -> NT_EXPR opPlusEq NT_EXPR
-45. NT_EXPR -> NT_EXPR opMnsEq NT_EXPR
-46. NT_EXPR -> NT_EXPR opMulEq NT_EXPR
-47. NT_EXPR -> NT_EXPR opDivEq NT_EXPR
-48. NT_EXPR -> NT_EXPR opDivFltEq NT_EXPR
-49. NT_EXPR -> NT_EXPR opEq NT_EXPR
-50. NT_EXPR -> NT_EXPR opLes NT_EXPR
-51. NT_EXPR -> NT_EXPR opGrt NT_EXPR
-52. NT_EXPR -> NT_EXPR opLesEq NT_EXPR
-53. NT_EXPR -> NT_EXPR opGrtEq NT_EXPR
-54. NT_EXPR -> ident kwLeftBrt NT_ARGUMENT_LIST kwRightBrt
-55. NT_EXPR -> kwLeftBrc NT_EXPR kwRightBrc
+39. NT_EXPR -> ident asng NT_EXPR
+40. NT_EXPR -> NT_EXPR opPlus NT_EXPR
+41. NT_EXPR -> NT_EXPR opMns NT_EXPR
+42. NT_EXPR -> NT_EXPR opMul NT_EXPR
+43. NT_EXPR -> NT_EXPR opDiv NT_EXPR
+44. NT_EXPR -> NT_EXPR opDivFlt NT_EXPR
+45. NT_EXPR -> NT_EXPR opPlusEq NT_EXPR
+46. NT_EXPR -> NT_EXPR opMnsEq NT_EXPR
+47. NT_EXPR -> NT_EXPR opMulEq NT_EXPR
+48. NT_EXPR -> NT_EXPR opDivEq NT_EXPR
+49. NT_EXPR -> NT_EXPR opDivFltEq NT_EXPR
+50. NT_EXPR -> NT_EXPR opEq NT_EXPR
+51. NT_EXPR -> NT_EXPR opLes NT_EXPR
+52. NT_EXPR -> NT_EXPR opGrt NT_EXPR
+53. NT_EXPR -> NT_EXPR opLesEq NT_EXPR
+54. NT_EXPR -> NT_EXPR opGrtEq NT_EXPR
+55. NT_EXPR -> ident kwLeftBrt NT_ARGUMENT_LIST kwRightBrt
+56. NT_EXPR -> kwLeftBrc NT_EXPR kwRightBrc
 
-56. NT_ARGUMENT_LIST -> NT_EXPR opComma NT_ARGUMENT_LIST
-57. NT_ARGUMENT_LIST -> NT_EXPR
-58. NT_ARGUMENT_LIST -> (epsilon)
+57. NT_ARGUMENT_LIST -> NT_EXPR opComma NT_ARGUMENT_LIST
+58. NT_ARGUMENT_LIST -> NT_EXPR
+59. NT_ARGUMENT_LIST -> (epsilon)
 
 */
 
