@@ -7,7 +7,7 @@
  * This package provides functions over global stack of symbol tables.
  *
  * \author  Petr Fusek (xfusek08)
- * \date    15.11.2017 - Petr Fusek
+ * \date    21.11.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -28,14 +28,63 @@ typedef enum {
 } SymbolType;
 
 /**
- * Structure uset in data, containg information about Function symbol.
+ * Object reprezenting one argument in argument list (TArgList)
+ */
+typedef struct Argument *TArgument;
+struct Argument {
+  char *ident;        /*!< identifier of argument */
+  DataType dataType;  /*!< data type of argument */
+  TArgument next;     /*!< next argument in list */
+};
+
+/**
+ * Object reprezenting list of arguments
+ */
+typedef struct ArgList *TArgList;
+struct ArgList {
+  int count;        /*!< count of arguments in list */
+  TArgument head;   /*!< first argument in list */
+  TArgument tail;   /*!< last argument in list */
+  /**
+   * Get n-th arument from head in TArgList;
+   *
+   * \param TArgList self self reference
+   * \param int index n = index - position of agrument from begining
+   * \returns TArgument argument on position index
+   */
+  TArgument (*get)(TArgList self, int index);
+
+  /**
+   * Create new argument on the end of the list
+   *
+   * \param TArgList self self reference
+   * \param const char *ident identifier of new argument
+   * \param DataType dataType data type of new argument
+   * \returns TArgument new created argument
+   */
+  TArgument (*insert)(TArgList self, const char *ident, DataType dataType);
+};
+
+/**
+ * Constructor of argument list
+ * \returns TArgList new argument list
+ */
+TArgList TArgList_create();
+
+/**
+ * Destructor of argument list
+ * \param TArgList self self reference
+ */
+void TArgList_destroy(TArgList self);
+
+/**
+ * Structure used in data, containg information about Function symbol.
  */
 typedef struct {
-  char *label;          /*!< label of function used in outbut code */
+  char *label;          /*!< label of function used in output code */
   DataType returnType;  /*!< return type of function */
-  int argumentCount;    /*!< number of arguments */
-  DataType *arguments;  /*!< array of arguments required by function in order. Lenght of array is equal to argumentCount */
   bool isDefined;       /*!< flag, true if function has been defined */
+  TArgList arguments;   /*!< List of arguments, NULL on initialization */
 } SFuncData;
 
 /**
@@ -82,8 +131,10 @@ void symbt_destroy();
 
 /**
  * Creates new instance of symbol table on top of the stack
+ * \param bool transparent flag true if created frame is suppose to be transparent
+ * (searching for symbols continues on next table on stack)
  */
-void symbt_pushFrame();
+void symbt_pushFrame(bool transparent);
 
 /**
  * Frees destroys symbol table on top of the stack.
@@ -103,7 +154,8 @@ int symbt_cntFrames();
 /**
  * Finds symbol by indentifier
  *
- * It is search from top to bottom of stack.
+ * It is search in top frame and if there is not fouded searchs in global frame
+ * If table frame is transparent
  * \param  char* ident string identifier used as key
  * \returns TSymbol Fisrt occurrence of symbol with corresponding identifier, NULL if not exist
  */
@@ -133,8 +185,9 @@ TSymbol symbt_findOrInsertSymb(char *ident);
 TSymbol symbt_insertSymbOnTop(char *ident);
 
 /**
- * Removes first occurrence of symbol from top of stack with given identifier
+ * Removes symbol from top table in stack with identifier ident
  *
+ * Does nothing when such symbol not exists.
  * \param  char* ident string identifier used as key
  */
 void symbt_deleteSymb(char *ident);
