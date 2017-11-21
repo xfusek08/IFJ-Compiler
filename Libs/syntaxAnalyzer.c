@@ -69,6 +69,169 @@ int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn)
 
   return 1;
 }
+
+/**
+ * Converts double to integer
+ */
+int syntx_doubleToInt(double inputNum){
+  int floorNum = inputNum;
+
+  if( remainder(inputNum,1) == 0.5 && remainder(floorNum,2) == 0.0){ //rest 0.5 and even
+    return floorNum;
+  }else if(remainder(inputNum,1) == 0.5 && remainder(floorNum,2) == 1.0){   //rest 0.5 and odd
+    return floorNum + 1;
+  }else{
+    return round(inputNum);
+  }
+}
+
+/**
+ * Converts integer to double
+ */
+double syntx_intToDouble(int inputNum){
+  return inputNum;
+}
+
+/**
+ * Implicitly converts token from int to double
+ */
+void syntx_intToDoubleToken(SToken *token){
+
+  token->symbol->data.doubleVal = syntx_intToDouble(token->symbol->data.intVal);
+  token->symbol->dataType = dtFloat;
+
+}
+
+/**
+ * Implicitly converts token from double to int
+ */
+void syntx_doubleToIntToken(SToken *token){
+
+  token->symbol->data.intVal = syntx_doubleToInt(token->symbol->data.doubleVal);
+  token->symbol->dataType = dtInt;
+
+}
+
+/**
+ * Checks data types of two operands
+ * Returns 1 if everything is OK, otherwise 0
+ */
+int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *rightOperand){
+  //TODO: optimalization
+  // enabled data types pairs
+  if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){  // int - int
+    return 1;
+  }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtFloat){  // double - double
+    return 1;
+  }else if(leftOperand->symbol->dataType == dtString && rightOperand->symbol->dataType == dtString){  // string - string
+    return 1;
+  }else if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){  // bool - bool
+    return 1;
+  }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int
+    syntx_intToDoubleToken(rightOperand);
+    return 0;
+  }else if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtFloat){  // int - double
+    syntx_intToDoubleToken(leftOperand);
+    return 0;
+  }
+
+  return 0; //other combinations are not allowed
+
+}
+
+/**
+ * Checks data types of two operands of opDiv
+ * Returns 1 if everything is OK, otherwise 0
+ */
+int syntx_checkDataTypesOfDiv(SToken *leftOperand, SToken *rightOperand){
+  // TODO: cast here?
+  if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){  // int - int
+    return 1;
+  }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int
+    syntx_doubleToIntToken(leftOperand);
+    return 0;
+  }else if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtFloat){  // int - double
+    syntx_doubleToIntToken(rightOperand);
+    return 0;
+  }
+
+  return 0; //other combinations are not allowed
+
+}
+
+/**
+ * Checks data types of two operands of asigns operators
+ * Returns 1 if everything is OK, otherwise 0
+ */
+int syntx_checkDataTypesOfAgnOps(SToken *leftOperand, SToken *rightOperand){
+  //TODO: optimalization
+
+  // enabled data types pairs
+  if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){  // int - int
+    return 1;
+  }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtFloat){  // double - double
+    return 1;
+  }else if(leftOperand->symbol->dataType == dtString && rightOperand->symbol->dataType == dtString){  // string - string
+    return 1;
+  }else if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){  // bool - bool
+    return 1;
+  }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> int - int
+    syntx_intToDoubleToken(rightOperand);
+    return 0;
+  }else if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtFloat){  // int - double -> double - double
+    syntx_doubleToIntToken(rightOperand);
+    return 0;
+  }
+
+  return 0; //other combinations are not allowed
+}
+
+/**
+ * Checks data types
+ */
+void checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
+
+  // if operator type is +, -, *, /, <, >, <=, >=, =, <>, +=, -=, /=, \=, :=
+  if(operator->type == opPlus || 
+     operator->type == opMns || 
+     operator->type == opMul || 
+     operator->type == opDivFlt ||
+     operator->type == opLes ||
+     operator->type == opGrt ||
+     operator->type == opLessEq ||
+     operator->type == opGrtEq ||
+     operator->type == opEq ||
+     operator->type == opNotEq
+     ){
+      //checks compalibility of data types
+      if(syntx_checkDataTypesOfBasicOp(leftOperand, rightOperand) == 0){
+        scan_raiseCodeError(typeCompatibilityErr);  // prints error
+      }
+  }else if(operator->type == opDiv){  // if operator type is '\'
+    if(syntx_checkDataTypesOfDiv(leftOperand, rightOperand) == 0){
+      scan_raiseCodeError(typeCompatibilityErr);  // prints error
+    }
+  }else if(
+     operator->type == opPlusEq ||
+     operator->type == opMnsEq ||
+     operator->type == opMulEq ||
+     operator->type == opDivFlt ||
+     operator->type == opDiv ||
+     operator->type == asng
+  ){
+    if(syntx_checkDataTypesOfAgnOps(leftOperand, rightOperand) == 0){
+      scan_raiseCodeError(typeCompatibilityErr);  // prints error
+    }
+  }
+
+}
+
+/**
+ * Main function for code generation
+ */
+void syntx_generateCode(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
+  checkDataTypes(leftOperand, operator, rightOperand, partialResult);
+}
 //radim konec*************
 
 /**
