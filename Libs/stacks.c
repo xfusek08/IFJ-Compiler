@@ -141,6 +141,16 @@ void tknl_postDelete(TTkList list)
   }
 }
 
+void TTkList_print(TTkList list)
+{
+  TTkListItem *item = list->first;
+  fprintf(stderr, "---");
+  while (item != NULL) {
+    fprintf(stderr, "|%d|---", item->token.type);
+    item = item->next;
+  }
+}
+
 /****** POINTER STACK ********/
 void pst_push(TPStack stack, void *val)
 {

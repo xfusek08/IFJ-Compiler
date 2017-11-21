@@ -18,7 +18,7 @@
 #define DPRINT(x) printf x
 
 SToken token; //loaded token, we might want to have array/list of tokens for code generation
-TGrStack statStack; //stack used in syntx_statAnalyze()
+TTkList tlist; //list used as stack in syntx_processExpression
 
 //radim******
 /**
@@ -65,7 +65,7 @@ int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn)
     return 0;
   }
 
-  precRtrn = precTable[stackSymb][inputSymb]; // save to reference variable
+  *precRtrn = precTable[stackSymb][inputSymb]; // save to reference variable
 
   return 1;
 }
@@ -80,20 +80,17 @@ int isTerminal(EGrSymb symb)
 }
 
 /**
-* returns closest terminal to top of the stack
+* returns closest terminal to top of the stack (its acually list). 
+\post Token with terminal in list is set as active item
 */
-EGrSymb syntx_getFirstTerminal(TGrStack stack, int *position)
+EGrSymb syntx_getFirstTerminal(TTkList list)
 {
-  for (int i = 0; i < stack->count; i++)
-  {
-    EGrSymb symb = stack->grArray[i];
-    if (isTerminal(symb))
-    {
-      *position = i;
-      return symb;
-    }
-  }                                                                                 
-  scan_raiseCodeError(syntaxErr);
+  list->activate(list);
+  while (list->active != NULL) {
+    if (isTerminal(list->active->token.type))
+      return list->active->token.type;
+    list->next(list);
+  }
   return eol;
 }
 
@@ -105,7 +102,7 @@ void statSemantic(int ruleNum)
   DPRINT(("Semantic statement analyze: Received rule number %d", ruleNum));
 }
 
-SToken *nextToken()
+SToken nextToken()
 {
   if (!scan_GetNextToken(&token))
   {
@@ -115,68 +112,65 @@ SToken *nextToken()
   return token;
 }
 
-int syntx_useRule(TGrStack stack, int *usedRule)
+/* Use syntax rule at the end of the list. If there is no valid combination, returns zero. */
+int syntx_useRule(TTkList list)
 {
-  return 1;
+  (void)list;
+  return 0;
 }
 
 /**
 * Precedent statement analyze
 */
-void syntx_statAnalyze()
+void syntx_processExpression(SToken *actToken, const char *frame, const char *ident, DataType datatype)
 {
-  statStack->push(statStack, eol);
-  SToken *token - nextToken();
+  SToken auxToken;
+  auxToken.type = eol;
+  tlist->insertLast(tlist, &auxToken);
 
+  *actToken = nextToken();
+  EGrSymb terminal;
   do {
-    int terminalPosition;
-    EGrSymb terminal = syntx_getFirstTerminal(statStack, &terminalPosition);
+     terminal = syntx_getFirstTerminal(tlist);
 
     //debug print
-    DPRINT(("Analyzing token: %d\n", token->type));
+    DPRINT(("Analyzing token: %d\n", actToken->type));
     DPRINT(("First terminal on stack: %d\n", terminal));
 
     EGrSymb tablesymb;
-    if (!Table(terminal, token->type, &tablesymb))
+    //TODO: handle function identifier somehow
+    if (!syntx_getPrecedence(terminal, actToken->type, &tablesymb))
     {
       scan_raiseCodeError(syntaxErr);
     }
 
     switch (tablesymb)
     {
-    case priorEq:
-      statStack->push(statStack, token->type);
-      token = nextToken();
+    case precEqu:
+      tlist->insertLast(tlist, actToken);
+      *actToken = nextToken();
       break;
-    case priorLess:
-      TGrStack_postInsert(statStack, terminalPosition, priorLess);
-      statStack->push(statStack, token->type);
-      token = nextToken();
+    case precLes:
+      auxToken.type = precLes;
+      tlist->postInsert(tlist, &auxToken);
+      tlist->insertLast(tlist, actToken);
+      *actToken = nextToken();
       break;
-    case priorGrt:
-      int rule;
-      if (syntx_useRule(statStack, &rule))
+    case precGrt:
+      if (!syntx_useRule(tlist))
       {
-        DPRINT(("SyntaxAnalyzer: used rule number %d", rule));
-      }
-      else {
         scan_raiseCodeError(syntaxErr);
       }
       break;
     default:
-      apperr_runtimeError("SyntaxAnalyzer.c: unsupported symbol!");
+      apperr_runtimeError("SyntaxAnalyzer.c: internal error!");
     }
-  }while(terminal == eol && token->type == eol)
+  } while (terminal == eol && actToken->type == eol);
 }
 
 
-void syntx_analyzeCode()
+void syntx_init()
 {
-  //---------init-----------
-  statStack = TGrStack_create();
-
-  //---------Parse----------
-  syntx_statAnalyze();
-
+  tlist = TTkList_create();
 }
 

@@ -90,6 +90,8 @@ struct pointerStack{
 */
 TTkList TTkList_create();
 
+void TTkList_print(TTkList);
+
 /**
 * Initialize empty pointer stack and returns its pointer.
 */
