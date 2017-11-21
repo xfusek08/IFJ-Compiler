@@ -15,10 +15,11 @@
 #include "stacks.h"
 #include "appErr.h"
 
-#define DPRINT(x) printf x
+#define DPRINT(x) fprintf(stderr, x); fprintf(stderr, "\n")
+#define DDPRINT(x, y) fprintf(stderr, x, y); fprintf(stderr, "\n")
 
 SToken token; //loaded token, we might want to have array/list of tokens for code generation
-TGrStack statStack; //stack used in syntx_statAnalyze()
+TTkList tlist; //list used as stack in syntx_processExpression
 
 //radim******
 /**
@@ -65,7 +66,7 @@ int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn)
     return 0;
   }
 
-  precRtrn = precTable[stackSymb][inputSymb]; // save to reference variable
+  *precRtrn = precTable[stackSymb][inputSymb]; // save to reference variable
 
   return 1;
 }
@@ -243,20 +244,17 @@ int isTerminal(EGrSymb symb)
 }
 
 /**
-* returns closest terminal to top of the stack
+* returns closest terminal to top of the stack (its acually list). 
+\post Token with terminal in list is set as active item
 */
-EGrSymb syntx_getFirstTerminal(TGrStack stack, int *position)
+EGrSymb syntx_getFirstTerminal(TTkList list)
 {
-  for (int i = 0; i < stack->count; i++)
-  {
-    EGrSymb symb = stack->grArray[i];
-    if (isTerminal(symb))
-    {
-      *position = i;
-      return symb;
-    }
-  }                                                                                 
-  scan_raiseCodeError(syntaxErr);
+  list->activate(list);
+  while (list->getActive(list) != NULL) {
+    if (isTerminal(list->active->token.type))
+      return list->active->token.type;
+    list->prev(list);
+  }
   return eol;
 }
 
@@ -265,81 +263,117 @@ EGrSymb syntx_getFirstTerminal(TGrStack stack, int *position)
 */
 void statSemantic(int ruleNum)
 {
-  DPRINT(("Semantic statement analyze: Received rule number %d", ruleNum));
+  DDPRINT("Semantic statement analyze: Received rule number %d", ruleNum);
 }
 
-SToken *nextToken()
+SToken nextToken()
 {
   if (!scan_GetNextToken(&token))
   {
     fprintf(stderr, "File unexpectedly ended.");
     scan_raiseCodeError(syntaxErr);
   }
+  DDPRINT("new token: %d", token.type);
   return token;
 }
 
-int syntx_useRule(TGrStack stack, int *usedRule)
+/* Use syntax rule at the end of the list. If there is no valid combination, returns zero. */
+int syntx_useRule(TTkList list)
 {
+  DPRINT("Entering useRule()");
+  list->activate(list);
+  while (list->getActive(list)->type != precLes)
+  {
+    list->prev(list);
+    if (list->getActive(list) == NULL)
+      return 0;
+  }
+  list->next(list);
+  //SToken nonTerm;
+  switch (list->getActive(list)->type)
+  {
+  case ident:
+    list->getActive(list)->type = NT_EXPR;
+    //list->prev(list);
+    //list->postDelete(list);
+    //nonTerm.type = NT_EXPR;
+    //list->postInsert(list, nonTerm)
+    break;
+  //case NT_EXPR:
+
+  default:
+    return 0;
+  }
+  //test end of stack
+  if (list->active->next != NULL)
+    return 0;
+
+  //delete <
+  list->preDelete(list);
+  DPRINT("leaving useRule()");
   return 1;
 }
 
 /**
 * Precedent statement analyze
 */
-void syntx_statAnalyze()
+void syntx_processExpression(SToken *actToken, const char *frame, const char *ident, DataType datatype)
 {
-  statStack->push(statStack, eol);
-  SToken *token - nextToken();
+  SToken auxToken;
+  auxToken.type = eol;
+  tlist->insertLast(tlist, &auxToken);
+  
+  DPRINT("po pushnuti eol");
 
+  *actToken = nextToken();
+  EGrSymb terminal;
   do {
-    int terminalPosition;
-    EGrSymb terminal = syntx_getFirstTerminal(statStack, &terminalPosition);
+     terminal = syntx_getFirstTerminal(tlist);
 
     //debug print
-    DPRINT(("Analyzing token: %d\n", token->type));
-    DPRINT(("First terminal on stack: %d\n", terminal));
+    DDPRINT("Analyzing token: %d", actToken->type);
+    DDPRINT("First terminal on stack: %d", terminal);
 
     EGrSymb tablesymb;
-    if (!Table(terminal, token->type, &tablesymb))
+    //TODO: handle function identifier somehow
+    if (!syntx_getPrecedence(terminal, actToken->type, &tablesymb))
     {
       scan_raiseCodeError(syntaxErr);
     }
-
+    DDPRINT("Table: %d", tablesymb);
     switch (tablesymb)
     {
-    case priorEq:
-      statStack->push(statStack, token->type);
-      token = nextToken();
+    case precEqu:
+      tlist->insertLast(tlist, actToken);
+      *actToken = nextToken();
       break;
-    case priorLess:
-      TGrStack_postInsert(statStack, terminalPosition, priorLess);
-      statStack->push(statStack, token->type);
-      token = nextToken();
+    case precLes:
+      auxToken.type = precLes;
+      tlist->postInsert(tlist, &auxToken);
+      tlist->insertLast(tlist, actToken);
+      *actToken = nextToken();
       break;
-    case priorGrt:
-      int rule;
-      if (syntx_useRule(statStack, &rule))
+    case precGrt:
+      if (!syntx_useRule(tlist))
       {
-        DPRINT(("SyntaxAnalyzer: used rule number %d", rule));
-      }
-      else {
         scan_raiseCodeError(syntaxErr);
       }
       break;
     default:
-      apperr_runtimeError("SyntaxAnalyzer.c: unsupported symbol!");
+      apperr_runtimeError("SyntaxAnalyzer.c: internal error!");
     }
-  }while(terminal == eol && token->type == eol)
+    DPRINT("po jedne iteraci");
+  } while (!(terminal == eol && actToken->type == eol));
+  DPRINT("konec vyrazu.");
+  (void)ident;
+  (void)frame;
+  (void)datatype;
 }
 
 
-void syntx_analyzeCode()
+void syntx_init()
 {
-  //---------init-----------
-  statStack = TGrStack_create();
-
-  //---------Parse----------
-  syntx_statAnalyze();
-
+  tlist = TTkList_create();
+  DPRINT("precedent syntax init");
 }
 
