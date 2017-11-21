@@ -21,20 +21,18 @@
 typedef enum
 {
   /* TERMINALS */
+  
   /* operators and other*/
   /* DON'T CHANGE IT PART - used to index the array */
   opPlus = 0, opMns, opMul, opDiv, opDivFlt, opLeftBrc, opRightBrc, ident, opSemcol, 
   opEq, /*TODO: opNotEq?*/ opLes, opLessEq, opGrt, opGrtEq, opPlusEq, opMnsEq, opMulEq, opDivEq, opDivFltEq, asng, eol,
   /* END OF DON'T CHANGE IT PART */
-  opComma,
+  opComma, dataType,
 
   /* key words */
   kwAs, kwAsc, kwDeclare, kwDim, kwDo, kwElse, kwEnd, kwFunction, kwIf, kwInput, kwLength, kwLoop,
   kwPrint, kwReturn, kwScope, kwSubStr, kwThen, kwWhile, kwAnd, kwContinue, kwElseif, kwExit, kwFalse, kwFor,
-  kwNext, kwNot, kwOr, kwShared, kwStatic, kwTrue, kwTo, kwUntil,
-
-  /* other */
-  dataType,
+  kwNext, kwNot, kwOr, kwShared, kwStatic, kwTrue, kwTo, kwUntil,  
 
   /* NON-TERMINALS */
   NT_PROG = 1000,          // Program - staritng non-terminal
