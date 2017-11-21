@@ -21,9 +21,12 @@
 typedef enum
 {
   /* TERMINALS */
-  /* operators */
-  opPlus = 0, opMns, opMul, opDiv, opDivFlt, opPlusEq, opMnsEq, opMulEq, opDivEq, opDivFltEq, opEq, opLes, opGrt,
-  opLessEq, opGrtEq, opLeftBrc, opRightBrc, opSemcol, opComma,
+  /* operators and other*/
+  /* DON'T CHANGE IT PART - used to index the array */
+  opPlus = 0, opMns, opMul, opDiv, opDivFlt, opLeftBrc, opRightBrc, ident, opSemcol, 
+  opEq, /*TODO: opNotEq?*/ opLes, opLessEq, opGrt, opGrtEq, opPlusEq, opMnsEq, opMulEq, opDivEq, opDivFltEq, asng, eol,
+  /* END OF DON'T CHANGE IT PART */
+  opComma,
 
   /* key words */
   kwAs, kwAsc, kwDeclare, kwDim, kwDo, kwElse, kwEnd, kwFunction, kwIf, kwInput, kwLength, kwLoop,
@@ -31,7 +34,7 @@ typedef enum
   kwNext, kwNot, kwOr, kwShared, kwStatic, kwTrue, kwTo, kwUntil,
 
   /* other */
-  ident, asng, eol, dataType,
+  dataType,
 
   /* NON-TERMINALS */
   NT_PROG,          // Program - staritng non-terminal
@@ -49,7 +52,10 @@ typedef enum
   NT_INIF_EXT,      // extension of body of if statement
   NT_EXPR_LIST,     // list of expression for print function
   NT_EXPR,          // one expresion
-  NT_ARGUMENT_LIST  // list of expression separated by comma
+  NT_ARGUMENT_LIST,  // list of expression separated by comma
+
+  /* Precedence table symbols */
+  precLes, precEqu, precGrt, precUnd
 } EGrSymb;
 
 /**
@@ -110,7 +116,7 @@ first(NT_STAT) = {
 17. NT_STAT -> kwPrint NT_EXPR_LIST
 18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf eol
 19. NT_STAT -> kwDim iden kwAs dataType NT_ASSINGEXT
-20. NT_STAT -> ident asng NT_EXPR
+20. NT_STAT -> NT_EXPR                                                          // EDIT from: ident asng NT_EXPR
 21. NT_STAT -> kwContinue
 22. NT_STAT -> kwExit
 23. NT_STAT -> NT_SCOPE

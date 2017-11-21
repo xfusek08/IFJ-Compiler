@@ -21,82 +21,43 @@ TGrStack statStack; //stack used in syntx_statAnalyze()
 
 //radim******
 /**
-* Returns 0 if symbol is not defined, otherwise procLess, procEq, procGrt
+* Returns precUnd if symbol is not defined, otherwise precLes, precEq, precGrt
 * stackSymb symbol on top of stack
 * inputSymb symbol from end of expression
 */
-int precTable(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *ref)
+int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb)
 {
+  if(stackSymb > 21 || inputSymb > 21){
+    return precUnd;
+  }
 
-/*
-  typedef struct{
-    EGrSymb stackSymb;
-    EGrSymb inputSymb;
-    EGrSymb priority;
-  } precTableItem;
-
-  int placeholder = 1486456;
-
-  const precTableItem precTable[] = {
-    //line 1
-    {opPlus, opPlus, procGrt},
-    {opPlus, opMns, procGrt},
-    {opPlus, opMul, procGrt},
-    {opPlus, opDiv, procGrt},
-    {opPlus, opDivFlt, procGrt},
-    {opPlus, opLeftBrc, procGrt},
-    {opPlus, opRightBrc, procGrt},
-    {opPlus, placeholder, procGrt}, //TODO: i
-    {opPlus, kwFunction, procGrt},
-    {opPlus, opMul, procGrt},
-    {opPlus, opMul, procGrt},
-    {opPlus, opMul, procGrt},
-    {opPlus, opMul, procGrt},
-    //line 2
+  EGrSymb precTable[22][22] = {
+             /* + */   /* - */  /* * */   /* / */  /* \ */  /* ( */  /* ) */  /* i */  /* , */  /* = */  /* <> */         /* < */  /* <= */ /* > */  /* >= */ /* += */ /* -= */ /* *= */ /* /= */ /* \= */ /* := */ /* $ */
+    /* +  */ {precGrt, precGrt, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* +  */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* -  */ {precGrt, precGrt, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* -  */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* *  */ {precGrt, precGrt, precGrt, precGrt, precGrt, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* *  */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* /  */ {precGrt, precGrt, precGrt, precGrt, precGrt, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* /  */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* \  */ {precGrt, precGrt, precLes, precLes, precGrt, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* \  */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* (  */ {precLes, precLes, precLes, precLes, precLes, precLes, precEqu, precLes, precEqu, precLes, precLes, /* (  */ precLes, precLes, precLes, precLes, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precUnd},
+    /* )  */ {precGrt, precGrt, precGrt, precGrt, precGrt, precUnd, precGrt, precUnd, precGrt, precGrt, precGrt, /* )  */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* i  */ {precGrt, precGrt, precGrt, precGrt, precGrt, precUnd, precGrt, precUnd, precGrt, precGrt, precGrt, /* i  */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* ,  */ {precLes, precLes, precLes, precLes, precLes, precLes, precLes, precLes, precEqu, precLes, precLes, /* ,  */ precLes, precLes, precLes, precLes, precLes, precLes, precLes, precLes, precLes, precLes, precLes},
+    /* =  */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* =  */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* <> */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* <> */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* <  */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* <  */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* <= */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* <= */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* >  */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* >  */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* >= */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* >= */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* += */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precLes, precLes, /* += */ precLes, precLes, precLes, precLes, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* -= */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precLes, precLes, /* -= */ precLes, precLes, precLes, precLes, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* *= */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precLes, precLes, /* *= */ precLes, precLes, precLes, precLes, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* /= */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precLes, precLes, /* /= */ precLes, precLes, precLes, precLes, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* \= */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precLes, precLes, /* \= */ precLes, precLes, precLes, precLes, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* := */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precLes, precLes, /* := */ precLes, precLes, precLes, precLes, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt},
+    /* $  */ {precLes, precLes, precLes, precLes, precLes, precLes, precUnd, precLes, precLes, precLes, precLes, /* $  */ precLes, precLes, precLes, precLes, precLes, precLes, precLes, precLes, precLes, precLes, precUnd}
   };
 
-  if(stackSymb == opPlus){  // stack: +
-    
-  }else if(stackSymb == opMns){ // stack: -
-
-  }else if(stackSymb == opMul){ // stack: *
-
-  }else if(stackSymb == opDiv){ // stack: /
-
-  }else if(stackSymb == opDivFlt){  // stack: '\'
-
-  }else if(stackSymb == opLeftBrc){ // stack: (
-
-  }else if(stackSymb == opRightBrc){  // stack: )
-
-  }else if(stackSymb == opMns){ // stack: TODO: i
-
-  }else if(stackSymb == kwFunction){ // stack: function
-
-  }else if(stackSymb == opComma){ // stack: ,
-
-  }else if(stackSymb == opEq){ // stack: ==
-
-  }else if(stackSymb == opMns){ // stack: TODO: not equal
-
-  }else if(stackSymb == opLes){ // stack: <
-
-  }else if(stackSymb == opLessEq){ // stack: <=
-
-  }else if(stackSymb == opGrt){ // stack: >
-
-  }else if(stackSymb == opGrtEq){ // stack: >=
-
-  }else if(stackSymb == opMns){ // stack: TODO: end of expression
-
-  }
-
-  //stack symbol has greater priority than input symbol
-  switch(stackSymb == "+"){
-    case inputSymb == "+":
-      break;
-  }
-  */
+  return precTable[stackSymb][inputSymb];
 }      
 //radim konec*************
 
