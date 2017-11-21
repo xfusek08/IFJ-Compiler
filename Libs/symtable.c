@@ -129,9 +129,9 @@ void TSymbol_destroy(TSymbol symbol)
     if (symbol->type == symtFuction)
     {
       if (symbol->data.funcData.arguments != NULL)
-        mmng_safeFree(symbol->data.funcData.arguments);
+        TArgList_destroy(symbol->data.funcData.arguments);
       if (symbol->data.funcData.label != NULL)
-        mmng_safeFree(symbol->data.funcData.arguments);
+        mmng_safeFree(symbol->data.funcData.label);
     }
     else if (symbol->type == symtConstant || symbol->dataType == dtString)
     {
