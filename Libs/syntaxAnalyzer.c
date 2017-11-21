@@ -29,7 +29,7 @@ TGrStack statStack; //stack used in syntx_statAnalyze()
 int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb)
 {
   if(stackSymb > 21 || inputSymb > 21){
-    return precUnd;
+    scan_raiseCodeError(syntaxErr);
   }
 
   EGrSymb precTable[22][22] = {
@@ -58,8 +58,12 @@ int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb)
     /* $  */ {precLes, precLes, precLes, precLes, precLes, precLes, precUnd, precLes, precLes, precLes, precLes, /* $  */ precLes, precLes, precLes, precLes, precLes, precLes, precLes, precLes, precLes, precLes, precUnd}
   };
 
+  if(precTable[stackSymb][inputSymb] == precUnd){
+    scan_raiseCodeError(syntaxErr);
+  }
+
   return precTable[stackSymb][inputSymb];
-}      
+}
 //radim konec*************
 
 /**

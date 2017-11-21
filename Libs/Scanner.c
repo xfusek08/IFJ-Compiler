@@ -28,7 +28,7 @@ int scan_GetNextToken(SToken *token)
   return 1;
 }
 
-void scan_raiseCodeError(ErrorType typchyby)
+void scan_raiseCodeError(ErrType typchyby)
 {
-  fprintf("Scanner> some error!");
+  fprintf(stderr, "Scanner> some error!");
 }
