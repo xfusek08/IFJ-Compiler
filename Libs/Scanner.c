@@ -13,13 +13,16 @@
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <math.h>
 #include "Scanner.h"
 #include "symtable.h"
 #include "MMng.h"
+//#include "appErr.h"
 
 //LAnalyzer
 typedef struct LAnalyzer *TLAnalyzer;
 struct LAnalyzer {
+  int alocStr;
   int curentLine;
   int position;
   int lineSize; //in CHUNKS
@@ -34,6 +37,7 @@ TLAnalyzer Scanner_create()
 {
   TLAnalyzer newScanner = (TLAnalyzer)mmng_safeMalloc(sizeof(struct LAnalyzer));
 
+  newScanner->alocStr = 1;
   newScanner->curentLine = 0;
   newScanner->position = 0;
   newScanner->lineSize = 1;
@@ -50,16 +54,18 @@ void Scanner_init()
     apperr_runtimeError("Scanner is already initialized.");
   Scanner = Scanner_create();
 }
-/*
-void scan_raiseCodeError(ErrorType typchyby)
+
+//
+void scan_raiseCodeError(ErrType typchyby)
 {
-  //TODO
+  apperr_codeError(typchyby, Scanner->curentLine, Scanner->position, Scanner->line);
 }
-*/
+
 
 //Function for alocating line for scanner
 void get_line()
 {
+  Scanner->curentLine++;
   int charCounter = 0;
   while(((Scanner->line[charCounter] = getchar()) != '\n'))
   {
@@ -82,25 +88,38 @@ void delete_comment(bool isLine)
   //Delete line comment
   if(isLine == true)
   {
-    Scanner->curentLine++;
     get_line();
   }
   //Looking for ending characters of multi-line comment  
   else
   {
     int charCounter = 0;
-    while(!(Scanner->line[charCounter] == '\'' && Scanner->line[charCounter + 1] == '/') && Scanner->line[charCounter + 1] != '\0')
+    while(!(Scanner->line[charCounter] == '\'' && Scanner->line[charCounter + 1] == '/') && Scanner->line[charCounter + 1] != EOF)
     {
       if(Scanner->line[charCounter + 1] == '\0')
       {
-        Scanner->curentLine++;
         get_line(Scanner);
         charCounter = -1;
       }
       charCounter++;  
     }
-    Scanner->position = charCounter + 1;
+    Scanner->position = charCounter + 2;
   }
+}
+
+//Function for hashing string
+void hash_string(char *string, char *hashString)
+{
+  int value = 0;
+  int exp = 1;
+  int i = 0;
+  while(string[i] != '\0')
+  {
+    value += exp * string[i];
+    exp *= 10;
+    i++;  
+  }
+  sprintf(hashString, "sh@%d", value);
 }
 
 //Comparing given string with keyWords
@@ -127,7 +146,7 @@ EGrSymb isKeyWord(char *tokenID)//Change name
   {
     if(strcmp(str, sArray[i]) == 0) //maybe as long as != Until
     {
-      tokenType = i + 20;   
+      tokenType = i + 23;   
     }
     i++;
   }
@@ -161,6 +180,7 @@ SToken scan_GetNextToken()
   char *stringVal = NULL;
   bool boolVal = true;
   //helping variables
+  char *hasStr = NULL;
   int state = 0;
   int position = 0;
   bool allowed = false;
@@ -269,7 +289,7 @@ SToken scan_GetNextToken()
         }
         else
         {
-          //error
+          scan_raiseCodeError(lexicalErr);
         }
         allowed = true;
         break;
@@ -282,6 +302,7 @@ SToken scan_GetNextToken()
       case '!':
         state = 0;
         position--;
+        allowed = true;
         if(Scanner->line[Scanner->position] == '\"')
         {
           state = 1;
@@ -308,9 +329,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  //ERROR
-                  printf("ERROR \n");
-                  state = 5;
+                  scan_raiseCodeError(lexicalErr);
                 }
                 break;
               case 2:
@@ -326,9 +345,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  //ERROR
-                  printf("ERROR \n");
-                  state = 5;
+                  scan_raiseCodeError(lexicalErr);
                 }
                 break;
               case 3:
@@ -339,9 +356,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  //ERROR
-                  printf("ERROR \n");
-                  state = 5;
+                  scan_raiseCodeError(lexicalErr);
                 }
                 break;
               case 4:
@@ -352,9 +367,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  //ERROR
-                  printf("ERROR \n");
-                  state = 5;
+                  scan_raiseCodeError(lexicalErr);
                 }
                 break; 
             }    
@@ -363,17 +376,27 @@ SToken scan_GetNextToken()
           type = symtConstant;
           dataType = dtString;
           tokenID[position] = '\0';
+          if(position < 10)
+          {
+            hasStr = mmng_safeMalloc(sizeof(char) * position * 3 + 4);//asci az 127(3 znaky) za znak + sh@(3 znaky) + '\0'
+            hash_string(tokenID, hasStr);
+          }
+          else
+          {
+            hasStr = mmng_safeMalloc(sizeof(char) * floor(log10(abs(Scanner->alocStr))) + 4); //s@'number'\0
+            sprintf(hasStr, "s@%d", Scanner->alocStr);
+            Scanner->alocStr++;    
+          }
           stringVal = util_StrHardCopy(tokenID);
         }
         else if(Scanner->line[Scanner->position] == '=')
         {
-          allowed = true;
           Scanner->position++;
           tokenType = opNotEq;
         }
         else
         {
-          //ERROR
+          scan_raiseCodeError(lexicalErr);
         }
         break;
       //End of line
@@ -441,9 +464,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  //ERROR
-                  printf("ERROR");
-                  state = 5;
+                  scan_raiseCodeError(lexicalErr);
                 }
                 break;
               case 1:
@@ -460,9 +481,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  //ERROR
-                  printf("ERROR");
-                  state = 5;
+                  scan_raiseCodeError(lexicalErr);
                 }
                 break;
               case 2:
@@ -483,9 +502,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  //ERROR
-                  printf("ERROR");
-                  state = 5;
+                  scan_raiseCodeError(lexicalErr);
                 }
                 break;
               case 3:
@@ -505,9 +522,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  //ERROR
-                  printf("ERROR");
-                  state = 5;
+                  scan_raiseCodeError(lexicalErr);
                 }
                 break;
               case 4:
@@ -527,9 +542,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  //ERROR
-                  printf("ERROR");
-                  state = 5;
+                  scan_raiseCodeError(lexicalErr);
                 }
                 break;
             }
@@ -570,9 +583,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  //ERROR
-                  printf("ERROR");
-                  state = 3;
+                  scan_raiseCodeError(lexicalErr);
                 }
                 break;
               case 1:
@@ -590,9 +601,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  //ERROR
-                  printf("ERROR");
-                  state = 3;
+                  scan_raiseCodeError(lexicalErr);
                 }
                 break;
               case 2:
@@ -603,9 +612,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  //ERROR
-                  printf("ERROR");
-                  state = 3;
+                  scan_raiseCodeError(lexicalErr);
                 }
                 break;
             }
@@ -621,14 +628,22 @@ SToken scan_GetNextToken()
         //Error
         else
         {
-          //scan_raiseCodeError(ErrorType typchyby);//TODO
+          scan_raiseCodeError(lexicalErr);
         }
     }
   }
   //Filing returning token with values
   if(tokenType == ident || tokenType == kwTrue || tokenType == kwFalse)
   {
-    symbol = symbt_findOrInsertSymb(tokenID);
+    if(type == symtConstant && dataType == dtString && hasStr != NULL)
+    {
+      symbol = symbt_findOrInsertSymb(hasStr);
+      mmng_safeFree(hasStr);  
+    }
+    else
+    {
+      symbol = symbt_findOrInsertSymb(tokenID);
+    }
     symbol->type = type;
     symbol->dataType = dataType;
     symbol->data.boolVal = boolVal;
