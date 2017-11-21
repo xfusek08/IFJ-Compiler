@@ -38,7 +38,7 @@ typedef enum
   NT_ASSINGEXT,     // Assignement (...  [as datatype])
   NT_SCOPE,         // Scope statement where local variables can be owerriten.
   NT_PARAM_LIST,    // list of parameters for function
-  NT_PARAM,         // one parameter
+  NT_PARAM,         // one or more parameters
   NT_PARAM_EXT,     // continue of param list
   NT_STAT_LIST,     // list of statements
   NT_STAT,          // one statement

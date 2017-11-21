@@ -25,13 +25,14 @@
 #include "grammar.h"
 #include "rParser.h"
 #include "syntaxAnalyzer.h"
+#include "stacks.h"
 
 // =============================================================================
 // ====================== Supportive function macros  ==========================
 // =============================================================================
 
 #define NEXT_TOKEN(T) *T = scan_GetNextToken()
-#define CHECK_TOKEN(T, S) if (T->type != S) scan_raiseCodeError(syntaxErr, "")
+#define CHECK_TOKEN(T, S) if (T->type != S) scan_raiseCodeError(syntaxErr, "\"S\" token expected")
 #define NEXT_CHECK_TOKEN(T, S) NEXT_TOKEN(T); CHECK_TOKEN(T, S)
 
 
@@ -40,7 +41,7 @@
 // =============================================================================
 void ck_NT_PROG(SToken *actToken); 					// Program - staritng non-terminal
 void ck_NT_DD(SToken *actToken); 						// definitions and declarations section
-void ck_NT_ASSINGEXT(                            // Assignement (...  [as datatype])
+void ck_NT_ASSINGEXT(                       // Assignement (...  [as datatype])
   SToken *actToken,
   const char *frame,
   const char *ident,
@@ -50,7 +51,10 @@ void ck_NT_PARAM_LIST(                      // list of parameters for function
   SToken *actToken,
   int *parCnt,
   DataType **params);
-void ck_NT_PARAM(SToken *actToken); 				// one parameter
+void ck_NT_PARAM( 				                  // one or more parameters
+  SToken *actToken,
+  int *parCnt,
+  DataType **params);
 void ck_NT_PARAM_EXT(SToken *actToken); 		// continue of param list
 void ck_NT_STAT_LIST(SToken *actToken); 		// list of statements
 void ck_NT_STAT(SToken *actToken); 					// one statement
@@ -254,8 +258,20 @@ void ck_NT_ASSINGEXT(SToken *actToken, const char *frame, const char *ident, Dat
 // first(NT_SCOPE) = { kwScope -> (8); else -> (error) }
 void ck_NT_SCOPE(SToken *actToken)
 {
-  (void)actToken;
-  // 8. NT_SCOPE -> kwScope NT_STAT_LIST kwEnd kwScope eol
+  switch (actToken->type)
+  {
+    // 8. NT_SCOPE -> kwScope NT_STAT_LIST kwEnd kwScope eol
+    case kwScope:
+      NEXT_TOKEN(actToken);
+      ck_NT_STAT_LIST(actToken);
+      CHECK_TOKEN(actToken, kwEnd); // statement list must ends on end key word
+      NEXT_CHECK_TOKEN(actToken, kwScope);
+      NEXT_CHECK_TOKEN(actToken, eol);
+      break;
+    default:
+      scan_raiseCodeError(syntaxErr, "\"scope\" token expected.");
+      break;
+  }
 }
 
 // list of parameters for function
@@ -264,19 +280,38 @@ void ck_NT_SCOPE(SToken *actToken)
 // first(NT_PARAM_LIST) = { first(NT_PARAM) -> (9); else -> (10 [epsilon]) }
 void ck_NT_PARAM_LIST(SToken *actToken, int *parCnt, DataType **params)
 {
-  (void)actToken;
-  (void)parCnt;
-  (void)params;
-  // 9.  NT_PARAM_LIST -> NT_PARAM
-  // 10. NT_PARAM_LIST -> (epsilon)
+
+  switch (actToken->type)
+  {
+    // 9.  NT_PARAM_LIST -> NT_PARAM
+    case ident:
+      ck_NT_PARAM(actToken, parCnt, params);
+      break;
+    // 10. NT_PARAM_LIST -> (epsilon)
+    default:
+      // let it be
+      break;
+  }
 }
 
-// one parameter
+// one or more parameters
 // first(NT_PARAM) = { ident -> (11); else -> (error) }
-void ck_NT_PARAM(SToken *actToken)
+void ck_NT_PARAM(SToken *actToken, )
 {
-  (void)actToken;
-  // 11. NT_PARAM -> ident kwAs dataType NT_PARAM_EXT
+  switch (actToken->type)
+  {
+    // 9.  NT_PARAM_LIST -> NT_PARAM
+    case ident:
+      NEXT_CHECK_TOKEN(actToken, kwAs);
+      NEXT_CHECK_TOKEN(actToken, dataType);
+      *parCnt++;
+      *dataType[]
+      break;
+    // 11. NT_PARAM -> ident kwAs dataType NT_PARAM_EXT
+    default:
+      scan_raiseCodeError("identifier token is requed.");
+      break;
+  }
 }
 
 // continue of param list
