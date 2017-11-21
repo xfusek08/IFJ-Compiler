@@ -4,7 +4,7 @@
  * \file    symtable.c
  * \brief   Symbol table implementation
  * \author  Petr Fusek (xfusek08)
- * \date    15.11.2017 - Petr Fusek
+ * \date    21.11.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -32,6 +32,13 @@ struct STNode {
   TSTNode parent;   // parent node
   TSTNode left;     // root of lft sub-tree
   TSTNode right;    // root of right sub-tree
+};
+
+// node of AVL tree main root with no parent reprezenting one symbol table
+typedef struct SymTable *TSymTable;
+struct SymTable {
+  TSTNode root;         // root of table
+  bool isTransparent;   // true if finding symbol is suppose to continue to lower table on stack (scope)
 };
 
 // global internal instance of symbol table stack
@@ -368,9 +375,11 @@ TSTNode TSTNode_delete(TSTNode self, char *key, bool *deleted)
   // find node to be delete
   TSTNode toDelNode = TSTNode_find(self, key);
 
+  if (deleted != NULL)
+    *deleted = false;
+
   if (toDelNode == NULL)
   {
-    *deleted = false;
     return self;
   }
 
@@ -449,7 +458,51 @@ TSTNode TSTNode_delete(TSTNode self, char *key, bool *deleted)
   // destroy node non recursively (keep subtrees)
   TSTNode_destroy(toDelNode, false);
   TSTNode_balanceFromBottom(kritNode);
+  if (deleted != NULL)
+    *deleted = true;
   return TSTNode_getRoot(kritNode);
+}
+
+// =============================================================================
+// ====================== TSymTable implementation =============================
+// =============================================================================
+
+// constructor of TSymTable
+TSymTable TSymTable_create(bool transparent)
+{
+  TSymTable newST = (TSymTable)mmng_safeMalloc(sizeof(struct SymTable));
+  newST->isTransparent = transparent;
+  newST->root = NULL;
+  return newST;
+}
+
+// destructor of TSymTable
+void TSymTable_destroy(TSymTable self)
+{
+  TSTNode_destroy(self->root, true);
+  mmng_safeFree(self);
+}
+
+// finds symbol by identifier, NULL if not found
+TSymbol TSymTable_find(TSymTable self, char *ident)
+{
+  return TSTNode_find(self->root, ident)->symbol;
+}
+
+// inserts symbol with identifier, NULL if identifier exists
+TSymbol TSymTable_insert(TSymTable self, char *ident)
+{
+  TSTNode newNode = TSTNode_insert(self->root, ident);
+  if (newNode == NULL)
+    return NULL;
+  self->root = TSTNode_getRoot(newNode);
+  return newNode->symbol;
+}
+
+// deletes symbol witch given identifier
+void TSymTable_detete(TSymTable self, char *ident)
+{
+  self->root = TSTNode_delete(self->root, ident, NULL);
 }
 
 // =============================================================================
@@ -474,7 +527,7 @@ void symbt_init()
     apperr_runtimeError("symbt_init(): Symbol table is already initialized.");
 
   GLBSymbTabStack = TPStack_create();
-  symbt_pushFrame(); // insert initial frame
+  symbt_pushFrame(false); // insert global frame
 }
 
 //  Free of all symbol table stack
@@ -485,29 +538,29 @@ void symbt_destroy()
   while (!(GLBSymbTabStack->count == 1 && GLBSymbTabStack->top(GLBSymbTabStack) == NULL))
     symbt_popFrame();
 
-  // delete last left table on stack (pop left null)
+  // delete last left global table on stack (pop left null)
+  TSymTable_destroy(GLBSymbTabStack->top(GLBSymbTabStack));
+  // destroy stack
   GLBSymbTabStack->pop(GLBSymbTabStack);
   GLBSymbTabStack->destroy(GLBSymbTabStack); // destroy stack
   GLBSymbTabStack = NULL; // null global reference
 }
 
 // Creates new instance of symbol table on top of the stack
-void symbt_pushFrame()
+void symbt_pushFrame(bool transparent)
 {
   symbt_assertIfNotInit();
-  GLBSymbTabStack->push(GLBSymbTabStack, NULL);
+  GLBSymbTabStack->push(GLBSymbTabStack, TSymTable_create(transparent));
 }
 
 // Frees destroys symbol table on top of the stack.
 void symbt_popFrame()
 {
   symbt_assertIfNotInit();
-  TSTNode actST = GLBSymbTabStack->top(GLBSymbTabStack);
-  TSTNode_destroy(actST, true);
-  if (GLBSymbTabStack->count > 1)
-    GLBSymbTabStack->pop(GLBSymbTabStack);
-  else
-    GLBSymbTabStack->ptArray[0] = NULL;
+  TSymTable_destroy(GLBSymbTabStack->top(GLBSymbTabStack));
+  GLBSymbTabStack->pop(GLBSymbTabStack);
+  if (GLBSymbTabStack->count == 0) // if nothing left, push global frame
+    symbt_pushFrame(false);
 }
 
 // Count frames
@@ -524,19 +577,22 @@ TSymbol symbt_findSymb(char *ident)
   if (ident == NULL)
     apperr_runtimeError("Symbol table: NULL identifier while calling delete symbol method.");
 
-  // searching from top of the stack
-  for (int i = GLBSymbTabStack->count - 1; i >= 0; i--)
+  // load act table on top
+  TSymTable actTable = GLBSymbTabStack->top(GLBSymbTabStack);
+  TSymbol foundSymb = TSymTable_find(actTable, ident);
+  if (foundSymb != NULL)
+    return foundSymb;
+
+  // searching from top until searched table is not transparent or next on stack is global
+  for (int i = GLBSymbTabStack->count - 2; i > 0 && actTable->isTransparent; i--)
   {
-    // we storimg pointers on TSTNode NULL in stack means empty table but in existing frame
-    TSTNode actTable = GLBSymbTabStack->ptArray[i];
-    if (actTable != NULL)
-    {
-      TSTNode foundNode = TSTNode_find(actTable, ident);
-      if (foundNode != NULL)
-        return foundNode->symbol;
-    }
+    actTable = GLBSymbTabStack->ptArray[i];
+    foundSymb = TSymTable_find(actTable, ident);
+    if (foundSymb != NULL)
+      return foundSymb;
   }
-  return NULL;
+  // search global table
+  return TSymTable_find(GLBSymbTabStack->ptArray[0], ident);
 }
 
 // Finds symbol by identifier or creates new symbol if it's not found.
@@ -559,44 +615,17 @@ TSymbol symbt_insertSymbOnTop(char *ident)
   if (ident == NULL)
     apperr_runtimeError("Symbol table: NULL identifier while calling delete symbol method.");
 
-  TSymbol resSymb = NULL;
-  TSTNode topTab = GLBSymbTabStack->top(GLBSymbTabStack);
-  if (topTab == NULL)
-  {
-    topTab = TSTNode_create(ident); // symbol is also created in this constructor
-    resSymb = topTab->symbol;
-  }
-  else
-    resSymb = TSTNode_insert(topTab, ident)->symbol;
-
-  // make sure that pointer on top of table stact is pointin on to root of tree
-  GLBSymbTabStack->ptArray[GLBSymbTabStack->count - 1] = TSTNode_getRoot(topTab);
-  return resSymb;
+  return TSymTable_insert(GLBSymbTabStack->top(GLBSymbTabStack), ident);
 }
 
-// Removes first occurrence of symbol from top of stack with given identifier
+// Removes symbol from top table in stack with identifier ident
 void symbt_deleteSymb(char *ident)
 {
   symbt_assertIfNotInit();
   if (ident == NULL)
     apperr_runtimeError("Symbol table: NULL identifier while calling delete symbol method.");
 
-  // searching from top of the stack
-  for (int i = GLBSymbTabStack->count - 1; i >= 0; i--)
-  {
-    // we storimg pointers on TSTNode NULL in stack means empty table but in existing frame
-    TSTNode actTable = GLBSymbTabStack->ptArray[i];
-    if (actTable != NULL)
-    {
-      bool deleted;
-      // Delete function returns new root of tree because order of nodes could be changed for balance
-      // and act root node could be deleted of shifted deeper into the tree
-      // or node on top could be only one in table in that case null is returned.
-      GLBSymbTabStack->ptArray[i] = TSTNode_delete(actTable, ident, &deleted);
-      if (deleted)
-        return;
-    }
-  }
+  TSymTable_detete(GLBSymbTabStack->top(GLBSymbTabStack), ident);
 }
 
 // =============================================================================
@@ -630,7 +659,11 @@ void TSTNode_print(TSTNode node, int depht)
 // Prints top table as binary tree into stdout
 void symbt_print()
 {
-  TSTNode_print(GLBSymbTabStack->top(GLBSymbTabStack), 0);
+  for (int i = GLBSymbTabStack->count - 1; i <= 0; i--)
+  {
+    printf("Symbol table [%d] -----------------------------------------------\n", i);
+    TSTNode_print(((TSymTable)GLBSymbTabStack->ptArray[i])->root, 0);
+  }
 }
 
 // Prints instance of TSymbol into stdout
@@ -669,16 +702,19 @@ void symbt_printSymb(TSymbol symbol)
       printf(" Function:\n");
       printf("\n    Label: \"%s\"\n", symbol->data.funcData.label);
       printf("    return type: %s\n", util_dataTypeToString(symbol->data.funcData.returnType));
-      printf("    Argument count: %d\n", symbol->data.funcData.argumentCount);
+      printf("    Defined: %s\n", (symbol->data.funcData.isDefined) ? "True" : "False");
+      printf("    Argument count: %d\n", symbol->data.funcData.arguments->count);
       printf("    Arguments: [");
-      for (int i = 0; i < symbol->data.funcData.argumentCount; i++)
+      TArgList arguments = symbol->data.funcData.arguments;
+      for (int i = 0; i < arguments->count; i++)
       {
-        printf("%s", util_dataTypeToString(symbol->data.funcData.arguments[i]));
-        if (i + 1 < symbol->data.funcData.argumentCount)
-          printf(", ");
+        printf("(%s as %s)",
+          arguments->get(arguments, i)->ident,
+          util_dataTypeToString(arguments->get(arguments, i)->dataType));
+        if (i + 1 < arguments->count)
+          printf("; ");
       }
       printf("]\n");
-      printf("    Defined: %s\n", (symbol->data.funcData.returnType) ? "True" : "False");
       break;
   }
 }

@@ -7,7 +7,7 @@
  * This package provides functions over global stack of symbol tables.
  *
  * \author  Petr Fusek (xfusek08)
- * \date    15.11.2017 - Petr Fusek
+ * \date    21.11.2017 - Petr Fusek
  */
 /******************************************************************************/
 
@@ -131,8 +131,10 @@ void symbt_destroy();
 
 /**
  * Creates new instance of symbol table on top of the stack
+ * \param bool transparent flag true if created frame is suppose to be transparent
+ * (searching for symbols continues on next table on stack)
  */
-void symbt_pushFrame();
+void symbt_pushFrame(bool transparent);
 
 /**
  * Frees destroys symbol table on top of the stack.
@@ -152,7 +154,8 @@ int symbt_cntFrames();
 /**
  * Finds symbol by indentifier
  *
- * It is search from top to bottom of stack.
+ * It is search in top frame and if there is not fouded searchs in global frame
+ * If table frame is transparent
  * \param  char* ident string identifier used as key
  * \returns TSymbol Fisrt occurrence of symbol with corresponding identifier, NULL if not exist
  */
@@ -182,8 +185,9 @@ TSymbol symbt_findOrInsertSymb(char *ident);
 TSymbol symbt_insertSymbOnTop(char *ident);
 
 /**
- * Removes first occurrence of symbol from top of stack with given identifier
+ * Removes symbol from top table in stack with identifier ident
  *
+ * Does nothing when such symbol not exists.
  * \param  char* ident string identifier used as key
  */
 void symbt_deleteSymb(char *ident);
