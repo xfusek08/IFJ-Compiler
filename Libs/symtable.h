@@ -28,14 +28,63 @@ typedef enum {
 } SymbolType;
 
 /**
- * Structure uset in data, containg information about Function symbol.
+ * Object reprezenting one argument in argument list (TArgList)
+ */
+typedef struct Argument *TArgument;
+struct Argument {
+  char *ident;        /*!< identifier of argument */
+  DataType dataType;  /*!< data type of argument */
+  TArgument next;     /*!< next argument in list */
+};
+
+/**
+ * Object reprezenting list of arguments
+ */
+typedef struct ArgList *TArgList;
+struct ArgList {
+  int count;        /*!< count of arguments in list */
+  TArgument head;   /*!< first argument in list */
+  TArgument tail;   /*!< last argument in list */
+  /**
+   * Get n-th arument from head in TArgList;
+   *
+   * \param TArgList self self reference
+   * \param int index n = index - position of agrument from begining
+   * \returns TArgument argument on position index
+   */
+  TArgument (*get)(TArgList self, int index);
+
+  /**
+   * Create new argument on the end of the list
+   *
+   * \param TArgList self self reference
+   * \param const char *ident identifier of new argument
+   * \param DataType dataType data type of new argument
+   * \returns TArgument new created argument
+   */
+  TArgument (*insert)(TArgList self, const char *ident, DataType dataType);
+};
+
+/**
+ * Constructor of argument list
+ * \returns TArgList new argument list
+ */
+TArgList TArgList_create();
+
+/**
+ * Destructor of argument list
+ * \param TArgList self self reference
+ */
+void TArgList_destroy(TArgList self);
+
+/**
+ * Structure used in data, containg information about Function symbol.
  */
 typedef struct {
-  char *label;          /*!< label of function used in outbut code */
+  char *label;          /*!< label of function used in output code */
   DataType returnType;  /*!< return type of function */
-  int argumentCount;    /*!< number of arguments */
-  DataType *arguments;  /*!< pointer to first item of array of arguments required by function in order. Lenght of array is equal to argumentCount */
   bool isDefined;       /*!< flag, true if function has been defined */
+  TArgList arguments;   /*!< List of arguments, NULL on initialization */
 } SFuncData;
 
 /**

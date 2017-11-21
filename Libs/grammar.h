@@ -21,7 +21,7 @@ typedef enum
 {
   /* TERMINALS */
   /* operators */
-  opPlus, opMns, opMul, opDiv, opDivFlt, opPlusEq, opMnsEq, opMulEq, opDivEq, opDivFltEq, opEq, opLes, opGrt,
+  opPlus, opMns, opMul, opDiv, opDivFlt, opPlusEq, opMnsEq, opMulEq, opDivEq, opDivFltEq, opEq, opNotEq, opLes, opGrt,
   opLessEq, opGrtEq, opLeftBrc, opRightBrc, opSemcol, opComma,
 
   /* key words */
