@@ -370,7 +370,7 @@ TSTNode TSTNode_insert(TSTNode self, char *key)
 TSTNode TSTNode_delete(TSTNode self, char *key, bool *deleted)
 {
   if (self == NULL || key == NULL)
-    apperr_runtimeError("Symbol table: NULL parameter while calling node delete method.");
+    apperr_runtimeError("Symbol table: NULL parameter while calling TSTNode_delete().");
 
   // find node to be delete
   TSTNode toDelNode = TSTNode_find(self, key);
@@ -486,12 +486,21 @@ void TSymTable_destroy(TSymTable self)
 // finds symbol by identifier, NULL if not found
 TSymbol TSymTable_find(TSymTable self, char *ident)
 {
-  return TSTNode_find(self->root, ident)->symbol;
+  TSTNode resNode = TSTNode_find(self->root, ident);
+  if (resNode != NULL)
+    return resNode->symbol;
+  return NULL;
 }
 
 // inserts symbol with identifier, NULL if identifier exists
 TSymbol TSymTable_insert(TSymTable self, char *ident)
 {
+  if (self->root == NULL)
+  {
+    self->root = TSTNode_create(ident);
+    return self->root->symbol;
+  }
+
   TSTNode newNode = TSTNode_insert(self->root, ident);
   if (newNode == NULL)
     return NULL;
@@ -502,7 +511,8 @@ TSymbol TSymTable_insert(TSymTable self, char *ident)
 // deletes symbol witch given identifier
 void TSymTable_detete(TSymTable self, char *ident)
 {
-  self->root = TSTNode_delete(self->root, ident, NULL);
+  if (self->root != NULL)
+    self->root = TSTNode_delete(self->root, ident, NULL);
 }
 
 // =============================================================================
@@ -535,7 +545,7 @@ void symbt_destroy()
 {
   symbt_assertIfNotInit();
   // make sure nothing stays in stack
-  while (!(GLBSymbTabStack->count == 1 && GLBSymbTabStack->top(GLBSymbTabStack) == NULL))
+  while (GLBSymbTabStack->count > 1)
     symbt_popFrame();
 
   // delete last left global table on stack (pop left null)
@@ -575,7 +585,8 @@ TSymbol symbt_findSymb(char *ident)
 {
   symbt_assertIfNotInit();
   if (ident == NULL)
-    apperr_runtimeError("Symbol table: NULL identifier while calling delete symbol method.");
+    apperr_runtimeError("Symbol table: NULL identifier while calling symbt_findSymb().");
+
 
   // load act table on top
   TSymTable actTable = GLBSymbTabStack->top(GLBSymbTabStack);
@@ -600,7 +611,7 @@ TSymbol symbt_findOrInsertSymb(char *ident)
 {
   symbt_assertIfNotInit();
   if (ident == NULL)
-    apperr_runtimeError("Symbol table: NULL identifier while calling delete symbol method.");
+    apperr_runtimeError("Symbol table: NULL identifier while calling symbt_findOrInsertSymb().");
 
   TSymbol foundSymb = symbt_findSymb(ident);
   if (foundSymb != NULL)
@@ -613,7 +624,7 @@ TSymbol symbt_insertSymbOnTop(char *ident)
 {
   symbt_assertIfNotInit();
   if (ident == NULL)
-    apperr_runtimeError("Symbol table: NULL identifier while calling delete symbol method.");
+    apperr_runtimeError("Symbol table: NULL identifier while calling symbt_insertSymbOnTop().");
 
   return TSymTable_insert(GLBSymbTabStack->top(GLBSymbTabStack), ident);
 }
@@ -623,7 +634,7 @@ void symbt_deleteSymb(char *ident)
 {
   symbt_assertIfNotInit();
   if (ident == NULL)
-    apperr_runtimeError("Symbol table: NULL identifier while calling delete symbol method.");
+    apperr_runtimeError("Symbol table: NULL identifier while calling symbt_deleteSymb().");
 
   TSymTable_detete(GLBSymbTabStack->top(GLBSymbTabStack), ident);
 }
@@ -659,9 +670,9 @@ void TSTNode_print(TSTNode node, int depht)
 // Prints top table as binary tree into stdout
 void symbt_print()
 {
-  for (int i = GLBSymbTabStack->count - 1; i <= 0; i--)
+  for (int i = GLBSymbTabStack->count - 1; i >= 0; i--)
   {
-    printf("Symbol table [%d] -----------------------------------------------\n", i);
+    printf("\nSymbol table [%d] -----------------------------------------------\n\n", i);
     TSTNode_print(((TSymTable)GLBSymbTabStack->ptArray[i])->root, 0);
   }
 }
