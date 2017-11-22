@@ -97,6 +97,28 @@ TArgument TArgList_insert(TArgList self, const char *ident, DataType dataType)
   return newArg;
 }
 
+bool TArgList_equals(TArgList list1, TArgList list2)
+{
+  if (list1 == list2)
+    return true;
+  if (list1->count != list2->count)
+    return false;
+
+  TArgument arg1 = list1->head;
+  TArgument arg2 = list2->head;
+
+  while(arg1 != NULL || arg2 != NULL)
+  {
+    if (strcmp(arg1->ident, arg2->ident) != 0)
+      return false;
+    if (arg1->dataType != arg2->dataType)
+      return false;
+    arg1 = arg1->next;
+    arg2 = arg2->next;
+  }
+  return arg1 == arg2; // both has to be NULL
+}
+
 // constructor of TArgList
 TArgList TArgList_create()
 {
@@ -106,6 +128,7 @@ TArgList TArgList_create()
   newArgList->tail = NULL;
   newArgList->get = TArgList_get;
   newArgList->insert = TArgList_insert;
+  newArgList->equals = TArgList_equals;
   return newArgList;
 }
 

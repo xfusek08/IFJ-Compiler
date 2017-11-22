@@ -49,12 +49,10 @@ void ck_NT_ASSINGEXT(                       // Assignement (...  [as datatype])
 void ck_NT_SCOPE(SToken *actToken); 				// Scope statement where local variables can be owerriten.
 void ck_NT_PARAM_LIST(                      // list of parameters for function
   SToken *actToken,
-  int *parCnt,
-  DataType **params);
+  TArgList parList);
 void ck_NT_PARAM( 				                  // one or more parameters
   SToken *actToken,
-  int *parCnt,
-  DataType **params);
+  TArgList parList);
 void ck_NT_PARAM_EXT(SToken *actToken); 		// continue of param list
 void ck_NT_STAT_LIST(SToken *actToken); 		// list of statements
 void ck_NT_STAT(SToken *actToken); 					// one statement
@@ -71,26 +69,14 @@ void ck_NT_ARGUMENT_LIS(SToken *actToken); 	// list of expression separated by c
 // ========================== Support functions  ===============================
 // =============================================================================
 
-// Checks equality of valuse in datatype array
-bool areDTArrayEqual(DataType *arr1, DataType *arr2, int count)
-{
-  for (int i = 0; i < count; i++)
-  {
-    if (arr1[i] != arr2[i])
-      return false;
-  }
-  return true;
-}
-
 // function for defining function
 // 3. NT_DD -> kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_STAT_LIST kwEnd kwFunction eol NT_DD
 void checkFunctionDefinition(SToken *actToken)
 {
-  bool isDeclared = false;
-  int parCnt = 0;
-  DataType *params = NULL;
-  DataType retType = dtUnspecified;
   TSymbol actSymbol = NULL;
+  bool isDeclared = false;
+  DataType retType = dtUnspecified;
+  TArgList parList = TArgList_create();
 
   NEXT_CHECK_TOKEN(actToken, kwFunction);
   NEXT_CHECK_TOKEN(actToken, ident);
@@ -114,7 +100,7 @@ void checkFunctionDefinition(SToken *actToken)
   NEXT_CHECK_TOKEN(actToken, opLeftBrc);
   NEXT_TOKEN(actToken);
   // checks params of function
-  ck_NT_PARAM_LIST(actToken, &parCnt, &params);
+  ck_NT_PARAM_LIST(actToken, parList);
   CHECK_TOKEN(actToken, opRightBrc); // param list ends on right bracket
   NEXT_CHECK_TOKEN(actToken, kwAs);
   NEXT_CHECK_TOKEN(actToken, dataType);
@@ -124,22 +110,31 @@ void checkFunctionDefinition(SToken *actToken)
   if (isDeclared)
   {
     // check if definition responds to declaration
-    if (parCnt != actSymbol->data.funcData.argumentCount ||
-        retType != actSymbol->data.funcData.returnType ||
-        !areDTArrayEqual(params, actSymbol->data.funcData.arguments, parCnt))
+    if (!(parList->equals(parList, actSymbol->data.funcData.arguments)) ||
+        retType != actSymbol->data.funcData.returnType)
       scan_raiseCodeError(semanticErr, "Function definition does not match with declaration.");
+
     // TODO: specify error ... ?
+
+    TArgList_destroy(parList); // parameters aleready exists
   }
   else
   {
-    actSymbol->data.funcData.argumentCount = parCnt;
     actSymbol->data.funcData.returnType = retType;
-    actSymbol->data.funcData.arguments = params;
+    actSymbol->data.funcData.arguments = parList;
   }
   actSymbol->data.funcData.isDefined = true;
 
-  // body of funtion
-  symbt_pushFrame(); // lets create local variable frame for function
+  // body of function
+  symbt_pushFrame(false); // lets create local variable frame for function
+  // fill frame with argument symbols
+  for (int i = 0; i < parList->count; i++)
+  {
+    TArgument actArg = parList->get(parList, i);
+    TSymbol symb = symbt_insertSymbOnTop(actArg->ident);
+    symb->type = symtVariable;
+    symb->dataType = actArg->dataType;
+  }
   printf("LABEL %s\n", actSymbol->data.funcData.label);
   printf("PUSHFRAME\n");
   printf("DEFVAR LF@%%retval\n");
@@ -197,8 +192,10 @@ void ck_NT_DD(SToken *actToken)
       NEXT_CHECK_TOKEN(actToken, opLeftBrc);
       NEXT_TOKEN(actToken);
       // checks params of function
-      ck_NT_PARAM_LIST(actToken, &(actSymbol->data.funcData.argumentCount), &(actSymbol->data.funcData.arguments));
+      TArgList parList = TArgList_create();
+      ck_NT_PARAM_LIST(actToken, parList); // params are filled
       CHECK_TOKEN(actToken, opRightBrc); // param list ends on right bracket
+      actSymbol->data.funcData.arguments = parList;
       NEXT_CHECK_TOKEN(actToken, kwAs);
       NEXT_CHECK_TOKEN(actToken, dataType);
       actSymbol->data.funcData.returnType = actToken->dataType; // token is return type
@@ -262,11 +259,13 @@ void ck_NT_SCOPE(SToken *actToken)
   {
     // 8. NT_SCOPE -> kwScope NT_STAT_LIST kwEnd kwScope eol
     case kwScope:
+      symbt_pushFrame(true);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
       CHECK_TOKEN(actToken, kwEnd); // statement list must ends on end key word
       NEXT_CHECK_TOKEN(actToken, kwScope);
       NEXT_CHECK_TOKEN(actToken, eol);
+      symbt_popFrame();
       break;
     default:
       scan_raiseCodeError(syntaxErr, "\"scope\" token expected.");
@@ -275,17 +274,14 @@ void ck_NT_SCOPE(SToken *actToken)
 }
 
 // list of parameters for function
-// int *parCnt - number of parametrs
-// DataType **params - pointer to pointer to array of types of parametrs, array size is parCnt
 // first(NT_PARAM_LIST) = { first(NT_PARAM) -> (9); else -> (10 [epsilon]) }
-void ck_NT_PARAM_LIST(SToken *actToken, int *parCnt, DataType **params)
+void ck_NT_PARAM_LIST(SToken *actToken, TArgList parList)
 {
-
   switch (actToken->type)
   {
     // 9.  NT_PARAM_LIST -> NT_PARAM
     case ident:
-      ck_NT_PARAM(actToken, parCnt, params);
+      ck_NT_PARAM(actToken, parList);
       break;
     // 10. NT_PARAM_LIST -> (epsilon)
     default:
@@ -296,40 +292,75 @@ void ck_NT_PARAM_LIST(SToken *actToken, int *parCnt, DataType **params)
 
 // one or more parameters
 // first(NT_PARAM) = { ident -> (11); else -> (error) }
-void ck_NT_PARAM(SToken *actToken, )
+void ck_NT_PARAM(SToken *actToken, TArgList parList)
 {
+  char *id;
+  DataType dt;
   switch (actToken->type)
   {
     // 9.  NT_PARAM_LIST -> NT_PARAM
     case ident:
+      id = actToken->symbol->ident;
       NEXT_CHECK_TOKEN(actToken, kwAs);
       NEXT_CHECK_TOKEN(actToken, dataType);
-      *parCnt++;
-      *dataType[]
+      dt = actToken->dataType;
+      parList->insert(id, dt);
+      NEXT_TOKEN(actToken);
+      ck_NT_PARAM_EXT(actToken, parList);
       break;
     // 11. NT_PARAM -> ident kwAs dataType NT_PARAM_EXT
     default:
-      scan_raiseCodeError("identifier token is requed.");
+      scan_raiseCodeError("identifier token expected.");
       break;
   }
 }
 
 // continue of param list
 // first(NT_PARAM_EXT) = { opComma -> (12); else -> (13 [epsilon]) }
-void ck_NT_PARAM_EXT(SToken *actToken)
+void ck_NT_PARAM_EXT(SToken *actToken, TArgList parList)
 {
-  (void)actToken;
-  // 12. NT_PARAM_EXT -> opComma NT_PARAM
-  // 13. NT_PARAM_EXT -> (epsilon)
+  switch (actToken->type)
+  {
+    // 12. NT_PARAM_EXT -> opComma NT_PARAM
+    case opComma:
+      NEXT_TOKEN(actToken);
+      ck_NT_PARAM(actToken, parList);
+      break;
+    // 13. NT_PARAM_EXT -> (epsilon)
+    default:
+      // let it be
+      break;
+  }
 }
 
 // list of statements
 // first(NT_STAT_LIST) = { first(NT_STAT) -> (14); else -> (15 [epsilon]) }
 void ck_NT_STAT_LIST(SToken *actToken)
 {
-  (void)actToken;
-  // 14. NT_STAT_LIST -> NT_STAT eol NT_STAT_LIST
-  // 15. NT_STAT_LIST -> (epsilon)
+  switch (actToken->type)
+  {
+    // 14. NT_STAT_LIST -> NT_STAT eol NT_STAT_LIST
+    case kwInput:
+    case kwPrint:
+    case kwIf:
+    case kwDim:
+    case ident:
+    case kwContinue:
+    case kwExit:
+    case kwScope:
+    case kwReturn:
+    case kwDo:
+    case kwFor:
+      ck_NT_STAT(actToken);
+      NEXT_CHECK_TOKEN(actToken, eol);
+      NEXT_TOKEN(actToken);
+      ck_NT_STAT_LIST(actToken);
+      break;
+    // 15. NT_STAT_LIST -> (epsilon)
+    default:
+      // let it be
+      break;
+  }
 }
 
 // one statement

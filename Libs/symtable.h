@@ -63,6 +63,14 @@ struct ArgList {
    * \returns TArgument new created argument
    */
   TArgument (*insert)(TArgList self, const char *ident, DataType dataType);
+  /**
+   * True if both lists are with same values and lenghts
+   *
+   * \param TArgList list1 first list
+   * \param TArgList list2 second list
+   * \returns bool true if list are equal
+   */
+  bool (*equals)(TArgList list1, TArgList list2);
 };
 
 /**
