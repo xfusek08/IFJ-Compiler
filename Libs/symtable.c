@@ -90,7 +90,7 @@ TArgument TArgList_get(TArgList self, int index)
   return actArg;
 }
 
-TArgument TArgList_insert(TArgList self, const char *ident, DataType dataType)
+TArgument TArgList_insert(TArgList self, char *ident, DataType dataType)
 {
   TArgument newArg = TArgument_create(ident, dataType);
   self->tail->next = newArg;
@@ -122,30 +122,31 @@ TSymbol TSymbol_create(char *ident)
     apperr_runtimeError("Symbol table: Invalid NULL parameter while creating symbol.");
 
   TSymbol newSymb = (TSymbol)mmng_safeMalloc(sizeof(struct Symbol));
-  newSymb->ident = ident;
+  newSymb->ident = util_StrHardCopy(ident);
   newSymb->type = symtUnknown;
   newSymb->dataType = dtUnspecified;
   return newSymb;
 }
 
 // destructor of TSymbol
-void TSymbol_destroy(TSymbol symbol)
+void TSymbol_destroy(TSymbol self)
 {
-  if (symbol != NULL)
+  if (self != NULL)
   {
-    if (symbol->type == symtFuction)
+    if (self->type == symtFuction)
     {
-      if (symbol->data.funcData.arguments != NULL)
-        TArgList_destroy(symbol->data.funcData.arguments);
-      if (symbol->data.funcData.label != NULL)
-        mmng_safeFree(symbol->data.funcData.label);
+      if (self->data.funcData.arguments != NULL)
+        TArgList_destroy(self->data.funcData.arguments);
+      if (self->data.funcData.label != NULL)
+        mmng_safeFree(self->data.funcData.label);
     }
-    else if (symbol->type == symtConstant || symbol->dataType == dtString)
+    else if (self->type == symtConstant || self->dataType == dtString)
     {
-      if (symbol->data.stringVal != NULL)
-        mmng_safeFree(symbol->data.stringVal);
+      if (self->data.stringVal != NULL)
+        mmng_safeFree(self->data.stringVal);
     }
-    mmng_safeFree(symbol);
+    mmng_safeFree(self->ident);
+    mmng_safeFree(self);
   }
 }
 
