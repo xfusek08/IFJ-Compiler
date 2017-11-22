@@ -51,7 +51,7 @@ typedef enum
   NT_EXPR_LIST,     // list of expression for print function
   NT_EXPR,          // one expresion
   NT_ARGUMENT_LIST,  // list of expression separated by comma
-
+  NT_EXPR_TMP,      // one expresion, indicates result in auxiliary variable (for code optimization)
   /* Precedence table symbols */
   precLes, precEqu, precGrt, precUnd
 } EGrSymb;

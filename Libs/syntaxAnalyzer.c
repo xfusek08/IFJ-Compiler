@@ -14,13 +14,15 @@
 #include "Scanner.h"
 #include "stacks.h"
 #include "appErr.h"
+#include "MMng.h"
+#include "symtable.h"
 
 #define DPRINT(x) fprintf(stderr, x); fprintf(stderr, "\n")
 #define DDPRINT(x, y) fprintf(stderr, x, y); fprintf(stderr, "\n")
 
-SToken token; //loaded token, we might want to have array/list of tokens for code generation
 TTkList tlist; //list used as stack in syntx_processExpression
-
+TPStack identStack; //list of free unused identificators
+unsigned nextTokenIdent;
 //radim******
 /**
 * Returns 0 if symbols are out of range or relation between symbols is not defined, otherwise 1
@@ -95,16 +97,10 @@ EGrSymb syntx_getFirstTerminal(TTkList list)
   return eol;
 }
 
-/**
-* Semantic statement analyze
-*/
-void statSemantic(int ruleNum)
-{
-  DDPRINT("Semantic statement analyze: Received rule number %d", ruleNum);
-}
 
 SToken nextToken()
 {
+  SToken token;
   if (!scan_GetNextToken(&token))
   {
     fprintf(stderr, "File unexpectedly ended.");
@@ -114,10 +110,55 @@ SToken nextToken()
   return token;
 }
 
+void syntx_emptyVarStack() 
+{
+  while (identStack->count > 0)
+  {
+    mmng_safeFree(identStack->top(identStack));
+    identStack->pop(identStack);
+  }
+}
+
+void syntx_freeVar(SToken *var)
+{
+  identStack->push(identStack, var->symbol->ident);
+}
+
+SToken sytx_getFreeVar()
+{
+  SToken token;
+  token.type = NT_EXPR_TMP;
+  token.symbol = mmng_safeMalloc(sizeof(struct Symbol));
+  token.symbol->type = symtVariable;
+
+  //if stack not empty, return ident from stack
+  if (identStack->count != 0)
+  {
+    token.symbol->ident = (char *)identStack->top(identStack);
+    identStack->pop(identStack);
+    return token;
+  }
+  if (nextTokenIdent == 1000)
+  {
+    apperr_runtimeError("syntx_getFreeVar(): Limit of auxiliary variables reached! Too complicated expression.");
+  }
+  //generate next ident
+  char *ident = mmng_safeMalloc(sizeof(char) * 9); // LF@%T[1-9][0-9]{0,2}EOL = 9
+  sprintf(ident, "LF@\%T%d", nextTokenIdent);
+  //if not defined, define ident
+  if (symbt_findSymb(ident) == NULL)
+  {
+    symbt_insertSymbOnTop(ident);
+    printf("DEFVAR %s", ident);
+  }
+  token.symbol->ident = ident;
+  return token;
+}
+
 /* Use syntax rule at the end of the list. If there is no valid combination, returns zero. */
 int syntx_useRule(TTkList list)
 {
-  DPRINT("Entering useRule()");
+  DPRINT("+++ Entering useRule()");
   list->activate(list);
   while (list->getActive(list)->type != precLes)
   {
@@ -126,18 +167,55 @@ int syntx_useRule(TTkList list)
       return 0;
   }
   list->next(list);
-  //SToken nonTerm;
+  
   switch (list->getActive(list)->type)
   {
   case ident:
     list->getActive(list)->type = NT_EXPR;
-    //list->prev(list);
-    //list->postDelete(list);
-    //nonTerm.type = NT_EXPR;
-    //list->postInsert(list, nonTerm)
     break;
-  //case NT_EXPR:
-
+  case NT_EXPR:
+  case NT_EXPR_TMP:
+    SToken ref_var;
+    //test next->next...
+    if (list->active->next == NULL)
+      return 0;
+    if (list->active->next->next == NULL)
+      return 0;
+    SToken *arg1 = list->active;
+    SToken *arg2 = list->active->next;
+    SToken *arg3 = list->active->next->next;
+    if (arg1->symbol->type == symtConstant && arg3->symbol->type == symtConstant)
+    {
+      //radim2(..., &ref_nahrada)
+    }
+    else if(arg1->type == NT_EXPR_TMP && arg3->type == NT_EXPR_TMP){
+       //radim(active, next, next->next, &arg1)
+       //syntx_freeVar(arg3);
+       //list->postDelete(list);
+       //list->postDelete(list);
+    }
+    else if (arg1->type == NT_EXPR_TMP) {
+      //radim(..., &arg1)
+      //list->postDelete(list);
+      //list->postDelete(list);
+    }
+    else if (arg3->type == NT_EXPR_TMP) {
+      //radim(..., &arg3)
+      //list->postDelete(list);
+      //list->next(list);
+      //list->preDelete(list);
+    }
+    else {
+      ref_var = sytx_getFreeVar();
+      //radim(..., &ref_var)
+      //list->postDelete(list);
+      //list->postDelete(list);
+      //list->postInsert(list, ref_var);
+      //list->next(list);
+      //list->preDelete(list);
+    }
+    break;
+  //case not: radim(not, null)
   default:
     return 0;
   }
@@ -147,22 +225,21 @@ int syntx_useRule(TTkList list)
 
   //delete <
   list->preDelete(list);
-  DPRINT("leaving useRule()");
+  DPRINT("+++ leaving useRule()");
   return 1;
 }
 
 /**
 * Precedent statement analyze
 */
-void syntx_processExpression(SToken *actToken, const char *frame, const char *ident, DataType datatype)
+Symbol syntx_processExpression(SToken *actToken)
 {
   SToken auxToken;
   auxToken.type = eol;
   tlist->insertLast(tlist, &auxToken);
-  
+  nextTokenIdent = 0; //reset ident generator
   DPRINT("po pushnuti eol");
 
-  *actToken = nextToken();
   EGrSymb terminal;
   do {
      terminal = syntx_getFirstTerminal(tlist);
@@ -185,7 +262,7 @@ void syntx_processExpression(SToken *actToken, const char *frame, const char *id
       *actToken = nextToken();
       break;
     case precLes:
-      auxToken.type = precLes;
+      auxToken->type = precLes;
       tlist->postInsert(tlist, &auxToken);
       tlist->insertLast(tlist, actToken);
       *actToken = nextToken();
@@ -199,18 +276,22 @@ void syntx_processExpression(SToken *actToken, const char *frame, const char *id
     default:
       apperr_runtimeError("SyntaxAnalyzer.c: internal error!");
     }
-    DPRINT("po jedne iteraci");
-  } while (!(terminal == eol && actToken->type == eol));
+    DPRINT("--------------------------------");
+    DPRINT("-------konec-iterace------------");
+    getchar();
+  } while (!(terminal == eol && actToken->type == eol) && *actToken->type <= 24);
   DPRINT("konec vyrazu.");
-  (void)ident;
-  (void)frame;
-  (void)datatype;
+
+  //TODO free ident stack
+  syntx_emptyVarStack();
+  //TODO return symbol
 }
 
 
 void syntx_init()
 {
   tlist = TTkList_create();
+  identStack = TPStack_create();
   DPRINT("precedent syntax init");
 }
 
