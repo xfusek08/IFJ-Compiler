@@ -33,6 +33,7 @@ int main(int argc, char *argv[])
     printf("-----------Dalsi token----------- \n");
     token = scan_GetNextToken();
     printf("Typ tokenu: %d \n",token.type);
+    printf("Datovy typ tokenu: %d \n",token.dataType);
     if(token.symbol != NULL)
     {
       printf("Identifikator symbolu: %s \n",token.symbol->ident);

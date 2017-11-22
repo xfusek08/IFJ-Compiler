@@ -28,8 +28,8 @@ typedef enum
 
   /* key words */
   kwAs, kwAsc, kwDeclare, kwDim, kwDo, kwElse, kwEnd, kwFunction, kwIf, kwInput, kwLength, kwLoop,
-  kwPrint, kwReturn, kwScope, kwSubStr, kwThen, kwWhile, kwAnd, kwContinue, kwElseif, kwExit, kwFalse, kwFor,
-  kwNext, kwNot, kwOr, kwShared, kwStatic, kwTrue, kwTo, kwUntil,
+  kwPrint, kwReturn, kwScope, kwSubStr, kwThen, kwWhile, kwContinue, kwElseif, kwExit, kwFalse, kwFor,
+  kwNext, kwShared, kwStatic, kwTrue, kwTo, kwUntil,
 
   /* other */
   ident, asng, eol, eof, dataType,

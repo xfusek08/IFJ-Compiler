@@ -17,7 +17,9 @@
 #include "Scanner.h"
 #include "symtable.h"
 #include "MMng.h"
-//#include "appErr.h"
+
+#define kWordNumber 32
+#define dTypeNumber 4
 
 //LAnalyzer
 typedef struct LAnalyzer *TLAnalyzer;
@@ -55,7 +57,7 @@ void Scanner_init()
   Scanner = Scanner_create();
 }
 
-//
+//Error function
 void scan_raiseCodeError(ErrType typchyby)
 {
   apperr_codeError(typchyby, Scanner->curentLine, Scanner->position, Scanner->line);
@@ -123,17 +125,16 @@ void hash_string(char *string, char *hashString)
 }
 
 //Comparing given string with keyWords
-EGrSymb isKeyWord(char *tokenID)//Change name
+EGrSymb isKeyWord(char *tokenID)
 {
   //Array of keyWords
-  char *sArray[] = {"as", "asc", "declare", "dim", "do", "else", "end", "function", "if", "input", "length", "loop",
-  "print", "return", "scope", "subStr", "then", "while", "and", "continue", "elseif", "exit", "false", "for",
-  "next", "not", "or", "shared", "static", "true", "to", "until"};
-  int arrayLeght = 32;
+  char *wArray[] = {"not", "and", "or", "as", "asc", "declare", "dim", "do", "else", "end", "function", "if", "input", "length", "loop",
+  "print", "return", "scope", "subStr", "then", "while", "continue", "elseif", "exit", "false", "for",
+  "next", "shared", "static", "true", "to", "until"};  //32 kWordNumber
   int i = 0;
   EGrSymb tokenType = ident;
-  //ToLower
   char *str = mmng_safeMalloc(sizeof(char) * CHUNK * Scanner->lineSize);
+  //ToLower
   int k = 0;
   while(tokenID[k] != '\0')
   {
@@ -141,10 +142,10 @@ EGrSymb isKeyWord(char *tokenID)//Change name
     k++;
   }
   str[k] = '\0';
-  //Compare
-  while(i < arrayLeght)
+  //Compare keyWords
+  while(i < kWordNumber)
   {
-    if(strcmp(str, sArray[i]) == 0) //maybe as long as != Until
+    if(strcmp(str, wArray[i]) == 0)
     {
       tokenType = i + 23;   
     }
@@ -154,6 +155,34 @@ EGrSymb isKeyWord(char *tokenID)//Change name
   return tokenType;
 }
 
+//Comparing given string with dataTypes
+DataType isDataType(char *tokenID)
+{
+  //Array of keyWords
+  char *sArray[] = {"integer", "double", "string", "boolean"}; //4 dTypeNumber
+  int i = 0;
+  DataType dType = dtUnspecified;
+  char *str = mmng_safeMalloc(sizeof(char) * CHUNK * Scanner->lineSize);
+  //ToLower
+  int k = 0;
+  while(tokenID[k] != '\0')
+  {
+    str[k] = tolower(tokenID[k]);
+    k++;
+  }
+  str[k] = '\0';
+  //Compare dataType
+  while(i < dTypeNumber)
+  {
+    if(strcmp(str, sArray[i]) == 0) //maybe as long as != Until
+    {
+      dType = i + 1; 
+    }
+    i++;
+  }
+  mmng_safeFree(str);
+  return dType;
+}
 
 bool isEndChar()
 {
@@ -422,7 +451,7 @@ SToken scan_GetNextToken()
         {
           state = 0;
           tokenType = ident;
-          type = symtConstant;
+          type = symtUnknown;
           while(state != 5)
           {
             tokenID[position++] = Scanner->line[Scanner->position++];
@@ -447,7 +476,7 @@ SToken scan_GetNextToken()
                   state = 5;
                   tokenID[position] = '\0';
                   tokenType = isKeyWord(tokenID);
-                  type = symtUnknown;
+                  dataType = isDataType(tokenID);
                   if(tokenType == kwTrue || tokenType == kwFalse)
                   {
                     type = symtConstant;
@@ -460,6 +489,10 @@ SToken scan_GetNextToken()
                     {
                       boolVal = false;
                     } 
+                  }
+                  else if(dataType != dtUnspecified)
+                  {
+                    tokenType = dataType;
                   }
                 }
                 else
@@ -646,7 +679,6 @@ SToken scan_GetNextToken()
     }
     symbol->type = type;
     symbol->dataType = dataType;
-    symbol->data.boolVal = boolVal;
     if(dataType == dtInt)
     {
       symbol->data.intVal = intVal;
