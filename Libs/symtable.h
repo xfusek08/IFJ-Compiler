@@ -62,7 +62,7 @@ struct ArgList {
    * \param DataType dataType data type of new argument
    * \returns TArgument new created argument
    */
-  TArgument (*insert)(TArgList self, const char *ident, DataType dataType);
+  TArgument (*insert)(TArgList self, char *ident, DataType dataType);
   /**
    * True if both lists are with same values and lenghts
    *
