@@ -77,7 +77,7 @@ void get_line()
     if(charCounter == (Scanner->lineSize * CHUNK - 2))
     {
       Scanner->lineSize++;
-      Scanner->line = mmng_safeRealloc(Scanner->line, sizeof(char) * Scanner->lineSize * CHUNK);//Mozna chyba
+      Scanner->line = mmng_safeRealloc(Scanner->line, sizeof(char) * Scanner->lineSize * CHUNK);
     }
     if(Scanner->line[charCounter] == EOF)
       break;
@@ -319,10 +319,15 @@ SToken scan_GetNextToken()
           while(state != 5)
           {
             tokenID[position++] = Scanner->line[Scanner->position++];
+            if(position > ((CHUNK * Scanner->lineSize) - 4))
+            {
+              Scanner->lineSize++;
+              tokenID = mmng_safeRealloc(Scanner->line, sizeof(char) * Scanner->lineSize * CHUNK);  
+            }
             switch(state)
             {
               case 1:
-                if((tokenID[position - 1]) == '\"'  || (tokenID[position - 1]) == EOF)
+                if((tokenID[position - 1]) == '\"')
                 {
                   state = 5;
                   position--;
@@ -330,11 +335,34 @@ SToken scan_GetNextToken()
                 else if((tokenID[position - 1]) == '\\')
                 {
                   state = 2;
+                  tokenID[position - 1] = 92;
+                  tokenID[position] = '0';
+                  tokenID[position + 1] = '9';
+                  tokenID[position + 2] = '2';
+                  position += 3;
                 }
-                else if(/*isprint(tokenID[position - 1]) &&*/ (!isspace(tokenID[position - 1] || tokenID[position - 1] == ' '))
-                && tokenID[position - 1] != '#')
+                else if(tokenID[position - 1] > 31 && tokenID[position - 1] != '#')
                 {
                   state = 1;
+                  if(tokenID[position - 1] == 35 || tokenID[position - 1] == 32)
+                  {
+                    if(tokenID[position - 1] == 32)
+                    {
+                      tokenID[position - 1] = 92;
+                      tokenID[position] = '0';
+                      tokenID[position + 1] = '3';
+                      tokenID[position + 2] = '2';
+                      position += 3;
+                    }
+                    else if(tokenID[position - 1] == 35)
+                    {
+                      tokenID[position - 1] = 92;
+                      tokenID[position] = '0';
+                      tokenID[position + 1] = '3';
+                      tokenID[position + 2] = '5';
+                      position += 3;
+                    }
+                  }
                 }
                 else
                 {
