@@ -140,7 +140,7 @@ void TSymbol_destroy(TSymbol self)
       if (self->data.funcData.label != NULL)
         mmng_safeFree(self->data.funcData.label);
     }
-    else if (self->type == symtConstant || self->dataType == dtString)
+    else if (self->type == symtConstant && self->dataType == dtString)
     {
       if (self->data.stringVal != NULL)
         mmng_safeFree(self->data.stringVal);
