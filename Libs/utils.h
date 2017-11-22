@@ -1,3 +1,4 @@
+
 /******************************************************************************/
 /**
  * \project IFJ-Compiler
@@ -28,6 +29,12 @@ typedef enum {
  * \note Memory is allocated here and free has to be called.
  */
 char *util_StrHardCopy(const char *str);
+
+/**
+ * Fuction returns concatenated str1 and str2 (str = str1 + str2) Inputed strings are just readed and new string is created
+ * \note Memory is allocated here and free has to be called.
+ */
+char *util_StrConcatenate(const char *str1, const char *str2);
 
 /**
  * Fuction converts data type enum to constant string
