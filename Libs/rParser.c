@@ -71,7 +71,7 @@ void ck_NT_ARGUMENT_LIS(SToken *actToken); 	// list of expression separated by c
 
 // function for defining function
 // 3. NT_DD -> kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_STAT_LIST kwEnd kwFunction eol NT_DD
-void checkFunctionDefinition(SToken *actToken)
+void processFunction(SToken *actToken)
 {
   TSymbol actSymbol = NULL;
   bool isDeclared = false;
@@ -149,6 +149,31 @@ void checkFunctionDefinition(SToken *actToken)
   symbt_popFrame();
 }
 
+void writeExpression(SToken *actToken)
+{
+  if (actToken->type == ident || actToken->type == kwLeftBrc) // NT_EXPR
+  {
+    // evaluate expression
+    TSymbol actSymbol = syntx_processExpression(actToken);
+    if (actSymbol->type == symtVariable)
+      printf("WRITE %s", symbol->ident);
+    else if (actSymbol->type == symtConstant)
+    {
+      switch (actSymbol->dataType)
+      {
+        case dtInt: printf("WRITE int@% d", actSymbol->data.intVal); break;
+        case dtFloat: printf("WRITE float@% g", actSymbol->data.doubleVal); break;
+        case dtString: printf("WRITE string@%s", actSymbol->data.stringVal); break;
+        case dtBool: printf("WRITE bool@%s", (actSymbol->data.boolVal) ? "true" : "false"); break;
+      }
+    }
+    else
+      apperr_runtimeError("Invalid result of expression evaluation.");
+  }
+  else
+    scan_raiseCodeError(semanticErr, "Expression expected.");
+}
+
 // =============================================================================
 // ========== Definition of recursive Grammar NON-terminal functions ===========
 // =============================================================================
@@ -204,7 +229,7 @@ void ck_NT_DD(SToken *actToken)
       break;
     // 3. NT_DD -> kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_STAT_LIST kwEnd kwFunction eol NT_DD
     case kwFunction:
-      checkFunctionDefinition(actToken); // too long to be here
+      processFunction(actToken); // too long to be here
       ck_NT_DD(actToken);
       break;
     // 4. NT_DD -> kwStatic kwShared ident kwAs dataType NT_ASSINGEXT eol NT_DD
@@ -234,7 +259,7 @@ void ck_NT_DD(SToken *actToken)
 
 // Assignement (...  [as datatype])
 // first(NT_ASSINGEXT) = { asgn -> (6); else -> (7 [epsilon]) }
-void ck_NT_ASSINGEXT(SToken *actToken, const char *frame, const char *ident, DataType dataType)
+void ck_NT_ASSINGEXT(SToken *actToken, const char *ident, DataType dataType)
 {
   switch (actToken->type)
   {
@@ -242,7 +267,7 @@ void ck_NT_ASSINGEXT(SToken *actToken, const char *frame, const char *ident, Dat
     case asng:
       NEXT_CHECK_TOKEN(actToken, asng);
       NEXT_TOKEN(actToken);
-      syntx_processExpression(actToken, frame, ident, dataType);
+      syntx_processExpression(actToken, ident, dataType);
       break;
     // 7. NT_ASSINGEXT -> (epsilon)
     default:
@@ -379,18 +404,39 @@ void ck_NT_STAT_LIST(SToken *actToken)
 //   else -> (error) }
 void ck_NT_STAT(SToken *actToken)
 {
-  (void)actToken;
-  // 16. NT_STAT -> kwInput ident
-  // 17. NT_STAT -> kwPrint NT_EXPR_LIST
-  // 18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf eol
-  // 19. NT_STAT -> kwDim iden kwAs dataType NT_ASSINGEXT
-  // 20. NT_STAT -> ident asng NT_EXPR
-  // 21. NT_STAT -> kwContinue
-  // 22. NT_STAT -> kwExit
-  // 23. NT_STAT -> NT_SCOPE
-  // 24. NT_STAT -> kwReturn NT_EXPR
-  // 25. NT_STAT -> kwDo NT_DOIN kwLoop
-  // 26. NT_STAT -> kwFor ident NT_ASSINGEXT kwTo NT_EXPR NT_STEP eol NT_STAT_LIST kwNext
+  TSymbol actSymbol = NULL;
+  switch (actToken->type)
+  {
+    // 16. NT_STAT -> kwInput ident
+    case kwInput:
+      NEXT_TOKEN(actToken);
+      actSymbol = actToken->symbol;
+      if (actSymbol->type != symtVariable)
+        scan_raiseCodeError(semanticErr, "Symbol is not defined variable.");
+      printf("READ %s\n", actSymbol->ident, util_dataTypeToString(actSymbol->dataType));
+      break;
+    // 17. NT_STAT -> kwPrint NT_EXPR opSemcol NT_EXPR_LIST
+    case kwPrint:
+      NEXT_TOKEN(actToken);
+      writeExpression(actToken);
+      NEXT_CHECK_TOKEN(actToken, opSemcol);
+      NEXT_TOKEN(actToken);
+      ck_NT_INIF_EXT(actToken);
+      break;
+    // 18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf eol
+    // 19. NT_STAT -> kwDim iden kwAs dataType NT_ASSINGEXT
+    // 20. NT_STAT -> NT_EXPR
+    // 21. NT_STAT -> kwContinue
+    // 22. NT_STAT -> kwExit
+    // 23. NT_STAT -> NT_SCOPE
+    // 24. NT_STAT -> kwReturn NT_EXPR
+    // 25. NT_STAT -> kwDo NT_DOIN kwLoop
+    // 26. NT_STAT -> kwFor ident NT_ASSINGEXT kwTo NT_EXPR NT_STEP eol NT_STAT_LIST kwNext
+    // else -> error
+    default:
+    // chyba
+      break;
+  }
 }
 
 // body of do..loop statement
@@ -434,9 +480,21 @@ void ck_NT_INIF_EXT(SToken *actToken)
 // first(NT_EXPR_LIST) = { first(NT_EXPR) -> (36); else -> (37 [epsilon]) }
 void ck_NT_EXPR_LIST(SToken *actToken)
 {
-  (void)actToken;
-  // 36. NT_EXPR_LIST -> NT_EXPR opSemcol NT_EXPR_LIST
-  // 37. NT_EXPR_LIST -> (epsilon)
+  switch (actToken->type)
+  {
+    // 36. NT_EXPR_LIST -> NT_EXPR opSemcol NT_EXPR_LIST
+    case :
+      NEXT_TOKEN(actToken);
+      writeExpression(actToken);
+      NEXT_CHECK_TOKEN(actToken, opSemcol);
+      NEXT_TOKEN(actToken);
+      ck_NT_INIF_EXT(actToken);
+      break;
+    // 37. NT_EXPR_LIST -> (epsilon)
+    default:
+        // let if be
+      break;
+  }
 }
 
 // =============================================================================

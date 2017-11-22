@@ -1,14 +1,8 @@
 
 #include "syntaxAnalyzer.h"
+#include "symtable.h"
 
-void syntx_processExpression(
-  SToken *actToken,
-  const char *frame,
-  const char *ident,
-  DataType dataType)
+TSymbol syntx_processExpression(SToken *actToken)
 {
   (void)actToken;
-  (void)frame;
-  (void)ident;
-  (void)dataType;
 }

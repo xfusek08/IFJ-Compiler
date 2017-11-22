@@ -3,11 +3,8 @@
 #define _SYNTAXANALYZER
 
 #include "grammar.h"
+#include "symtable.h"
 
-void syntx_processExpression(
-  SToken *actToken,
-  const char *frame,
-  const char *ident,
-  DataType dataType);
+TSymbol syntx_processExpression(SToken *actToken);
 
 #endif

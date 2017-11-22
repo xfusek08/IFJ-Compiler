@@ -108,7 +108,7 @@ first(NT_STAT) = {
   kwFor -> (26);
   else -> (error) }
 16. NT_STAT -> kwInput ident
-17. NT_STAT -> kwPrint NT_EXPR_LIST
+17. NT_STAT -> kwPrint NT_EXPR opSemcol NT_EXPR_LIST
 18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf eol
 19. NT_STAT -> kwDim iden kwAs dataType NT_ASSINGEXT
 20. NT_STAT -> NT_EXPR

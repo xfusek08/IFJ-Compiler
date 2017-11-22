@@ -39,10 +39,10 @@ const char *util_dataTypeToString(const DataType dataType)
 {
   switch(dataType)
   {
-    case dtInt:      return "Integer";
-    case dtFloat:    return "Float";
-    case dtString:   return "String";
-    case dtBool:     return "Boolean";
+    case dtInt:      return "int";
+    case dtFloat:    return "float";
+    case dtString:   return "string";
+    case dtBool:     return "bool";
     default:         return "Unspecified";
   }
 }
