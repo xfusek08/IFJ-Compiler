@@ -46,7 +46,8 @@ int main(int argc, char *argv[])
 
   int i = 0;
   SToken token;
-  while(i < 20)
+  token.type = eol;
+  while(token.type != eof)
   {
     token = scan_GetNextToken();
     printf("%d: Token: %s \n", i, TokenTypeStrings[token.type]);

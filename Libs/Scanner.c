@@ -18,12 +18,13 @@
 #include "symtable.h"
 #include "MMng.h"
 
-#define kWordNumber 32
-#define dTypeNumber 4
+#define KWORDNUMBER 32
+#define DTYPENUMBER 4
 
 //LAnalyzer
 typedef struct LAnalyzer *TLAnalyzer;
 struct LAnalyzer {
+  SToken lastToken;
   int alocStr;
   int curentLine;
   int position;
@@ -45,7 +46,8 @@ TLAnalyzer Scanner_create()
   newScanner->lineSize = 1;
   newScanner->line = mmng_safeMalloc(sizeof(char) * CHUNK * newScanner->lineSize);
   newScanner->line[0] = '\0';
-
+  newScanner->lastToken.type = eol;
+  
   return newScanner;
 }
 
@@ -87,15 +89,26 @@ void get_line()
 //Function for deleting comments
 void delete_comment(bool isLine)
 {
+  int charCounter = 0;
   //Delete line comment
   if(isLine == true)
   {
-    get_line();
+    if(Scanner->lastToken.type != eol)
+    {
+      while(Scanner->line[charCounter] != '\0' && Scanner->line[charCounter] != EOF && Scanner->line[charCounter] != '\n')
+      {
+        charCounter++;  
+      }
+      Scanner->position = charCounter;      
+    }
+    else
+    {
+      get_line();
+    }
   }
   //Looking for ending characters of multi-line comment
   else
   {
-    int charCounter = 0;
     while(!(Scanner->line[charCounter] == '\'' && Scanner->line[charCounter + 1] == '/') && Scanner->line[charCounter + 1] != EOF)
     {
       if(Scanner->line[charCounter + 1] == '\0')
@@ -109,21 +122,6 @@ void delete_comment(bool isLine)
   }
 }
 
-//Function for hashing string
-void hash_string(char *string, char *hashString)
-{
-  int value = 0;
-  int exp = 1;
-  int i = 0;
-  while(string[i] != '\0')
-  {
-    value += exp * string[i];
-    exp *= 10;
-    i++;
-  }
-  sprintf(hashString, "sh@%d", value);
-}
-
 //Comparing given string with keyWords
 EGrSymb isKeyWord(char *tokenID)
 {
@@ -133,25 +131,15 @@ EGrSymb isKeyWord(char *tokenID)
   "next", "shared", "static", "true", "to", "until"};  //32 kWordNumber
   int i = 0;
   EGrSymb tokenType = ident;
-  char *str = mmng_safeMalloc(sizeof(char) * CHUNK * Scanner->lineSize);
-  //ToLower
-  int k = 0;
-  while(tokenID[k] != '\0')
-  {
-    str[k] = tolower(tokenID[k]);
-    k++;
-  }
-  str[k] = '\0';
   //Compare keyWords
-  while(i < kWordNumber)
+  while(i < KWORDNUMBER)
   {
-    if(strcmp(str, wArray[i]) == 0)
+    if(strcmp(tokenID, wArray[i]) == 0)
     {
       tokenType = i + 20;
     }
     i++;
   }
-  mmng_safeFree(str);
   return tokenType;
 }
 
@@ -162,25 +150,16 @@ DataType isDataType(char *tokenID)
   char *sArray[] = {"integer", "double", "string", "boolean"}; //4 dTypeNumber
   int i = 0;
   DataType dType = dtUnspecified;
-  char *str = mmng_safeMalloc(sizeof(char) * CHUNK * Scanner->lineSize);
   //ToLower
-  int k = 0;
-  while(tokenID[k] != '\0')
-  {
-    str[k] = tolower(tokenID[k]);
-    k++;
-  }
-  str[k] = '\0';
   //Compare dataType
-  while(i < dTypeNumber)
+  while(i < DTYPENUMBER)
   {
-    if(strcmp(str, sArray[i]) == 0) //maybe as long as != Until
+    if(strcmp(tokenID, sArray[i]) == 0) //maybe as long as != Until
     {
       dType = i + 1;
     }
     i++;
   }
-  mmng_safeFree(str);
   return dType;
 }
 
@@ -191,7 +170,7 @@ bool isEndChar()
   || Scanner->line[Scanner->position - 1] == '/' || Scanner->line[Scanner->position - 1] == '\\'
   || Scanner->line[Scanner->position - 1] == '=' || Scanner->line[Scanner->position - 1] == EOF
   || Scanner->line[Scanner->position - 1] == 33 || Scanner->line[Scanner->position - 1] == '('
-  || Scanner->line[Scanner->position - 1] == ')';
+  || Scanner->line[Scanner->position - 1] == ')' || Scanner->line[Scanner->position - 1] == ';';
 }
 
 
@@ -201,7 +180,7 @@ SToken scan_GetNextToken()
   char *tokenID = mmng_safeMalloc(sizeof(char) * CHUNK * Scanner->lineSize);
   TSymbol symbol = NULL;
   SymbolType type = symtUnknown;
-  DataType dataType = dtUnspecified;
+  DataType dType = dtUnspecified;
   EGrSymb tokenType = eol;
   //Data
   int intVal = 0;
@@ -351,7 +330,7 @@ SToken scan_GetNextToken()
                 {
                   state = 2;
                 }
-                else if(isprint(tokenID[position - 1]) && !isspace(tokenID[position - 1])
+                else if(/*isprint(tokenID[position - 1]) &&*/ (!isspace(tokenID[position - 1] || tokenID[position - 1] == ' '))
                 && tokenID[position - 1] != '#')
                 {
                   state = 1;
@@ -403,19 +382,11 @@ SToken scan_GetNextToken()
           }
           tokenType = ident;
           type = symtConstant;
-          dataType = dtString;
+          dType = dtString;
           tokenID[position] = '\0';
-          if(position < 10)
-          {
-            hasStr = mmng_safeMalloc(sizeof(char) * position * 3 + 4);//asci az 127(3 znaky) za znak + sh@(3 znaky) + '\0'
-            hash_string(tokenID, hasStr);
-          }
-          else
-          {
-            hasStr = mmng_safeMalloc(sizeof(char) * floor(log10(abs(Scanner->alocStr))) + 4); //s@'number'\0
-            sprintf(hasStr, "s@%d", Scanner->alocStr);
-            Scanner->alocStr++;
-          }
+          hasStr = mmng_safeMalloc(sizeof(char) * floor(log10(abs(Scanner->alocStr))) + 4); //s@'number'\0
+          sprintf(hasStr, "s@%d", Scanner->alocStr);
+          Scanner->alocStr++;
           stringVal = util_StrHardCopy(tokenID);
         }
         else if(Scanner->line[Scanner->position] == '=')
@@ -432,6 +403,11 @@ SToken scan_GetNextToken()
       case '\n':
         tokenType = eol;
         allowed = true;
+        if(Scanner->lastToken.type == eol)
+        {
+          allowed = false;
+          position--;
+        }
         break;
       //End of File
       case EOF:
@@ -475,12 +451,18 @@ SToken scan_GetNextToken()
                   Scanner->position--;
                   state = 5;
                   tokenID[position] = '\0';
+                  int k = 0;
+                  while(tokenID[k] != '\0')
+                  {
+                    tokenID[k] = tolower(tokenID[k]);
+                    k++;
+                  }
                   tokenType = isKeyWord(tokenID);
-                  dataType = isDataType(tokenID);
+                  dType = isDataType(tokenID);
                   if(tokenType == kwTrue || tokenType == kwFalse)
                   {
                     type = symtConstant;
-                    dataType = dtBool;
+                    dType = dtBool;
                     if(tokenType == kwTrue)
                     {
                       boolVal = true;
@@ -490,7 +472,7 @@ SToken scan_GetNextToken()
                       boolVal = false;
                     }
                   }
-                  else if(dataType != dtUnspecified)
+                  else if(dType != dtUnspecified)
                   {
                     tokenType = dataType;
                   }
@@ -612,7 +594,7 @@ SToken scan_GetNextToken()
                   Scanner->position--;
                   tokenID[--position] = '\0';
                   intVal = strtol(tokenID, NULL, 10);
-                  dataType = dtInt;
+                  dType = dtInt;
                 }
                 else
                 {
@@ -630,7 +612,7 @@ SToken scan_GetNextToken()
                   Scanner->position--;
                   tokenID[--position] = '\0';
                   doubleVal = strtod(tokenID, NULL);
-                  dataType = dtFloat;
+                  dType = dtFloat;
                 }
                 else
                 {
@@ -666,9 +648,10 @@ SToken scan_GetNextToken()
     }
   }
   //Filing returning token with values
+  Scanner->lastToken.type = tokenType;
   if(tokenType == ident || tokenType == kwTrue || tokenType == kwFalse)
   {
-    if(type == symtConstant && dataType == dtString && hasStr != NULL)
+    if(type == symtConstant && dType == dtString && hasStr != NULL)
     {
       symbol = symbt_findOrInsertSymb(hasStr);
       mmng_safeFree(hasStr);
@@ -678,26 +661,26 @@ SToken scan_GetNextToken()
       symbol = symbt_findOrInsertSymb(tokenID);
     }
     symbol->type = type;
-    symbol->dataType = dataType;
-    if(dataType == dtInt)
+    symbol->dataType = dType;
+    if(dType == dtInt)
     {
       symbol->data.intVal = intVal;
     }
-    else if(dataType == dtFloat)
+    else if(dType == dtFloat)
     {
       symbol->data.doubleVal = doubleVal;
     }
-    else if(dataType == dtString)
+    else if(dType == dtString)
     {
       symbol->data.stringVal = stringVal;
     }
-    else if(dataType == dtBool)
+    else if(dType == dtBool)
     {
       symbol->data.boolVal = boolVal;
     }
   }
   SToken token;
-  token.dataType = dataType;
+  token.dataType = dType;
   token.type = tokenType;
   token.symbol = symbol;
   mmng_safeFree(tokenID);
