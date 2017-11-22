@@ -15,7 +15,7 @@
 #define appErr
 
 /*! Enum of error types and error codes */
-typedef enum 
+typedef enum
 {
   lexicalErr = 1, /*!< incorrect structure of the current lex */
   syntaxErr = 2,  /*!< wrong program syntax */

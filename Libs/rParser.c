@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include "appErr.h"
 #include "utils.h"
-#include "Scanner.h"
+#include "scanner.h"
 #include "symtable.h"
 #include "grammar.h"
 #include "rParser.h"

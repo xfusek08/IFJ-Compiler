@@ -23,7 +23,7 @@ void apperr_runtimeError(char *errMsg)
 
 void apperr_codeError(ErrType type, int row, int col, char *line)
 {
-    
+
   switch (type)
   {
     case lexicalErr:
@@ -72,7 +72,7 @@ void apperr_codeError(ErrType type, int row, int col, char *line)
       }
       printf("\x1B[31m^\x1B[0m\n");
     }
-        
+
     consoleRowNum++;
   }
 
