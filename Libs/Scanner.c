@@ -692,6 +692,7 @@ void Scanner_destroy()
 {
   if (Scanner != NULL)
   {
+    mmng_safeFree(Scanner->line);
     mmng_safeFree(Scanner);
   }
 }
