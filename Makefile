@@ -16,7 +16,7 @@ debug: $(EXECUTABLE) clean
 	gcc $(CFLAGS) -c $< -o $@
 
 $(EXECUTABLE): $(OBJS)
-	gcc $(CFLAGS) -o $@ $^
+	gcc $(CFLAGS) -o $@ $^ -lm
 
 clean:
 	-rm *.o */*.o
