@@ -158,11 +158,11 @@ int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *rightOperand){
 }
 
 /**
- * Checks data types of two operands of opDiv
+ * Checks data types of two operands of opDiv (integer division)
  * Returns 1 if everything is OK, otherwise 0
  */
 int syntx_checkDataTypesOfDiv(SToken *leftOperand, SToken *rightOperand){
-  // TODO: cast here?
+  // TODO: really cast here - doubleToInt?
   if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){  // int - int
     return 1;
   }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> int - int
@@ -227,7 +227,7 @@ int syntx_checkDataTypesOfBoolOps(SToken *leftOperand, SToken *rightOperand){
 /**
  * Checks data types, implicitly converts constants and generates code for implicit convertion of variables
  */
-void checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
+void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOperand){
 
   // if operator type is +, -, *, /, <, >, <=, >=, =, <>, +=, -=, /=, \=, :=
   if(operator->type == opPlus || 
@@ -260,8 +260,7 @@ void checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOperand,
     if(syntx_checkDataTypesOfAgnOps(leftOperand, rightOperand) == 0){
       scan_raiseCodeError(typeCompatibilityErr);  // prints error
     }
-  }else if( // if operator is boolean operator
-     operator->type == opBoolNot ||
+  }else if( // if operator is boolean operator (except opBoolNot)
      operator->type == opBoolAnd ||
      operator->type == opBoolOr
   ){ 
@@ -270,8 +269,22 @@ void checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOperand,
     }
   }
 
-  partialResult->dataType = dtUnspecified;  // due to testing
+  apperr_runtimeError("syntaxAnalyzer.c, syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOperand): unknown operator");
 
+}
+
+/**
+ * Checks data types of boolean operators
+ * Returns 1 if everything is OK, otherwise 0
+ */
+int syntx_checkDataTypeOfBool(SToken *boolOperand){
+
+  // enabled data types pairs
+  if(boolOperand->symbol->dataType == dtBool){  // bool
+    return 1;
+  }
+
+  return 0; //other combinations are not allowed
 }
 
 /**
@@ -280,7 +293,7 @@ void checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOperand,
  * if everythng is OK setted token.symbol->dataType, token.symbol->data
  * else token.symbol->dataType = dtUnspecified and wrong data
  */
-SToken doArithmeticOp(SToken *leftOperand, SToken *operator, SToken *rightOperand){
+SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *operator, SToken *rightOperand){
 
   SToken token;
   token.type = NT_EXPR;
@@ -372,19 +385,34 @@ SToken doArithmeticOp(SToken *leftOperand, SToken *operator, SToken *rightOperan
     }
   }
 
+  // function was invoked with wrong arguments - typeCompatibilityErr
+  if(token.symbol->dataType == dtUnspecified){
+    scan_raiseCodeError(typeCompatibilityErr);  // prints error
+  }
+
   return token;
 }
 
 
 /**
  * Main function for code generation
+ * leftOperand expects constant or ident
+ * operator
  */
 void syntx_generateCode(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
 
   // checks data types, implicitly converts constants and generates code for implicit convertion of variables
-  checkDataTypes(leftOperand, operator, rightOperand, partialResult);
+  if(rightOperand != NULL && operator->type != opBoolNot){
+    syntx_checkDataTypes(leftOperand, operator, rightOperand);
+  }else if(rightOperand == NULL && operator->type == opBoolNot){
+    syntx_checkDataTypeOfBool(leftOperand);
+  }else{  //for example: not string, not float, etc.
+    scan_raiseCodeError(typeCompatibilityErr);  // prints error
+  }
 
   // here are all data in right form
+
+  partialResult->dataType = dtUnspecified;  // due to testing
 
 }
 //radim konec*************
