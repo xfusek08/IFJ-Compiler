@@ -197,7 +197,7 @@ SToken scan_GetNextToken()
   while(!allowed)
   {
     //Finding type of token
-    switch(tokenID[position++] = Scanner->line[Scanner->position++])
+    switch(tokenID[position++] = tolower(Scanner->line[Scanner->position++]))
     {
       case '=':
         allowed = true;
@@ -318,10 +318,10 @@ SToken scan_GetNextToken()
           tokenID[position] = Scanner->line[Scanner->position++];
           while(state != 5)
           {
+            tokenID[position++] = Scanner->line[Scanner->position++];
             switch(state)
             {
               case 1:
-              tokenID[position++] = Scanner->line[Scanner->position++];
                 if((tokenID[position - 1]) == '\"'  || (tokenID[position - 1]) == EOF)
                 {
                   state = 5;
@@ -342,7 +342,6 @@ SToken scan_GetNextToken()
                 }
                 break;
               case 2:
-                tokenID[position++] = Scanner->line[Scanner->position++];
                 if(isdigit(tokenID[position - 1]))
                 {
                   state = 3;
@@ -358,7 +357,6 @@ SToken scan_GetNextToken()
                 }
                 break;
               case 3:
-                tokenID[position++] = Scanner->line[Scanner->position++];
                 if(isdigit(tokenID[position - 1]))
                 {
                   state = 4;
@@ -369,7 +367,6 @@ SToken scan_GetNextToken()
                 }
                 break;
               case 4:
-                tokenID[position++] = Scanner->line[Scanner->position++];
                 if(isdigit(tokenID[position - 1]))
                 {
                   state = 1;
@@ -423,144 +420,50 @@ SToken scan_GetNextToken()
         break;
       default:
         //Identifires
-        if((Scanner->line[Scanner->position - 1] > 64 && Scanner->line[Scanner->position - 1] < 91) //value of a-z
-        || (Scanner->line[Scanner->position - 1] > 96 && Scanner->line[Scanner->position - 1] < 123)) //value of A-Z
+        if((tokenID[position - 1] > 96 && tokenID[position - 1] < 123) //value of a-z
+        || tokenID[position - 1] == '_')
         {
           state = 0;
           tokenType = ident;
           type = symtUnknown;
-          while(state != 5)
+          while(state != 1)
           {
-            tokenID[position++] = Scanner->line[Scanner->position++];
-            switch(state)
+            tokenID[position++] = tolower(Scanner->line[Scanner->position++]);
+            if((tokenID[position - 1] > 96 && tokenID[position - 1] < 123) //value of a-z
+            || (tokenID[position - 1] > 47 && tokenID[position - 1] < 58) //value of 0-9
+            || tokenID[position - 1] == '_')
             {
-              case 0:
-                if(Scanner->line[Scanner->position - 1] == '@')
+              state = 0;
+            }
+            else if(isEndChar())
+            {
+              position--;
+              Scanner->position--;
+              state = 1;
+              tokenID[position] = '\0';
+              tokenType = isKeyWord(tokenID);
+              dType = isDataType(tokenID);
+              if(tokenType == kwTrue || tokenType == kwFalse)
+              {
+                type = symtConstant;
+                dType = dtBool;
+                if(tokenType == kwTrue)
                 {
-                  state = 1;
-                }
-                else if((Scanner->line[Scanner->position - 1] > 64 && Scanner->line[Scanner->position - 1] < 91) //value of a-z
-                || (Scanner->line[Scanner->position - 1] > 96 && Scanner->line[Scanner->position - 1] < 123) //value of A-Z
-                || ((Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)) //value of 0-9
-                || Scanner->line[Scanner->position - 1] == '_')
-                {
-                  state = 0;
-                }
-                else if(isEndChar())
-                {
-                  position--;
-                  Scanner->position--;
-                  state = 5;
-                  tokenID[position] = '\0';
-                  int k = 0;
-                  while(tokenID[k] != '\0')
-                  {
-                    tokenID[k] = tolower(tokenID[k]);
-                    k++;
-                  }
-                  tokenType = isKeyWord(tokenID);
-                  dType = isDataType(tokenID);
-                  if(tokenType == kwTrue || tokenType == kwFalse)
-                  {
-                    type = symtConstant;
-                    dType = dtBool;
-                    if(tokenType == kwTrue)
-                    {
-                      boolVal = true;
-                    }
-                    else
-                    {
-                      boolVal = false;
-                    }
-                  }
-                  else if(dType != dtUnspecified)
-                  {
-                    tokenType = dataType;
-                  }
+                  boolVal = true;
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr, NULL);
+                  boolVal = false;
                 }
-                break;
-              case 1:
-                if((Scanner->line[Scanner->position - 1] > 64 && Scanner->line[Scanner->position - 1] < 91) //value of a-z
-                || (Scanner->line[Scanner->position - 1] > 96 && Scanner->line[Scanner->position - 1] < 123) //value of A-Z)
-                || Scanner->line[Scanner->position - 1] == '\\')
-                {
-                  state = 4;
-                }
-                else if(((Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)) //value of 0-9
-                || Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-')
-                {
-                  state = 2;
-                }
-                else
-                {
-                  scan_raiseCodeError(lexicalErr, NULL);
-                }
-                break;
-              case 2:
-                if(Scanner->line[Scanner->position - 1] == '.') //value of A-Z)
-                {
-                  state = 3;
-                }
-                else if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58) //value of 0-9
-                {
-                  state = 2;
-                }
-                else if(isEndChar())
-                {
-                  position--;
-                  Scanner->position--;
-                  state = 5;
-                  tokenID[position] = '\0';
-                }
-                else
-                {
-                  scan_raiseCodeError(lexicalErr, NULL);
-                }
-                break;
-              case 3:
-                if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58) //value of 0-9
-                {
-                  state = 3;
-                }
-                else if(Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-'
-                || isspace(Scanner->line[Scanner->position - 1]) || Scanner->line[Scanner->position - 1] == '*'
-                || Scanner->line[Scanner->position - 1] == '/' || Scanner->line[Scanner->position - 1] == '\\'
-                || Scanner->line[Scanner->position - 1] == '=' || Scanner->line[Scanner->position - 1] == EOF
-                || Scanner->line[Scanner->position - 1] == 33) //!
-                {
-                  position--;
-                  state = 5;
-                  tokenID[position] = '\0';
-                }
-                else
-                {
-                  scan_raiseCodeError(lexicalErr, NULL);
-                }
-                break;
-              case 4:
-                if((Scanner->line[Scanner->position - 1] > 64 && Scanner->line[Scanner->position - 1] < 91) //value of a-z
-                || (Scanner->line[Scanner->position - 1] > 96 && Scanner->line[Scanner->position - 1] < 123) //value of A-Z
-                || ((Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)) //value of 0-9
-                || Scanner->line[Scanner->position - 1] == '_' || Scanner->line[Scanner->position - 1] == '\\')
-                {
-                  state = 4;
-                }
-                else if(isEndChar() && Scanner->line[Scanner->position - 1] != '\\')
-                {
-                  position--;
-                  Scanner->position--;
-                  state = 5;
-                  tokenID[position] = '\0';
-                }
-                else
-                {
-                  scan_raiseCodeError(lexicalErr, NULL);
-                }
-                break;
+              }
+              else if(dType != dtUnspecified)
+              {
+                tokenType = dataType;
+              }
+            }
+            else
+            {
+              scan_raiseCodeError(lexicalErr, NULL);
             }
             allowed = true;
           }
