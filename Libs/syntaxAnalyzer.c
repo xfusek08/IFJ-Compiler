@@ -289,9 +289,9 @@ int syntx_checkDataTypeOfBool(SToken *boolOperand){
 
 /**
  * Optimalization function - do operation with constants (+, -, *, /, \, + for concat strings)
- * Returns filled token token.type = NT_EXPR, oken.symbol->type always
- * if everythng is OK setted token.symbol->dataType, token.symbol->data
- * else token.symbol->dataType = dtUnspecified and wrong data
+ * Always returns filled token, token.type = NT_EXPR, token.symbol->type
+ * if everythng is OK, is setted token.symbol->dataType, token.symbol->data
+ * else token.symbol->dataType = dtUnspecified and wrong token.symbol->data
  */
 SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *operator, SToken *rightOperand){
 
@@ -393,11 +393,69 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *operator, SToken *right
   return token;
 }
 
+/**
+ * Prints int@constant, float@constant, bool@constant, string@constant or variable
+ */
+void syntx_printIdent(SToken *token){
+
+  if(token->symbol->type == symtConstant){  // constant
+    if(token->symbol->dataType == dtInt){
+      printf("int@%d", token->symbol->data.intVal);
+    }else if(token->symbol->dataType == dtFloat){
+      printf("float@%g", token->symbol->data.doubleVal);
+    }else if(token->symbol->dataType == dtString){
+      printf("string@%s", token->symbol->data.stringVal);
+    }else if(token->symbol->dataType == dtBool){
+      printf("bool@%s", token->symbol->data.boolVal ? "true" : "false");
+    }
+  }else if(token->symbol->type == symtVariable){  // variable
+    printf("%s", token->symbol->ident);
+  }
+}
+
+/**
+ * Generates instructions
+ */
+void syntx_generateInstruction(char *instrName, SToken *leftOperand, SToken *rightOperand, SToken *partialResult){
+      printf("%s ", instrName);
+      syntx_printIdent(partialResult);
+      printf(" ");
+      syntx_printIdent(leftOperand);
+      printf(" ");
+      syntx_printIdent(rightOperand);
+      printf("\n");
+}
+
+/**
+ * Generates code for basic operations
+ */
+void syntx_generateCodeForBasicOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
+  
+  switch(operator->type){
+    case opPlus:
+      syntx_generateInstruction("ADD", leftOperand, rightOperand, partialResult);
+      break;
+    case opMns:
+      syntx_generateInstruction("SUB", leftOperand, rightOperand, partialResult);
+      break;
+    case opMul:
+      syntx_generateInstruction("MUL", leftOperand, rightOperand, partialResult);
+      break;
+    case opDivFlt:
+      syntx_generateInstruction("DIV", leftOperand, rightOperand, partialResult);
+      break;
+    default:
+      break;
+  }
+}
+
 
 /**
  * Main function for code generation
  * leftOperand expects constant or ident
- * operator
+ * operator expects one of available operators, otherwise throws apperr_runtimeError (in subfunction)
+ * rightOperand expects constant, ident or NULL in case boolean NOT operator
+ * partialResult reference variable to return result from part of expression back to the SyntaxAnalyzer
  */
 void syntx_generateCode(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
 
@@ -411,6 +469,8 @@ void syntx_generateCode(SToken *leftOperand, SToken *operator, SToken *rightOper
   }
 
   // here are all data in right form
+
+
 
   partialResult->dataType = dtUnspecified;  // due to testing
 
