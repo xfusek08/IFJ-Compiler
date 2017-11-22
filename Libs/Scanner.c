@@ -30,6 +30,6 @@ int scan_GetNextToken(SToken *token)
 
 void scan_raiseCodeError(ErrType typchyby)
 {
-  (void)typchyby;
   fprintf(stderr, "Scanner> some error!");
+  exit(typchyby);
 }
