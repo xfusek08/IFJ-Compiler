@@ -60,8 +60,9 @@ void Scanner_init()
 }
 
 //Error function
-void scan_raiseCodeError(ErrType typchyby)
+void scan_raiseCodeError(ErrType typchyby, char *message)
 {
+  (void)*message;
   apperr_codeError(typchyby, Scanner->curentLine, Scanner->position, Scanner->line);
 }
 
@@ -297,7 +298,7 @@ SToken scan_GetNextToken()
         }
         else
         {
-          scan_raiseCodeError(lexicalErr);
+          scan_raiseCodeError(lexicalErr, NULL);
         }
         allowed = true;
         break;
@@ -337,7 +338,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr);
+                  scan_raiseCodeError(lexicalErr, NULL);
                 }
                 break;
               case 2:
@@ -353,7 +354,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr);
+                  scan_raiseCodeError(lexicalErr, NULL);
                 }
                 break;
               case 3:
@@ -364,7 +365,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr);
+                  scan_raiseCodeError(lexicalErr, NULL);
                 }
                 break;
               case 4:
@@ -375,7 +376,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr);
+                  scan_raiseCodeError(lexicalErr, NULL);
                 }
                 break;
             }
@@ -396,7 +397,7 @@ SToken scan_GetNextToken()
         }
         else
         {
-          scan_raiseCodeError(lexicalErr);
+          scan_raiseCodeError(lexicalErr, NULL);
         }
         break;
       //End of line
@@ -479,7 +480,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr);
+                  scan_raiseCodeError(lexicalErr, NULL);
                 }
                 break;
               case 1:
@@ -496,7 +497,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr);
+                  scan_raiseCodeError(lexicalErr, NULL);
                 }
                 break;
               case 2:
@@ -517,7 +518,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr);
+                  scan_raiseCodeError(lexicalErr, NULL);
                 }
                 break;
               case 3:
@@ -537,7 +538,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr);
+                  scan_raiseCodeError(lexicalErr, NULL);
                 }
                 break;
               case 4:
@@ -557,7 +558,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr);
+                  scan_raiseCodeError(lexicalErr, NULL);
                 }
                 break;
             }
@@ -598,7 +599,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr);
+                  scan_raiseCodeError(lexicalErr, NULL);
                 }
                 break;
               case 1:
@@ -616,7 +617,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr);
+                  scan_raiseCodeError(lexicalErr, NULL);
                 }
                 break;
               case 2:
@@ -627,7 +628,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr);
+                  scan_raiseCodeError(lexicalErr, NULL);
                 }
                 break;
             }
@@ -643,7 +644,7 @@ SToken scan_GetNextToken()
         //Error
         else
         {
-          scan_raiseCodeError(lexicalErr);
+          scan_raiseCodeError(lexicalErr, NULL);
         }
     }
   }

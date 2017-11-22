@@ -43,7 +43,7 @@ SToken scan_GetNextToken();
  * Write number of column and row, where the error has occurred.
  * Use appErr to printf errors on stderr. 
  */
-void scan_raiseCodeError(ErrorType typchyby);
+void scan_raiseCodeError(ErrType typchyby, char *message);
 
 /**
  * Free LAnalyzer
