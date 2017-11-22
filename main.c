@@ -17,6 +17,24 @@
 #include "Libs/symtable.h"
 #include "Libs/Scanner.h"
 
+// testovaci vypis
+#ifdef DEBUG
+const char *TokenTypeStrings[] = {
+  "opPlus", "opMns", "opMul", "opDiv", "opDivFlt", "opPlusEq", "opMnsEq", "opMulEq", "opDivEq", "opDivFltEq", "opEq", "opNotEq", "opLes", "opGrt",
+  "opLessEq", "opGrtEq", "opLeftBrc", "opRightBrc", "opSemcol", "opComma",
+  /*boolean operators*/
+  "opBoolNot", "opBoolAnd", "opBoolOr",
+
+  /* key words */
+  "kwAs", "kwAsc", "kwDeclare", "kwDim", "kwDo", "kwElse", "kwEnd", "kwFunction", "kwIf", "kwInput", "kwLength", "kwLoop",
+  "kwPrint", "kwReturn", "kwScope", "kwSubStr", "kwThen", "kwWhile", "kwContinue", "kwElseif", "kwExit", "kwFalse", "kwFor",
+  "kwNext", "kwShared", "kwStatic", "kwTrue", "kwTo", "kwUntil",
+
+  /* other */
+  "ident", "asng", "eol", "eof", "dataType"
+};
+#endif
+
 int main(int argc, char *argv[])
 {
   (void)argc;
@@ -25,23 +43,19 @@ int main(int argc, char *argv[])
   mmng_init();
   symbt_init();
   Scanner_init();
-  
+
   int i = 0;
   SToken token;
   while(i < 20)
   {
-    printf("-----------Dalsi token----------- \n");
     token = scan_GetNextToken();
-    printf("Typ tokenu: %d \n",token.type);
-    printf("Datovy typ tokenu: %d \n",token.dataType);
+    printf("%d: Token: %s \n", i, TokenTypeStrings[token.type]);
     if(token.symbol != NULL)
     {
       printf("Identifikator symbolu: %s \n",token.symbol->ident);
       printf("Typ symbolu: %d \n",token.symbol->type);
       symbt_printSymb(token.symbol);
     }
-    //printf("Datovy typ: %d \n",token.dataType);
-    printf("--------------------------------- \n");
     i++;
   }
   Scanner_destroy();

@@ -1,5 +1,5 @@
 /******************************************************************************/
-/**                           
+/**
  * \project IFJ-Compiler
  * \file    Scanner.c
  * \brief   Lexical analyzer
@@ -28,7 +28,7 @@ struct LAnalyzer {
   int curentLine;
   int position;
   int lineSize; //in CHUNKS
-  char *line; 
+  char *line;
 };
 
 // global internal instance of lexical analyzer
@@ -92,7 +92,7 @@ void delete_comment(bool isLine)
   {
     get_line();
   }
-  //Looking for ending characters of multi-line comment  
+  //Looking for ending characters of multi-line comment
   else
   {
     int charCounter = 0;
@@ -103,7 +103,7 @@ void delete_comment(bool isLine)
         get_line(Scanner);
         charCounter = -1;
       }
-      charCounter++;  
+      charCounter++;
     }
     Scanner->position = charCounter + 2;
   }
@@ -119,7 +119,7 @@ void hash_string(char *string, char *hashString)
   {
     value += exp * string[i];
     exp *= 10;
-    i++;  
+    i++;
   }
   sprintf(hashString, "sh@%d", value);
 }
@@ -147,7 +147,7 @@ EGrSymb isKeyWord(char *tokenID)
   {
     if(strcmp(str, wArray[i]) == 0)
     {
-      tokenType = i + 23;   
+      tokenType = i + 20;
     }
     i++;
   }
@@ -176,7 +176,7 @@ DataType isDataType(char *tokenID)
   {
     if(strcmp(str, sArray[i]) == 0) //maybe as long as != Until
     {
-      dType = i + 1; 
+      dType = i + 1;
     }
     i++;
   }
@@ -190,7 +190,7 @@ bool isEndChar()
   || isspace(Scanner->line[Scanner->position - 1]) || Scanner->line[Scanner->position - 1] == '*'
   || Scanner->line[Scanner->position - 1] == '/' || Scanner->line[Scanner->position - 1] == '\\'
   || Scanner->line[Scanner->position - 1] == '=' || Scanner->line[Scanner->position - 1] == EOF
-  || Scanner->line[Scanner->position - 1] == 33 || Scanner->line[Scanner->position - 1] == '(' 
+  || Scanner->line[Scanner->position - 1] == 33 || Scanner->line[Scanner->position - 1] == '('
   || Scanner->line[Scanner->position - 1] == ')';
 }
 
@@ -327,7 +327,7 @@ SToken scan_GetNextToken()
         delete_comment(true);
         allowed = false;
         break;
-      //String  
+      //String
       case '!':
         state = 0;
         position--;
@@ -398,8 +398,8 @@ SToken scan_GetNextToken()
                 {
                   scan_raiseCodeError(lexicalErr);
                 }
-                break; 
-            }    
+                break;
+            }
           }
           tokenType = ident;
           type = symtConstant;
@@ -414,7 +414,7 @@ SToken scan_GetNextToken()
           {
             hasStr = mmng_safeMalloc(sizeof(char) * floor(log10(abs(Scanner->alocStr))) + 4); //s@'number'\0
             sprintf(hasStr, "s@%d", Scanner->alocStr);
-            Scanner->alocStr++;    
+            Scanner->alocStr++;
           }
           stringVal = util_StrHardCopy(tokenID);
         }
@@ -443,7 +443,7 @@ SToken scan_GetNextToken()
         allowed = false;
         position--;
         get_line();
-        break; 
+        break;
       default:
         //Identifires
         if((Scanner->line[Scanner->position - 1] > 64 && Scanner->line[Scanner->position - 1] < 91) //value of a-z
@@ -480,7 +480,7 @@ SToken scan_GetNextToken()
                   if(tokenType == kwTrue || tokenType == kwFalse)
                   {
                     type = symtConstant;
-                    dataType = dtBool; 
+                    dataType = dtBool;
                     if(tokenType == kwTrue)
                     {
                       boolVal = true;
@@ -488,7 +488,7 @@ SToken scan_GetNextToken()
                     else
                     {
                       boolVal = false;
-                    } 
+                    }
                   }
                   else if(dataType != dtUnspecified)
                   {
@@ -503,7 +503,7 @@ SToken scan_GetNextToken()
               case 1:
                 if((Scanner->line[Scanner->position - 1] > 64 && Scanner->line[Scanner->position - 1] < 91) //value of a-z
                 || (Scanner->line[Scanner->position - 1] > 96 && Scanner->line[Scanner->position - 1] < 123) //value of A-Z)
-                || Scanner->line[Scanner->position - 1] == '\\') 
+                || Scanner->line[Scanner->position - 1] == '\\')
                 {
                   state = 4;
                 }
@@ -566,7 +566,7 @@ SToken scan_GetNextToken()
                 {
                   state = 4;
                 }
-                else if(isEndChar() && Scanner->line[Scanner->position - 1] != '\\') 
+                else if(isEndChar() && Scanner->line[Scanner->position - 1] != '\\')
                 {
                   position--;
                   Scanner->position--;
@@ -580,7 +580,7 @@ SToken scan_GetNextToken()
                 break;
             }
             allowed = true;
-          }   
+          }
         }
         //Numbers
         else if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58) // 0-9
@@ -650,7 +650,7 @@ SToken scan_GetNextToken()
                 break;
             }
             allowed = true;
-          }     
+          }
         }
         //Space,...
         else if(isspace(Scanner->line[Scanner->position - 1]))
@@ -671,7 +671,7 @@ SToken scan_GetNextToken()
     if(type == symtConstant && dataType == dtString && hasStr != NULL)
     {
       symbol = symbt_findOrInsertSymb(hasStr);
-      mmng_safeFree(hasStr);  
+      mmng_safeFree(hasStr);
     }
     else
     {
