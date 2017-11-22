@@ -335,11 +335,6 @@ SToken scan_GetNextToken()
                 else if((tokenID[position - 1]) == '\\')
                 {
                   state = 2;
-                  tokenID[position - 1] = 92;
-                  tokenID[position] = '0';
-                  tokenID[position + 1] = '9';
-                  tokenID[position + 2] = '2';
-                  position += 3;
                 }
                 else if(tokenID[position - 1] > 31 && tokenID[position - 1] != '#')
                 {
@@ -374,9 +369,40 @@ SToken scan_GetNextToken()
                 {
                   state = 3;
                 }
-                else if(tokenID[position - 1] == 'n' || tokenID[position - 1] == 't' ||
-                tokenID[position - 1] == '\"' || tokenID[position - 1] == '\\')
+                else if(tokenID[position - 1] == 'n')
                 {
+                  tokenID[position - 2] = 92;
+                  tokenID[position - 1] = '0';
+                  tokenID[position] = '1';
+                  tokenID[position + 1] = '0';
+                  position += 2;
+                  state = 1;
+                }
+                else if(tokenID[position - 1] == 't')
+                {
+                  tokenID[position - 2] = 92;
+                  tokenID[position - 1] = '1';
+                  tokenID[position] = '1';
+                  tokenID[position + 1] = '6';
+                  position += 2;
+                  state = 1;
+                }
+                else if(tokenID[position - 1] == '\"')
+                {
+                  tokenID[position - 2] = 92;
+                  tokenID[position - 1] = '0';
+                  tokenID[position] = '3';
+                  tokenID[position + 1] = '4';
+                  position += 2;
+                  state = 1;
+                }
+                else if(tokenID[position - 1] == '\\')
+                {
+                  tokenID[position - 2] = 92;
+                  tokenID[position - 1] = '0';
+                  tokenID[position] = '9';
+                  tokenID[position + 1] = '2';
+                  position += 2;
                   state = 1;
                 }
                 else
