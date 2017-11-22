@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 
   mmng_init();
   symbt_init();
-  Scanner_init();
+  scan_init();
 
   int i = 0;
   SToken token;
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
       symbt_printSymb(token.symbol);
     i++;
   }
-  Scanner_destroy();
+  scan_destroy();
   symbt_destroy();
   mmng_freeAll();
   return 0;

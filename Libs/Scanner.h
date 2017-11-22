@@ -1,15 +1,15 @@
 /******************************************************************************/
 /**
  * \project IFJ-Compiler
- * \file    Scanner.h
+ * \file    scanner.h
  * \brief   Lexical analyzer
  *
- * It takes code from language preprocessors that are written in the form of sentences. 
+ * It takes code from language preprocessors that are written in the form of sentences.
  * Breaks these syntaxes into a series of tokens, by removing any whitespace or comments in the source code.
  * If the lexical analyzer finds a token invalid, it generates an error.
  *
  * \author  Jaromír Franěk (xfrane16)
- * \date    29.10.2017 - Jaromír Franěk
+ * \date    22.11.2017 - Jaromír Franěk
  */
 /******************************************************************************/
 
@@ -26,7 +26,7 @@
  * Function prepares internal data structures and allows using another functions of lexical analyzer.
  * This function has to be called before first call of scan_GetNextToken() otherwise error is occured.
  */
-void Scanner_init();
+void scan_init();
 
 /**
  * Get next token from input
@@ -41,7 +41,7 @@ SToken scan_GetNextToken();
  * Write error on output
  *
  * Write number of column and row, where the error has occurred.
- * Use appErr to printf errors on stderr. 
+ * Use appErr to printf errors on stderr.
  */
 void scan_raiseCodeError(ErrType typchyby, char *message);
 
@@ -50,5 +50,4 @@ void scan_raiseCodeError(ErrType typchyby, char *message);
  *
  * Frees all data allocated in LAnalyzer.
  */
-void Scanner_destroy();
-
+void scan_destroy();

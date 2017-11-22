@@ -1,10 +1,10 @@
 /******************************************************************************/
 /**
  * \project IFJ-Compiler
- * \file    Scanner.c
+ * \file    scanner.c
  * \brief   Lexical analyzer
  * \author  Jaromír Franěk (xfrane16)
- * \date    21.11.2017 - Jaromír Franěk
+ * \date    22.11.2017 - Jaromír Franěk
  */
 /******************************************************************************/
 
@@ -33,10 +33,10 @@ struct LAnalyzer {
 };
 
 // global internal instance of lexical analyzer
-TLAnalyzer Scanner;
+TLAnalyzer GLBScanner;
 
 //Lexical analyzer constructor
-TLAnalyzer Scanner_create()
+TLAnalyzer TLAnalyzer_create()
 {
   TLAnalyzer newScanner = (TLAnalyzer)mmng_safeMalloc(sizeof(struct LAnalyzer));
 
@@ -47,44 +47,44 @@ TLAnalyzer Scanner_create()
   newScanner->line = mmng_safeMalloc(sizeof(char) * CHUNK * newScanner->lineSize);
   newScanner->line[0] = '\0';
   newScanner->lastToken.type = eol;
-  
+
   return newScanner;
 }
 
 //Initialization of scanner
-void Scanner_init()
+void scan_init()
 {
-  if (Scanner != NULL)
+  if (GLBScanner != NULL)
     apperr_runtimeError("Scanner is already initialized.");
-  Scanner = Scanner_create();
+  GLBScanner = TLAnalyzer_create();
 }
 
 //Error function
 void scan_raiseCodeError(ErrType typchyby, char *message)
 {
   (void)*message;
-  apperr_codeError(typchyby, Scanner->curentLine, Scanner->position, Scanner->line);
+  apperr_codeError(typchyby, GLBScanner->curentLine, GLBScanner->position, GLBScanner->line);
 }
 
 
 //Function for alocating line for scanner
 void get_line()
 {
-  Scanner->curentLine++;
+  GLBScanner->curentLine++;
   int charCounter = 0;
-  while(((Scanner->line[charCounter] = getchar()) != '\n'))
+  while(((GLBScanner->line[charCounter] = getchar()) != '\n'))
   {
-    if(charCounter == (Scanner->lineSize * CHUNK - 2))
+    if(charCounter == (GLBScanner->lineSize * CHUNK - 2))
     {
-      Scanner->lineSize++;
-      Scanner->line = mmng_safeRealloc(Scanner->line, sizeof(char) * Scanner->lineSize * CHUNK);
+      GLBScanner->lineSize++;
+      GLBScanner->line = mmng_safeRealloc(GLBScanner->line, sizeof(char) * GLBScanner->lineSize * CHUNK);
     }
-    if(Scanner->line[charCounter] == EOF)
+    if(GLBScanner->line[charCounter] == EOF)
       break;
     charCounter++;
   }
-  Scanner->line[++charCounter] = '\0';
-  Scanner->position = 0;
+  GLBScanner->line[++charCounter] = '\0';
+  GLBScanner->position = 0;
 }
 
 //Function for deleting comments
@@ -94,13 +94,13 @@ void delete_comment(bool isLine)
   //Delete line comment
   if(isLine == true)
   {
-    if(Scanner->lastToken.type != eol)
+    if(GLBScanner->lastToken.type != eol)
     {
-      while(Scanner->line[charCounter] != '\0' && Scanner->line[charCounter] != EOF && Scanner->line[charCounter] != '\n')
+      while(GLBScanner->line[charCounter] != '\0' && GLBScanner->line[charCounter] != EOF && GLBScanner->line[charCounter] != '\n')
       {
-        charCounter++;  
+        charCounter++;
       }
-      Scanner->position = charCounter;      
+      GLBScanner->position = charCounter;
     }
     else
     {
@@ -110,16 +110,16 @@ void delete_comment(bool isLine)
   //Looking for ending characters of multi-line comment
   else
   {
-    while(!(Scanner->line[charCounter] == '\'' && Scanner->line[charCounter + 1] == '/') && Scanner->line[charCounter + 1] != EOF)
+    while(!(GLBScanner->line[charCounter] == '\'' && GLBScanner->line[charCounter + 1] == '/') && GLBScanner->line[charCounter + 1] != EOF)
     {
-      if(Scanner->line[charCounter + 1] == '\0')
+      if(GLBScanner->line[charCounter + 1] == '\0')
       {
-        get_line(Scanner);
+        get_line(GLBScanner);
         charCounter = -1;
       }
       charCounter++;
     }
-    Scanner->position = charCounter + 2;
+    GLBScanner->position = charCounter + 2;
   }
 }
 
@@ -166,19 +166,19 @@ DataType isDataType(char *tokenID)
 
 bool isEndChar()
 {
-  return Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-'
-  || isspace(Scanner->line[Scanner->position - 1]) || Scanner->line[Scanner->position - 1] == '*'
-  || Scanner->line[Scanner->position - 1] == '/' || Scanner->line[Scanner->position - 1] == '\\'
-  || Scanner->line[Scanner->position - 1] == '=' || Scanner->line[Scanner->position - 1] == EOF
-  || Scanner->line[Scanner->position - 1] == 33 || Scanner->line[Scanner->position - 1] == '('
-  || Scanner->line[Scanner->position - 1] == ')' || Scanner->line[Scanner->position - 1] == ';';
+  return GLBScanner->line[GLBScanner->position - 1] == '+' || GLBScanner->line[GLBScanner->position - 1] == '-'
+  || isspace(GLBScanner->line[GLBScanner->position - 1]) || GLBScanner->line[GLBScanner->position - 1] == '*'
+  || GLBScanner->line[GLBScanner->position - 1] == '/' || GLBScanner->line[GLBScanner->position - 1] == '\\'
+  || GLBScanner->line[GLBScanner->position - 1] == '=' || GLBScanner->line[GLBScanner->position - 1] == EOF
+  || GLBScanner->line[GLBScanner->position - 1] == 33 || GLBScanner->line[GLBScanner->position - 1] == '('
+  || GLBScanner->line[GLBScanner->position - 1] == ')' || GLBScanner->line[GLBScanner->position - 1] == ';';
 }
 
 
 //Function that return next token
 SToken scan_GetNextToken()
 {
-  char *tokenID = mmng_safeMalloc(sizeof(char) * CHUNK * Scanner->lineSize);
+  char *tokenID = mmng_safeMalloc(sizeof(char) * CHUNK * GLBScanner->lineSize);
   TSymbol symbol = NULL;
   SymbolType type = symtUnknown;
   DataType dType = dtUnspecified;
@@ -197,7 +197,7 @@ SToken scan_GetNextToken()
   while(!allowed)
   {
     //Finding type of token
-    switch(tokenID[position++] = tolower(Scanner->line[Scanner->position++]))
+    switch(tokenID[position++] = tolower(GLBScanner->line[GLBScanner->position++]))
     {
       case '=':
         allowed = true;
@@ -205,43 +205,43 @@ SToken scan_GetNextToken()
         break;
       case '+':
         tokenType = opPlus;
-        if(Scanner->line[Scanner->position] == '=')
+        if(GLBScanner->line[GLBScanner->position] == '=')
         {
           tokenType = opPlusEq;
-          Scanner->position++;
+          GLBScanner->position++;
         }
         allowed = true;
         break;
       case '-':
         tokenType = opMns;
-        if(Scanner->line[Scanner->position] == '=')
+        if(GLBScanner->line[GLBScanner->position] == '=')
         {
           tokenType = opMnsEq;
-          Scanner->position++;
+          GLBScanner->position++;
         }
         allowed = true;
         break;
       case '*':
         tokenType = opMul;
-        if(Scanner->line[Scanner->position] == '=')
+        if(GLBScanner->line[GLBScanner->position] == '=')
         {
           tokenType = opMulEq;
-          Scanner->position++;
+          GLBScanner->position++;
         }
         allowed = true;
         break;
       case '/':
         tokenType = opDiv;
-        if(Scanner->line[Scanner->position] == '\'')
+        if(GLBScanner->line[GLBScanner->position] == '\'')
         {
           position--;
           delete_comment(false);
           allowed = false;
           tokenType = eol;
         }
-        else if(Scanner->line[Scanner->position] == '=')
+        else if(GLBScanner->line[GLBScanner->position] == '=')
         {
-          tokenID[position++] = Scanner->line[Scanner->position++];
+          tokenID[position++] = GLBScanner->line[GLBScanner->position++];
           tokenID[position] = '\0';
           allowed = true;
           tokenType = opDivEq;
@@ -249,28 +249,28 @@ SToken scan_GetNextToken()
         break;
       case '\\':
         tokenType = opDivFlt;
-        if(Scanner->line[Scanner->position] == '=')
+        if(GLBScanner->line[GLBScanner->position] == '=')
         {
           tokenType = opDivFltEq;
-          Scanner->position++;
+          GLBScanner->position++;
         }
         allowed = true;
         break;
       case '<':
         tokenType = opLes;
-        if(Scanner->line[Scanner->position] == '=')
+        if(GLBScanner->line[GLBScanner->position] == '=')
         {
           tokenType = opLessEq;
-          Scanner->position++;
+          GLBScanner->position++;
         }
         allowed = true;
         break;
       case '>':
         tokenType = opGrt;
-        if(Scanner->line[Scanner->position] == '=')
+        if(GLBScanner->line[GLBScanner->position] == '=')
         {
           tokenType = opGrtEq;
-          Scanner->position++;
+          GLBScanner->position++;
         }
         allowed = true;
         break;
@@ -291,10 +291,10 @@ SToken scan_GetNextToken()
         allowed = true;
         break;
       case ':':
-        if(Scanner->line[Scanner->position] == '=')
+        if(GLBScanner->line[GLBScanner->position] == '=')
         {
           tokenType = asng;
-          Scanner->position++;
+          GLBScanner->position++;
         }
         else
         {
@@ -312,17 +312,17 @@ SToken scan_GetNextToken()
         state = 0;
         position--;
         allowed = true;
-        if(Scanner->line[Scanner->position] == '\"')
+        if(GLBScanner->line[GLBScanner->position] == '\"')
         {
           state = 1;
-          tokenID[position] = Scanner->line[Scanner->position++];
+          tokenID[position] = GLBScanner->line[GLBScanner->position++];
           while(state != 5)
           {
-            tokenID[position++] = Scanner->line[Scanner->position++];
-            if(position > ((CHUNK * Scanner->lineSize) - 4))
+            tokenID[position++] = GLBScanner->line[GLBScanner->position++];
+            if(position > ((CHUNK * GLBScanner->lineSize) - 4))
             {
-              Scanner->lineSize++;
-              tokenID = mmng_safeRealloc(Scanner->line, sizeof(char) * Scanner->lineSize * CHUNK);  
+              GLBScanner->lineSize++;
+              tokenID = mmng_safeRealloc(GLBScanner->line, sizeof(char) * GLBScanner->lineSize * CHUNK);
             }
             switch(state)
             {
@@ -436,14 +436,14 @@ SToken scan_GetNextToken()
           type = symtConstant;
           dType = dtString;
           tokenID[position] = '\0';
-          hasStr = mmng_safeMalloc(sizeof(char) * floor(log10(abs(Scanner->alocStr))) + 4); //s@'number'\0
-          sprintf(hasStr, "s@%d", Scanner->alocStr);
-          Scanner->alocStr++;
+          hasStr = mmng_safeMalloc(sizeof(char) * floor(log10(abs(GLBScanner->alocStr))) + 4); //s@'number'\0
+          sprintf(hasStr, "s@%d", GLBScanner->alocStr);
+          GLBScanner->alocStr++;
           stringVal = util_StrHardCopy(tokenID);
         }
-        else if(Scanner->line[Scanner->position] == '=')
+        else if(GLBScanner->line[GLBScanner->position] == '=')
         {
-          Scanner->position++;
+          GLBScanner->position++;
           tokenType = opNotEq;
         }
         else
@@ -455,7 +455,7 @@ SToken scan_GetNextToken()
       case '\n':
         tokenType = eol;
         allowed = true;
-        if(Scanner->lastToken.type == eol)
+        if(GLBScanner->lastToken.type == eol)
         {
           allowed = false;
           position--;
@@ -482,7 +482,7 @@ SToken scan_GetNextToken()
           type = symtUnknown;
           while(state != 1)
           {
-            tokenID[position++] = tolower(Scanner->line[Scanner->position++]);
+            tokenID[position++] = tolower(GLBScanner->line[GLBScanner->position++]);
             if((tokenID[position - 1] > 96 && tokenID[position - 1] < 123) //value of a-z
             || (tokenID[position - 1] > 47 && tokenID[position - 1] < 58) //value of 0-9
             || tokenID[position - 1] == '_')
@@ -492,7 +492,7 @@ SToken scan_GetNextToken()
             else if(isEndChar())
             {
               position--;
-              Scanner->position--;
+              GLBScanner->position--;
               state = 1;
               tokenID[position] = '\0';
               tokenType = isKeyWord(tokenID);
@@ -523,33 +523,33 @@ SToken scan_GetNextToken()
           }
         }
         //Numbers
-        else if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58) // 0-9
+        else if(GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58) // 0-9
         {
           state = 0;
           tokenType = ident;
           type = symtConstant;
           while(state != 3)
           {
-            tokenID[position++] = Scanner->line[Scanner->position++];
+            tokenID[position++] = GLBScanner->line[GLBScanner->position++];
             switch(state)
             {
               case 0:
-                if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)
+                if(GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58)
                 {
                   state = 0;
                 }
-                else if(Scanner->line[Scanner->position - 1] == '.')
+                else if(GLBScanner->line[GLBScanner->position - 1] == '.')
                 {
                   state = 1;
                 }
-                else if(Scanner->line[Scanner->position - 1] == 'e' || Scanner->line[Scanner->position - 1] == 'E')
+                else if(GLBScanner->line[GLBScanner->position - 1] == 'e' || GLBScanner->line[GLBScanner->position - 1] == 'E')
                 {
                   state = 2;
                 }
                 else if(isEndChar())
                 {
                   state = 3;
-                  Scanner->position--;
+                  GLBScanner->position--;
                   tokenID[--position] = '\0';
                   intVal = strtol(tokenID, NULL, 10);
                   dType = dtInt;
@@ -560,14 +560,14 @@ SToken scan_GetNextToken()
                 }
                 break;
               case 1:
-                if(Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)
+                if(GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58)
                 {
                   state = 1;
                 }
                 else if(isEndChar())
                 {
                   state = 3;
-                  Scanner->position--;
+                  GLBScanner->position--;
                   tokenID[--position] = '\0';
                   doubleVal = strtod(tokenID, NULL);
                   dType = dtFloat;
@@ -578,8 +578,8 @@ SToken scan_GetNextToken()
                 }
                 break;
               case 2:
-                if((Scanner->line[Scanner->position - 1] > 47 && Scanner->line[Scanner->position - 1] < 58)
-                || Scanner->line[Scanner->position - 1] == '+' || Scanner->line[Scanner->position - 1] == '-')
+                if((GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58)
+                || GLBScanner->line[GLBScanner->position - 1] == '+' || GLBScanner->line[GLBScanner->position - 1] == '-')
                 {
                   state = 1;
                 }
@@ -593,7 +593,7 @@ SToken scan_GetNextToken()
           }
         }
         //Space,...
-        else if(isspace(Scanner->line[Scanner->position - 1]))
+        else if(isspace(GLBScanner->line[GLBScanner->position - 1]))
         {
           position--;
           allowed = false;
@@ -606,7 +606,7 @@ SToken scan_GetNextToken()
     }
   }
   //Filing returning token with values
-  Scanner->lastToken.type = tokenType;
+  GLBScanner->lastToken.type = tokenType;
   if(tokenType == ident || tokenType == kwTrue || tokenType == kwFalse)
   {
     if(type == symtConstant && dType == dtString && hasStr != NULL)
@@ -646,11 +646,11 @@ SToken scan_GetNextToken()
 }
 
 //destructor of LAnalyzer
-void Scanner_destroy()
+void scan_destroy()
 {
-  if (Scanner != NULL)
+  if (GLBScanner != NULL)
   {
-    mmng_safeFree(Scanner->line);
-    mmng_safeFree(Scanner);
+    mmng_safeFree(GLBScanner->line);
+    mmng_safeFree(GLBScanner);
   }
 }
