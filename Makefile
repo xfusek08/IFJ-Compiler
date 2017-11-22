@@ -13,7 +13,7 @@ debug: CFLAGS += -g -DDEBUG #-DST_DEBUG
 debug: $(EXECUTABLE) clean
 
 test: debug $(EXECUTABLE)
-	cat testcode.ifj | ./ifjcompile
+	cat testcode.ifj | ./ifjcompile.exe
 
 %.o : %.c
 	gcc $(CFLAGS) -c $< -o $@

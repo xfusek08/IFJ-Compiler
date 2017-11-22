@@ -52,11 +52,7 @@ int main(int argc, char *argv[])
     token = scan_GetNextToken();
     printf("%d: Token: %s \n", i, TokenTypeStrings[token.type]);
     if(token.symbol != NULL)
-    {
-      printf("Identifikator symbolu: %s \n",token.symbol->ident);
-      printf("Typ symbolu: %d \n",token.symbol->type);
       symbt_printSymb(token.symbol);
-    }
     i++;
   }
   Scanner_destroy();
