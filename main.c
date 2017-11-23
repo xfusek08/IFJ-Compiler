@@ -16,8 +16,26 @@
 #include "Libs/stacks.h"
 #include "Libs/symtable.h"
 #include "Libs/rParser.h"
-#include "Libs/scanner.h"
+#include "Libs/Scanner.h"
 
+// testovaci vypis
+#ifdef DEBUG
+const char *TokenTypeStrings[] = {
+  "opPlus", "opMns", "opMul", "opDiv", "opDivFlt", "opPlusEq", "opMnsEq", "opMulEq", "opDivEq", "opDivFltEq", "opEq", "opNotEq", "opLes", "opGrt",
+  "opLessEq", "opGrtEq", "opLeftBrc", "opRightBrc", "opSemcol", "opComma",
+  /*boolean operators*/
+  "opBoolNot", "opBoolAnd", "opBoolOr",
+
+  /* key words */
+  "kwAs", "kwAsc", "kwDeclare", "kwDim", "kwDo", "kwElse", "kwEnd", "kwFunction", "kwIf", "kwInput", "kwLength", "kwLoop",
+  "kwPrint", "kwReturn", "kwScope", "kwSubStr", "kwThen", "kwWhile", "kwContinue", "kwElseif", "kwExit", "kwFalse", "kwFor",
+  "kwNext", "kwShared", "kwStatic", "kwTrue", "kwTo", "kwUntil",
+
+  /* other */
+  "ident", "asng", "eol", "eof", "dataType"
+};
+#endif
+>>>>>>> master
 
 int main(int argc, char *argv[])
 {
@@ -26,11 +44,11 @@ int main(int argc, char *argv[])
 
   mmng_init();
   symbt_init();
-  scanner_init();
+  scan_init();
 
   rparser_processProgram();
 
-  scanner_destroy();
+  scan_destroy();
   symbt_destroy();
   mmng_freeAll();
   return 0;

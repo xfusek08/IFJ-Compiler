@@ -56,3 +56,5 @@ Documentation/
 
 # linux executible
 ifjcompile
+
+*.stackdump
