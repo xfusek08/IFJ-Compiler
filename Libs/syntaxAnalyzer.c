@@ -35,11 +35,11 @@ unsigned nextTokenIdent;
 int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn)
 {
   // check range
-  if(stackSymb > 21 || inputSymb > 21){
+  if(stackSymb > 24 || inputSymb > 24){
     return 0;
   }
 
-  EGrSymb precTable[22][22] = {
+  EGrSymb precTable[25][25] = {
              /* + */   /* - */  /* * */   /* / */  /* \ */  /* ( */  /* ) */  /* i */  /* , */  /* = */  /* <> */         /* < */  /* <= */ /* > */  /* >= */ /* += */ /* -= */ /* *= */ /* /= */ /* \= */ /* := */ /* AND*/ /* OR */ /* NOT*/ /* $ */
     /* +  */ {precGrt, precGrt, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* +  */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precUnd, precUnd, precUnd, precGrt},
     /* -  */ {precGrt, precGrt, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* -  */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precUnd, precUnd, precUnd, precGrt},
@@ -190,6 +190,10 @@ int syntx_checkDataTypesOfDiv(SToken *leftOperand, SToken *rightOperand){
  */
 int syntx_checkDataTypesOfAgnOps(SToken *leftOperand, SToken *rightOperand){
   //TODO: optimalization
+
+  if(leftOperand->symbol->type == symtConstant){  // if asigns to the constant -> error
+    return 0;
+  }
 
   // enabled data types pairs
   if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){  // int - int
@@ -398,9 +402,9 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *operator, SToken *right
 }
 
 /**
- * Prints int@constant, float@constant, bool@constant, string@constant or variable
+ * Generates int@constant, float@constant, bool@constant, string@constant or variable
  */
-void syntx_printIdent(SToken *token){
+void syntx_generateIdent(SToken *token){
 
   if(token->symbol->type == symtConstant){  // constant
     if(token->symbol->dataType == dtInt){
@@ -419,14 +423,17 @@ void syntx_printIdent(SToken *token){
 
 /**
  * Generates instructions
+ * rightOperand could be NULL for two-operands instructions
  */
-void syntx_generateInstruction(char *instrName, SToken *leftOperand, SToken *rightOperand, SToken *partialResult){
+void syntx_generateInstruction(char *instrName, SToken *partialResult, SToken *leftOperand, SToken *rightOperand){
       printf("%s ", instrName);
-      syntx_printIdent(partialResult);
+      syntx_generateIdent(partialResult);
       printf(" ");
-      syntx_printIdent(leftOperand);
-      printf(" ");
-      syntx_printIdent(rightOperand);
+      syntx_generateIdent(leftOperand);
+      if(rightOperand != NULL){ //if instruction has only two operands
+        printf(" ");
+        syntx_generateIdent(rightOperand);
+      }
       printf("\n");
 }
 
@@ -437,16 +444,40 @@ void syntx_generateCodeForBasicOps(SToken *leftOperand, SToken *operator, SToken
   
   switch(operator->type){
     case opPlus:
-      syntx_generateInstruction("ADD", leftOperand, rightOperand, partialResult);
+      if(leftOperand->symbol->dataType != dtString && leftOperand->symbol->dataType != dtString){ // if doesn't concatenates two strings
+        syntx_generateInstruction("ADD", partialResult, leftOperand, rightOperand);
+      }else{
+        syntx_generateInstruction("CONCAT", partialResult, leftOperand, rightOperand);  // string + string
+      }
       break;
     case opMns:
-      syntx_generateInstruction("SUB", leftOperand, rightOperand, partialResult);
+      syntx_generateInstruction("SUB", partialResult, leftOperand, rightOperand);
       break;
     case opMul:
-      syntx_generateInstruction("MUL", leftOperand, rightOperand, partialResult);
+      syntx_generateInstruction("MUL", partialResult, leftOperand, rightOperand);
       break;
     case opDivFlt:
-      syntx_generateInstruction("DIV", leftOperand, rightOperand, partialResult);
+      syntx_generateInstruction("DIV", partialResult, leftOperand, rightOperand);
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Generates code for boolean operations
+ */
+void syntx_generateCodeForBoolOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
+  
+  switch(operator->type){
+    case opBoolAnd:
+      syntx_generateInstruction("AND", partialResult, leftOperand, rightOperand);
+      break;
+    case opBoolOr:
+      syntx_generateInstruction("OR", partialResult, leftOperand, rightOperand);
+      break;
+    case opBoolNot:
+      syntx_generateInstruction("NOT", partialResult, leftOperand, NULL);
       break;
     default:
       break;
@@ -474,9 +505,9 @@ void syntx_generateCode(SToken *leftOperand, SToken *operator, SToken *rightOper
 
   // here are all data in right form
 
-
-
-  partialResult->dataType = dtUnspecified;  // due to testing
+  // one of functions bellow prints instructions by operator type
+  syntx_generateCodeForBasicOps(leftOperand, operator, rightOperand, partialResult);
+  syntx_generateCodeForBoolOps(leftOperand, operator, rightOperand, partialResult);
 
 }
 //radim konec*************
