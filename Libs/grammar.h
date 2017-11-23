@@ -77,9 +77,9 @@ first(NT_ASSINGEXT) = { asgn -> (6); else -> (7 [epsilon]) }
 7. NT_ASSINGEXT -> (epsilon)
 
 first(NT_SCOPE) = { kwScope -> (8); else -> (error) }
-8. NT_SCOPE -> kwScope NT_STAT_LIST kwEnd kwScope eol
+8. NT_SCOPE -> kwScope eol NT_STAT_LIST kwEnd kwScope eol
 
-first(NT_SCOPE) = { first(NT_PARAM) -> (9); else -> (10 [epsilon]) }
+first(NT_PARAM_LIST) = { first(NT_PARAM) -> (9); else -> (10 [epsilon]) }
 9.  NT_PARAM_LIST -> NT_PARAM
 10. NT_PARAM_LIST -> (epsilon)
 
@@ -110,7 +110,7 @@ first(NT_STAT) = {
 16. NT_STAT -> kwInput ident
 17. NT_STAT -> kwPrint NT_EXPR_LIST
 18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf eol
-19. NT_STAT -> kwDim iden kwAs dataType NT_ASSINGEXT
+19. NT_STAT -> kwDim ident kwAs dataType NT_ASSINGEXT
 20. NT_STAT -> ident asng NT_EXPR
 21. NT_STAT -> kwContinue
 22. NT_STAT -> kwExit

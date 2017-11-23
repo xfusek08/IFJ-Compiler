@@ -18,36 +18,30 @@
 #include "Libs/rParser.h"
 #include "Libs/Scanner.h"
 
-// testovaci vypis
-#ifdef DEBUG
-const char *TokenTypeStrings[] = {
-  "opPlus", "opMns", "opMul", "opDiv", "opDivFlt", "opPlusEq", "opMnsEq", "opMulEq", "opDivEq", "opDivFltEq", "opEq", "opNotEq", "opLes", "opGrt",
-  "opLessEq", "opGrtEq", "opLeftBrc", "opRightBrc", "opSemcol", "opComma",
-  /*boolean operators*/
-  "opBoolNot", "opBoolAnd", "opBoolOr",
-
-  /* key words */
-  "kwAs", "kwAsc", "kwDeclare", "kwDim", "kwDo", "kwElse", "kwEnd", "kwFunction", "kwIf", "kwInput", "kwLength", "kwLoop",
-  "kwPrint", "kwReturn", "kwScope", "kwSubStr", "kwThen", "kwWhile", "kwContinue", "kwElseif", "kwExit", "kwFalse", "kwFor",
-  "kwNext", "kwShared", "kwStatic", "kwTrue", "kwTo", "kwUntil",
-
-  /* other */
-  "ident", "asng", "eol", "eof", "dataType"
-};
-#endif
->>>>>>> master
-
 int main(int argc, char *argv[])
 {
   (void)argc;
   (void)argv;
 
   mmng_init();
-  symbt_init();
+  symbt_init("$$main");
   scan_init();
 
-  rparser_processProgram();
 
+  rparser_processProgram();
+  /*
+  int i = 0;
+  SToken token;
+  token.type = eol;
+  while(token.type != eof)
+  {
+    token = scan_GetNextToken();
+    printf("%d: Token: %s \n", i, TokenTypeStrings[token.type]);
+    if(token.symbol != NULL)
+      symbt_printSymb(token.symbol);
+    i++;
+  }
+  */
   scan_destroy();
   symbt_destroy();
   mmng_freeAll();

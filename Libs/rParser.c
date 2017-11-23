@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "appErr.h"
+#include "MMng.h"
 #include "utils.h"
 #include "scanner.h"
 #include "symtable.h"
@@ -27,14 +28,29 @@
 #include "syntaxAnalyzer.h"
 #include "stacks.h"
 
+void raiseUnexpToken(SToken *actToken, EGrSymb expected);
+
 // =============================================================================
 // ====================== Supportive function macros  ==========================
 // =============================================================================
 
 #define NEXT_TOKEN(T) *T = scan_GetNextToken()
-#define CHECK_TOKEN(T, S) if (T->type != S) scan_raiseCodeError(syntaxErr, "\"S\" token expected")
+#define CHECK_TOKEN(T, S) if (T->type != S) raiseUnexpToken(T, S)
 #define NEXT_CHECK_TOKEN(T, S) NEXT_TOKEN(T); CHECK_TOKEN(T, S)
 
+// semantic errors
+// on second definition of function
+#define ERR_FUNC_REDEF() scan_raiseCodeError(semanticErr, "Redefinition of function is not allowed.")
+// when defining symbol and it is already defined
+#define ERR_SYMB_REDEF() scan_raiseCodeError(semanticErr, "Redefinition of defined symbol is not allowed.")
+// unexpected token
+#define ERR_UNEXP_TOKEN() scan_raiseCodeError(syntaxErr, "Uexpected token.")
+
+// =============================================================================
+// ========================== Global variables =================================
+// =============================================================================
+
+unsigned int GLBFrameCnt = 0;
 
 // =============================================================================
 // ========== Declaration of recursive Grammar NON-terminal functions ==========
@@ -43,9 +59,7 @@ void ck_NT_PROG(SToken *actToken); 					// Program - staritng non-terminal
 void ck_NT_DD(SToken *actToken); 						// definitions and declarations section
 void ck_NT_ASSINGEXT(                       // Assignement (...  [as datatype])
   SToken *actToken,
-  const char *frame,
-  const char *ident,
-  DataType dataType);
+  TSymbol symbol);
 void ck_NT_SCOPE(SToken *actToken); 				// Scope statement where local variables can be owerriten.
 void ck_NT_PARAM_LIST(                      // list of parameters for function
   SToken *actToken,
@@ -53,7 +67,9 @@ void ck_NT_PARAM_LIST(                      // list of parameters for function
 void ck_NT_PARAM( 				                  // one or more parameters
   SToken *actToken,
   TArgList parList);
-void ck_NT_PARAM_EXT(SToken *actToken); 		// continue of param list
+void ck_NT_PARAM_EXT( 		                  // continue of param list
+  SToken *actToken,
+  TArgList parList);
 void ck_NT_STAT_LIST(SToken *actToken); 		// list of statements
 void ck_NT_STAT(SToken *actToken); 					// one statement
 void ck_NT_DOIN(SToken *actToken); 					// body of do..loop statement
@@ -78,7 +94,7 @@ void processFunction(SToken *actToken)
   DataType retType = dtUnspecified;
   TArgList parList = TArgList_create();
 
-  NEXT_CHECK_TOKEN(actToken, kwFunction);
+  CHECK_TOKEN(actToken, kwFunction);
   NEXT_CHECK_TOKEN(actToken, ident);
 
   // load ident to symbtable
@@ -86,16 +102,16 @@ void processFunction(SToken *actToken)
   if (actSymbol->type == symtUnknown)
   {
     actSymbol->type = symtFuction;
-    actSymbol->data.funcData.label = util_StrHardCopy(actSymbol->ident); // TODO: prefix ?
+    actSymbol->data.funcData.label = util_StrConcatenate("$", actSymbol->ident);
   }
   else if (actSymbol->type == symtFuction)
   {
     isDeclared = true;
     if (actSymbol->data.funcData.isDefined) // redefinition is not allowed
-      scan_raiseCodeError(semanticErr, "Redefinition of function.");
+      ERR_FUNC_REDEF();
   }
   else // attempt of redeclaration
-    scan_raiseCodeError(semanticErr, "Symbol is defined as different type.");
+    ERR_SYMB_REDEF();
 
   NEXT_CHECK_TOKEN(actToken, opLeftBrc);
   NEXT_TOKEN(actToken);
@@ -126,18 +142,21 @@ void processFunction(SToken *actToken)
   actSymbol->data.funcData.isDefined = true;
 
   // body of function
-  symbt_pushFrame(false); // lets create local variable frame for function
+  symbt_pushFrame(actSymbol->data.funcData.label, false); // lets create local variable frame for function
+  printf("LABEL %s\n", actSymbol->data.funcData.label);
+  printf("PUSHFRAME\n");
+  printf("DEFVAR LF@%%retval\n");
   // fill frame with argument symbols
   for (int i = 0; i < parList->count; i++)
   {
     TArgument actArg = parList->get(parList, i);
     TSymbol symb = symbt_insertSymbOnTop(actArg->ident);
+    char *preident = symb->ident;
+    symb->ident = util_StrConcatenate("LF@", symb->ident);
+    mmng_safeFree(preident);
     symb->type = symtVariable;
     symb->dataType = actArg->dataType;
   }
-  printf("LABEL %s\n", actSymbol->data.funcData.label);
-  printf("PUSHFRAME\n");
-  printf("DEFVAR LF@%%retval\n");
   NEXT_TOKEN(actToken);
   ck_NT_STAT_LIST(actToken);
   CHECK_TOKEN(actToken, kwEnd); // statement list must ends on end key word
@@ -151,12 +170,12 @@ void processFunction(SToken *actToken)
 
 void writeExpression(SToken *actToken)
 {
-  if (actToken->type == ident || actToken->type == kwLeftBrc) // NT_EXPR
+  if (actToken->type == ident || actToken->type == opLeftBrc) // NT_EXPR
   {
     // evaluate expression
-    TSymbol actSymbol = syntx_processExpression(actToken);
+    TSymbol actSymbol = syntx_processExpression(actToken, NULL);
     if (actSymbol->type == symtVariable)
-      printf("WRITE %s", symbol->ident);
+      printf("WRITE %s", actSymbol->ident);
     else if (actSymbol->type == symtConstant)
     {
       switch (actSymbol->dataType)
@@ -165,6 +184,9 @@ void writeExpression(SToken *actToken)
         case dtFloat: printf("WRITE float@% g", actSymbol->data.doubleVal); break;
         case dtString: printf("WRITE string@%s", actSymbol->data.stringVal); break;
         case dtBool: printf("WRITE bool@%s", (actSymbol->data.boolVal) ? "true" : "false"); break;
+        default:
+          apperr_runtimeError("Invalid symbol data type. (internal structure error)");
+          break;
       }
     }
     else
@@ -172,6 +194,13 @@ void writeExpression(SToken *actToken)
   }
   else
     scan_raiseCodeError(semanticErr, "Expression expected.");
+}
+
+void raiseUnexpToken(SToken *actToken, EGrSymb expected)
+{
+  char *message = mmng_safeMalloc(sizeof (char) * 100);
+  sprintf(message, "\"%s\" token expected, \"%s\" got.", TokenTypeStringss[expected], TokenTypeStringss[(*actToken).type]);
+  scan_raiseCodeError(syntaxErr, message);
 }
 
 // =============================================================================
@@ -188,8 +217,13 @@ void ck_NT_PROG(SToken *actToken)
 {
   // 1. NT_PROG -> NT_DD NT_SCOPE eof
   ck_NT_DD(actToken);
+  printf("LABEL %s\n", symbt_getActFuncLabel()); // main function
   ck_NT_SCOPE(actToken);
-  CHECK_TOKEN(actToken, eof);
+  if (actToken->type != eof)
+  {
+    CHECK_TOKEN(actToken, eol);
+    NEXT_CHECK_TOKEN(actToken, eof);
+  }
 }
 
 // definitions and declarations section
@@ -225,11 +259,13 @@ void ck_NT_DD(SToken *actToken)
       NEXT_CHECK_TOKEN(actToken, dataType);
       actSymbol->data.funcData.returnType = actToken->dataType; // token is return type
       NEXT_CHECK_TOKEN(actToken, eol);
+      NEXT_TOKEN(actToken);
       ck_NT_DD(actToken);
       break;
     // 3. NT_DD -> kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_STAT_LIST kwEnd kwFunction eol NT_DD
     case kwFunction:
       processFunction(actToken); // too long to be here
+      NEXT_TOKEN(actToken);
       ck_NT_DD(actToken);
       break;
     // 4. NT_DD -> kwStatic kwShared ident kwAs dataType NT_ASSINGEXT eol NT_DD
@@ -240,14 +276,20 @@ void ck_NT_DD(SToken *actToken)
       if (actSymbol->type == symtUnknown)
         actSymbol->type = symtVariable;
       else
-        scan_raiseCodeError(semanticErr, "Redefinition of static variable is not allowed.");
+        ERR_SYMB_REDEF();
+
       NEXT_CHECK_TOKEN(actToken, kwAs);
       NEXT_CHECK_TOKEN(actToken, dataType);
       actSymbol->dataType = actToken->dataType;
-      printf("DEFVAR GF@%s\n", actSymbol->ident);
+      // add frame fo identifier
+      char *preident = actSymbol->ident;
+      actSymbol->ident = util_StrConcatenate("GF@", actSymbol->ident);
+      mmng_safeFree(preident);
+      printf("DEFVAR %s\n", actSymbol->ident);
       NEXT_TOKEN(actToken);
-      ck_NT_ASSINGEXT(actToken, "GL", actSymbol->ident, actToken->dataType);
-      NEXT_CHECK_TOKEN(actToken, eol);
+      ck_NT_ASSINGEXT(actToken, actSymbol);
+      CHECK_TOKEN(actToken, eol);
+      NEXT_TOKEN(actToken);
       ck_NT_DD(actToken);
       break;
     // 5. NT_DD -> (epsilon)
@@ -259,7 +301,7 @@ void ck_NT_DD(SToken *actToken)
 
 // Assignement (...  [as datatype])
 // first(NT_ASSINGEXT) = { asgn -> (6); else -> (7 [epsilon]) }
-void ck_NT_ASSINGEXT(SToken *actToken, const char *ident, DataType dataType)
+void ck_NT_ASSINGEXT(SToken *actToken, TSymbol symbol)
 {
   switch (actToken->type)
   {
@@ -267,7 +309,8 @@ void ck_NT_ASSINGEXT(SToken *actToken, const char *ident, DataType dataType)
     case asng:
       NEXT_CHECK_TOKEN(actToken, asng);
       NEXT_TOKEN(actToken);
-      syntx_processExpression(actToken, ident, dataType);
+      // vtsledek expression bude ulozen v promenne symbol
+      syntx_processExpression(actToken, symbol);
       break;
     // 7. NT_ASSINGEXT -> (epsilon)
     default:
@@ -284,12 +327,15 @@ void ck_NT_SCOPE(SToken *actToken)
   {
     // 8. NT_SCOPE -> kwScope NT_STAT_LIST kwEnd kwScope eol
     case kwScope:
-      symbt_pushFrame(true);
+      NEXT_CHECK_TOKEN(actToken, eol);
+      char *label = symbt_getNewLocalLabel();
+      symbt_pushFrame(label, true);
+      mmng_safeFree(label);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
       CHECK_TOKEN(actToken, kwEnd); // statement list must ends on end key word
       NEXT_CHECK_TOKEN(actToken, kwScope);
-      NEXT_CHECK_TOKEN(actToken, eol);
+      NEXT_TOKEN(actToken);
       symbt_popFrame();
       break;
     default:
@@ -323,19 +369,18 @@ void ck_NT_PARAM(SToken *actToken, TArgList parList)
   DataType dt;
   switch (actToken->type)
   {
-    // 9.  NT_PARAM_LIST -> NT_PARAM
+    // 11. NT_PARAM -> ident kwAs dataType NT_PARAM_EXT
     case ident:
       id = actToken->symbol->ident;
       NEXT_CHECK_TOKEN(actToken, kwAs);
       NEXT_CHECK_TOKEN(actToken, dataType);
       dt = actToken->dataType;
-      parList->insert(id, dt);
+      parList->insert(parList, id, dt);
       NEXT_TOKEN(actToken);
       ck_NT_PARAM_EXT(actToken, parList);
       break;
-    // 11. NT_PARAM -> ident kwAs dataType NT_PARAM_EXT
     default:
-      scan_raiseCodeError("identifier token expected.");
+      scan_raiseCodeError(syntaxErr, "Identifier token expected.");
       break;
   }
 }
@@ -377,7 +422,7 @@ void ck_NT_STAT_LIST(SToken *actToken)
     case kwDo:
     case kwFor:
       ck_NT_STAT(actToken);
-      NEXT_CHECK_TOKEN(actToken, eol);
+      CHECK_TOKEN(actToken, eol);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
       break;
@@ -409,11 +454,11 @@ void ck_NT_STAT(SToken *actToken)
   {
     // 16. NT_STAT -> kwInput ident
     case kwInput:
-      NEXT_TOKEN(actToken);
+      NEXT_CHECK_TOKEN(actToken, ident);
       actSymbol = actToken->symbol;
       if (actSymbol->type != symtVariable)
         scan_raiseCodeError(semanticErr, "Symbol is not defined variable.");
-      printf("READ %s\n", actSymbol->ident, util_dataTypeToString(actSymbol->dataType));
+      printf("READ %s %s\n", actSymbol->ident, util_dataTypeToString(actSymbol->dataType));
       break;
     // 17. NT_STAT -> kwPrint NT_EXPR opSemcol NT_EXPR_LIST
     case kwPrint:
@@ -421,20 +466,67 @@ void ck_NT_STAT(SToken *actToken)
       writeExpression(actToken);
       NEXT_CHECK_TOKEN(actToken, opSemcol);
       NEXT_TOKEN(actToken);
-      ck_NT_INIF_EXT(actToken);
+      ck_NT_EXPR_LIST(actToken);
       break;
     // 18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf eol
-    // 19. NT_STAT -> kwDim iden kwAs dataType NT_ASSINGEXT
+    case kwIf:
+      break;
+    // 19. NT_STAT -> kwDim ident kwAs dataType NT_ASSINGEXT
+    case kwDim:
+      NEXT_CHECK_TOKEN(actToken, ident);
+      actSymbol = actToken->symbol;
+      if (actSymbol->type == symtUnknown)
+        actSymbol->type = symtVariable;
+      else
+        ERR_SYMB_REDEF();
+
+      NEXT_CHECK_TOKEN(actToken, kwAs);
+      NEXT_CHECK_TOKEN(actToken, dataType);
+      actSymbol->dataType = actToken->dataType;
+      // add frame fo identifier
+      char *preident = actSymbol->ident;
+      actSymbol->ident = util_StrConcatenate("LF@", actSymbol->ident);
+      mmng_safeFree(preident);
+      printf("DEFVAR %s\n", actSymbol->ident);
+      NEXT_TOKEN(actToken);
+      ck_NT_ASSINGEXT(actToken, actSymbol);
+      break;
     // 20. NT_STAT -> NT_EXPR
+    case ident:
+    case opLeftBrc:
+      syntx_processExpression(actToken, NULL);
+      break;
     // 21. NT_STAT -> kwContinue
+    case kwContinue:
+      // ???
+      break;
     // 22. NT_STAT -> kwExit
+    case kwExit:
+      // ???
+      break;
     // 23. NT_STAT -> NT_SCOPE
+    case kwScope:
+      ck_NT_SCOPE(actToken);
+      break;
     // 24. NT_STAT -> kwReturn NT_EXPR
+    case kwReturn:
+      if (symbt_cntFuncFrames() > 1)
+      {
+        NEXT_TOKEN(actToken);
+        TSymbol symbol = symbt_findOrInsertSymb("%%retval");
+        syntx_processExpression(actToken, symbol);
+        char *epiloglabel = util_StrConcatenate(symbt_getActFuncLabel(), "$epilog");
+        printf("JMP %s\n", epiloglabel);
+        mmng_safeFree(epiloglabel);
+      }
+      else
+        scan_raiseCodeError(anotherSemanticErr, "Return can not be used outside of function.");
+      break;
     // 25. NT_STAT -> kwDo NT_DOIN kwLoop
     // 26. NT_STAT -> kwFor ident NT_ASSINGEXT kwTo NT_EXPR NT_STEP eol NT_STAT_LIST kwNext
     // else -> error
     default:
-    // chyba
+      ERR_UNEXP_TOKEN();
       break;
   }
 }
@@ -483,12 +575,13 @@ void ck_NT_EXPR_LIST(SToken *actToken)
   switch (actToken->type)
   {
     // 36. NT_EXPR_LIST -> NT_EXPR opSemcol NT_EXPR_LIST
-    case :
+    case opLeftBrc:
+    case ident:
       NEXT_TOKEN(actToken);
       writeExpression(actToken);
       NEXT_CHECK_TOKEN(actToken, opSemcol);
       NEXT_TOKEN(actToken);
-      ck_NT_INIF_EXT(actToken);
+      ck_NT_EXPR_LIST(actToken);
       break;
     // 37. NT_EXPR_LIST -> (epsilon)
     default:
@@ -504,6 +597,7 @@ void ck_NT_EXPR_LIST(SToken *actToken)
 void rparser_processProgram()
 {
   printf(".IFJcode17\n");
+  printf("JUMP %s\n", symbt_getActFuncLabel());
   SToken token = scan_GetNextToken();
   ck_NT_PROG(&token);
 }

@@ -11,6 +11,7 @@
 // references
 #include <stdbool.h>
 #include <string.h>
+#include <math.h>
 #include "appErr.h"
 #include "MMng.h"
 #include "utils.h"
@@ -35,8 +36,10 @@ struct STNode {
 // node of AVL tree main root with no parent reprezenting one symbol table
 typedef struct SymTable *TSymTable;
 struct SymTable {
-  TSTNode root;         // root of table
-  bool isTransparent;   // true if finding symbol is suppose to continue to lower table on stack (scope)
+  TSTNode root;               // root of table
+  bool isTransparent;         // true if finding symbol is suppose to continue to lower table on stack (scope)
+  char *frameLabel;           // label of frame
+  unsigned int localLabelCnt; // counter of local labels
 };
 
 // global internal instance of symbol table stack
@@ -83,7 +86,7 @@ void TArgList_destroy(TArgList self)
 TArgument TArgList_get(TArgList self, int index)
 {
   TArgument actArg = self->head;
-  for (; index >= 0 && actArg != NULL; index--)
+  for (; index >= 0 && actArg->next != NULL; index--)
     actArg = actArg->next;
   return actArg;
 }
@@ -91,7 +94,10 @@ TArgument TArgList_get(TArgList self, int index)
 TArgument TArgList_insert(TArgList self, char *ident, DataType dataType)
 {
   TArgument newArg = TArgument_create(ident, dataType);
-  self->tail->next = newArg;
+  if (self->tail != NULL)
+    self->tail->next = newArg;
+  else
+    self->head = newArg;
   self->tail = newArg;
   self->count++;
   return newArg;
@@ -490,11 +496,13 @@ TSTNode TSTNode_delete(TSTNode self, char *key, bool *deleted)
 // =============================================================================
 
 // constructor of TSymTable
-TSymTable TSymTable_create(bool transparent)
+TSymTable TSymTable_create(char *frameLabel, bool transparent)
 {
   TSymTable newST = (TSymTable)mmng_safeMalloc(sizeof(struct SymTable));
   newST->isTransparent = transparent;
   newST->root = NULL;
+  newST->frameLabel = util_StrHardCopy(frameLabel);
+  newST->localLabelCnt = 0;
   return newST;
 }
 
@@ -502,6 +510,7 @@ TSymTable TSymTable_create(bool transparent)
 void TSymTable_destroy(TSymTable self)
 {
   TSTNode_destroy(self->root, true);
+  mmng_safeFree(self->frameLabel);
   mmng_safeFree(self);
 }
 
@@ -548,18 +557,27 @@ void symbt_assertIfNotInit()
     apperr_runtimeError("Symbol table is not initialized.");
 }
 
+TSymTable getFirstNonTransparetFrame()
+{
+  int i = GLBSymbTabStack->count - 1;
+  TSymTable actTable = GLBSymbTabStack->ptArray[i];
+  for(;actTable->isTransparent && i >= 0; i--) // serach first non transparent frame
+    actTable = GLBSymbTabStack->ptArray[i];
+  return actTable;
+}
+
 // =============================================================================
 // ====================== Interface implementation =============================
 // =============================================================================
 
 // Initialization of global symbol table stack
-void symbt_init()
+void symbt_init(char *mainLabel)
 {
   if (GLBSymbTabStack != NULL)
     apperr_runtimeError("symbt_init(): Symbol table is already initialized.");
 
   GLBSymbTabStack = TPStack_create();
-  symbt_pushFrame(false); // insert global frame
+  symbt_pushFrame(mainLabel, false); // insert global frame
 }
 
 //  Free of all symbol table stack
@@ -572,6 +590,7 @@ void symbt_destroy()
 
   // delete last left global table on stack (pop left null)
   TSymTable_destroy(GLBSymbTabStack->top(GLBSymbTabStack));
+
   // destroy stack
   GLBSymbTabStack->pop(GLBSymbTabStack);
   GLBSymbTabStack->destroy(GLBSymbTabStack); // destroy stack
@@ -579,27 +598,35 @@ void symbt_destroy()
 }
 
 // Creates new instance of symbol table on top of the stack
-void symbt_pushFrame(bool transparent)
+void symbt_pushFrame(char *label, bool transparent)
 {
   symbt_assertIfNotInit();
-  GLBSymbTabStack->push(GLBSymbTabStack, TSymTable_create(transparent));
+  GLBSymbTabStack->push(GLBSymbTabStack, TSymTable_create(label, transparent));
 }
 
 // Frees destroys symbol table on top of the stack.
 void symbt_popFrame()
 {
   symbt_assertIfNotInit();
-  TSymTable_destroy(GLBSymbTabStack->top(GLBSymbTabStack));
-  GLBSymbTabStack->pop(GLBSymbTabStack);
-  if (GLBSymbTabStack->count == 0) // if nothing left, push global frame
-    symbt_pushFrame(false);
+  if (GLBSymbTabStack->count > 1)
+  {
+    TSymTable_destroy(GLBSymbTabStack->top(GLBSymbTabStack));
+    GLBSymbTabStack->pop(GLBSymbTabStack);
+  }
 }
 
 // Count frames
-int symbt_cntFrames()
+int symbt_cntFuncFrames()
 {
   symbt_assertIfNotInit();
-  return GLBSymbTabStack->count;
+  int cnt = 0;
+  for(int i = GLBSymbTabStack->count - 1; i >= 0; i--) // serach first non transparent frame
+  {
+    TSymTable actTable = GLBSymbTabStack->ptArray[i];
+    if (!actTable->isTransparent)
+      cnt++;
+  }
+  return cnt;
 }
 
 // Finds symbol by indentifier
@@ -660,6 +687,29 @@ void symbt_deleteSymb(char *ident)
 
   TSymTable_detete(GLBSymbTabStack->top(GLBSymbTabStack), ident);
 }
+
+// Gets label of first non-transparent frame from top of frame stack (used as function label)
+char *symbt_getActFuncLabel()
+{
+  return getFirstNonTransparetFrame()->frameLabel;
+}
+
+// Gets label of actual frame on top of frame stack
+char *symbt_getActLocalLabel()
+{
+  return ((TSymTable)(GLBSymbTabStack->top(GLBSymbTabStack)))->frameLabel;
+}
+
+// Gets new unique label for actual FunctionLabel
+char *symbt_getNewLocalLabel()
+{
+  TSymTable actTable = getFirstNonTransparetFrame();
+  char *cntString = mmng_safeMalloc(
+    sizeof(char) * (strlen(actTable->frameLabel) + 12));
+  sprintf(cntString, "%s$L%u", actTable->frameLabel, actTable->localLabelCnt);
+  return cntString;
+}
+
 
 // =============================================================================
 // ====================== funkce pro testovaci programy ========================
@@ -733,17 +783,16 @@ void symbt_printSymb(TSymbol symbol)
       break;
     case symtFuction:
       printf(" Function:\n");
-      printf("\n    Label: \"%s\"\n", symbol->data.funcData.label);
-      printf("    return type: %s\n", util_dataTypeToString(symbol->data.funcData.returnType));
-      printf("    Defined: %s\n", (symbol->data.funcData.isDefined) ? "True" : "False");
-      printf("    Argument count: %d\n", symbol->data.funcData.arguments->count);
-      printf("    Arguments: [");
       TArgList arguments = symbol->data.funcData.arguments;
-      for (int i = 0; i < arguments->count; i++)
+      printf("\n    Label: \"%s\"\n", symbol->data.funcData.label);
+      printf("    Return type: %s\n", util_dataTypeToString(symbol->data.funcData.returnType));
+      printf("    Defined: %s\n", (symbol->data.funcData.isDefined) ? "True" : "False");
+      printf("    Argument count: %d\n", arguments->count);
+      printf("    Arguments: [");
+      TArgument arg = arguments->get(arguments, 0);
+      for (int i = 0; i < arguments->count && arg != NULL; i++)
       {
-        printf("(%s as %s)",
-          arguments->get(arguments, i)->ident,
-          util_dataTypeToString(arguments->get(arguments, i)->dataType));
+        printf("(%s as %s)", arg->ident, util_dataTypeToString(arg->dataType));
         if (i + 1 < arguments->count)
           printf("; ");
       }

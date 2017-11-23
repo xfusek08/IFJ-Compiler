@@ -62,8 +62,13 @@ void scan_init()
 //Error function
 void scan_raiseCodeError(ErrType typchyby, char *message)
 {
-  (void)*message;
-  apperr_codeError(typchyby, GLBScanner->curentLine, GLBScanner->position, GLBScanner->line);
+  apperr_codeError(
+    typchyby,
+    GLBScanner->curentLine,
+    GLBScanner->position,
+    GLBScanner->line,
+    message
+  );
 }
 
 

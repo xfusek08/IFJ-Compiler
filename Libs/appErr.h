@@ -45,6 +45,6 @@ void apperr_runtimeError(char *errMsg);
  * \param col column where the error occurred
  * \param line wrong section of code
  */
-void apperr_codeError(ErrType type, int row, int col, char *line);
+void apperr_codeError(ErrType type, int row, int col, char *line, char *message);
 
 #endif // _appErr

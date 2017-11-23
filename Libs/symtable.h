@@ -127,8 +127,9 @@ struct Symbol {
  * is called only for initialization.
  * If function is called and symbol table is already initialized error is thrown
  * to prevent memory leaks.
+ * \param char *mainLabel label of main function
  */
-void symbt_init();
+void symbt_init(char *mainLabel);
 
 /**
  * Free of all symbol table stack
@@ -140,9 +141,10 @@ void symbt_destroy();
 /**
  * Creates new instance of symbol table on top of the stack
  * \param bool transparent flag true if created frame is suppose to be transparent
+ * \param char *label sets label of frame
  * (searching for symbols continues on next table on stack)
  */
-void symbt_pushFrame(bool transparent);
+void symbt_pushFrame(char *label, bool transparent);
 
 /**
  * Frees destroys symbol table on top of the stack.
@@ -153,11 +155,11 @@ void symbt_pushFrame(bool transparent);
 void symbt_popFrame();
 
 /**
- * Count frames
+ * Counts number non transparent frames
  *
- * \returns unsigned int number or frames (tables on stack)
+ * \returns unsigned int number of non-transparent frames (tables on stack)
  */
-int symbt_cntFrames();
+int symbt_cntFuncFrames();
 
 /**
  * Finds symbol by indentifier
@@ -199,6 +201,21 @@ TSymbol symbt_insertSymbOnTop(char *ident);
  * \param  char* ident string identifier used as key
  */
 void symbt_deleteSymb(char *ident);
+
+/**
+ * Gets label of first non-transparent frame from top of frame stack (used as function label)
+ */
+char *symbt_getActFuncLabel();
+
+/**
+ * Gets label of actual frame on top of frame stack
+ */
+char *symbt_getActLocalLabel();
+
+/**
+ * Gets new unique label for actual FunctionLabel
+ */
+char *symbt_getNewLocalLabel();
 
 // funkce pouze pro testovaci programy
 

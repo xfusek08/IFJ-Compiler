@@ -21,7 +21,7 @@ void apperr_runtimeError(char *errMsg)
   exit(internalErr);
 }
 
-void apperr_codeError(ErrType type, int row, int col, char *line)
+void apperr_codeError(ErrType type, int row, int col, char *line, char *message)
 {
 
   switch (type)
@@ -46,6 +46,7 @@ void apperr_codeError(ErrType type, int row, int col, char *line)
   }
 
   fprintf( stderr, "\033[33m[%d:%d]\033[0m:\n", row, col);
+  fprintf( stderr, "%s\n", message);
 
   unsigned int i = 1;
   int consoleRowNum = 0;
@@ -55,7 +56,7 @@ void apperr_codeError(ErrType type, int row, int col, char *line)
     int j = 0;
     for(; j < 80 && i <= strlen(line); j++)
     {
-      printf("%c", line[i+j-1]);
+      putchar(line[i+j-1]);
     }
 
     i += j;

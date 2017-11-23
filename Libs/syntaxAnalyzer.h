@@ -5,6 +5,6 @@
 #include "grammar.h"
 #include "symtable.h"
 
-TSymbol syntx_processExpression(SToken *actToken);
+TSymbol syntx_processExpression(SToken *actToken, TSymbol outsymb);
 
 #endif

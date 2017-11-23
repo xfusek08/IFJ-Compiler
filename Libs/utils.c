@@ -13,6 +13,8 @@
 #include "MMng.h"
 #include "utils.h"
 
+#include "grammar.h"
+
 // hard string copy
 char *util_StrHardCopy(const char *str)
 {
@@ -45,4 +47,24 @@ const char *util_dataTypeToString(const DataType dataType)
     case dtBool:     return "bool";
     default:         return "Unspecified";
   }
+}
+
+// Return grammar symbol as tring
+char *grammarToString(EGrSymb symb)
+{
+  char *tokenTypeStrings[] = {
+    "opPlus", "opMns", "opMul", "opDiv", "opDivFlt", "opPlusEq", "opMnsEq", "opMulEq", "opDivEq", "opDivFltEq", "opEq", "opNotEq", "opLes", "opGrt",
+    "opLessEq", "opGrtEq", "opLeftBrc", "opRightBrc", "opSemcol", "opComma",
+    /*boolean operators*/
+    "opBoolNot", "opBoolAnd", "opBoolOr",
+
+    /* key words */
+    "kwAs", "kwAsc", "kwDeclare", "kwDim", "kwDo", "kwElse", "kwEnd", "kwFunction", "kwIf", "kwInput", "kwLength", "kwLoop",
+    "kwPrint", "kwReturn", "kwScope", "kwSubStr", "kwThen", "kwWhile", "kwContinue", "kwElseif", "kwExit", "kwFalse", "kwFor",
+    "kwNext", "kwShared", "kwStatic", "kwTrue", "kwTo", "kwUntil",
+
+    /* other */
+    "ident", "asng", "eol", "eof", "dataType"
+  };
+  return tokenTypeStrings[symb];
 }

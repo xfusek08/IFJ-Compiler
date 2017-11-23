@@ -12,6 +12,8 @@
 #ifndef _utils
 #define _utils
 
+#include "grammar.h"
+
 /**
  * Global data type enum
  */
@@ -39,5 +41,10 @@ char *util_StrConcatenate(const char *str1, const char *str2);
  * Fuction converts data type enum to constant string
  */
 const char *util_dataTypeToString(const DataType dataType);
+
+/**
+ * Return grammar symbol as tring
+ */
+char *grammarToString(EGrSymb symb);
 
 #endif // _utils
