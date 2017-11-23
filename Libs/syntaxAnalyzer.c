@@ -488,7 +488,7 @@ SToken sytx_getFreeVar()
   }
   //generate next ident
   char *ident = mmng_safeMalloc(sizeof(char) * 9); // LF@%T[1-9][0-9]{0,2}EOL = 9
-  sprintf(ident, "LF@\%T%d", nextTokenIdent);
+  sprintf(ident, "LF@%%T%d", nextTokenIdent);
   //if not defined, define ident
   if (symbt_findSymb(ident) == NULL)
   {
@@ -516,54 +516,56 @@ int syntx_useRule(TTkList list)
   {
   case ident:
     list->getActive(list)->type = NT_EXPR;
-    //list->prev(list);
-    //list->postDelete(list);
-    //nonTerm.type = NT_EXPR;
-    //list->postInsert(list, nonTerm)
     break;
   case NT_EXPR:
   case NT_EXPR_TMP:
-    SToken ref_var;
-    //test next->next...
     if (list->active->next == NULL)
       return 0;
     if (list->active->next->next == NULL)
       return 0;
-    SToken *arg1 = list->active;
-    SToken *arg2 = list->active->next;
-    SToken *arg3 = list->active->next->next;
+    SToken *arg1 = &list->active->token;
+    SToken *arg2 = &list->active->next->token;
+    SToken *arg3 = &list->active->next->next->token;
     if (arg1->symbol->type == symtConstant && arg3->symbol->type == symtConstant)
     {
-      //radim2(..., &ref_nahrada)
+      SToken t = syntx_doArithmeticOp(arg1, arg2, arg3);
+      list->postInsert(list, &t);
     }
     else if(arg1->type == NT_EXPR_TMP && arg3->type == NT_EXPR_TMP){
-       //radim(active, next, next->next, &arg1)
-       //syntx_freeVar(arg3);
-       //list->postDelete(list);
-       //list->postDelete(list);
+      syntx_generateCode(arg1, arg2, arg3, arg1);
+      syntx_freeVar(arg3);
+      list->postDelete(list);
+      list->postDelete(list);
     }
     else if (arg1->type == NT_EXPR_TMP) {
-      //radim(..., &arg1)
-      //list->postDelete(list);
-      //list->postDelete(list);
+      syntx_generateCode(arg1, arg2, arg3, arg1);
+      list->postDelete(list);
+      list->postDelete(list);
     }
     else if (arg3->type == NT_EXPR_TMP) {
-      //radim(..., &arg3)
-      //list->postDelete(list);
-      //list->next(list);
-      //list->preDelete(list);
+      syntx_generateCode(arg1, arg2, arg3, arg3);
+      list->postDelete(list);
+      list->next(list);
+      list->preDelete(list);
     }
     else {
+      SToken ref_var;
       ref_var = sytx_getFreeVar();
-      //radim(..., &ref_var)
-      //list->postDelete(list);
-      //list->postDelete(list);
-      //list->postInsert(list, ref_var);
-      //list->next(list);
-      //list->preDelete(list);
+      syntx_generateCode(arg1, arg2, arg3, &ref_var);
+      list->postDelete(list);
+      list->postDelete(list);
+      list->postInsert(list, &ref_var);
+      list->next(list);
+      list->preDelete(list);
     }
     break;
-  //case not: radim(not, null)
+  case kwNot:
+    if (list->active->next == NULL)
+      return 0;
+    SToken ref_var;
+    ref_var = sytx_getFreeVar();
+    syntx_generateCode(&list->active->token, &list->active->next->token, NULL, &ref_var);
+      break;
   default:
     return 0;
   }
@@ -580,8 +582,14 @@ int syntx_useRule(TTkList list)
 /**
 * Precedent statement analyze
 */
-Symbol syntx_processExpression(SToken *actToken)
+TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
 {
+  //TODO
+  //kontrola symbolu
+  //pokud null vratit docasnou promennou
+  //else vratit stejny symvbol s vysledkem
+
+ 
   SToken auxToken;
   auxToken.type = eol;
   tlist->insertLast(tlist, &auxToken);
@@ -597,12 +605,29 @@ Symbol syntx_processExpression(SToken *actToken)
     DDPRINT("First terminal on stack: %d", terminal);
 
     EGrSymb tablesymb;
-    //TODO: handle function identifier somehow
+    if (actToken->symbol != NULL)
+    {
+      switch (actToken->symbol->type)
+      {
+      case symtFuction:
+        //TODO: handle function identifier somehow
+        break;
+      case symtVariable:
+      case symtConstant:
+        //ok
+        break;
+      case symtUnknown:
+        fprintf(stderr, "Error: Symbol was not defined.");
+        scan_raiseCodeError(syntaxErr);
+        break;
+      }
+    }
     if (!syntx_getPrecedence(terminal, actToken->type, &tablesymb))
     {
       scan_raiseCodeError(syntaxErr);
     }
     DDPRINT("Table: %d", tablesymb);
+
     switch (tablesymb)
     {
     case precEqu:
@@ -624,15 +649,17 @@ Symbol syntx_processExpression(SToken *actToken)
     default:
       apperr_runtimeError("SyntaxAnalyzer.c: internal error!");
     }
+
     DPRINT("--------------------------------");
     DPRINT("-------konec-iterace------------");
-    getchar();
-  } while (!(terminal == eol && actToken->type == eol) && *actToken->type <= 24);
+    getchar(); //debug
+  } while (!(terminal == eol && actToken->type == eol) && actToken->type <= 24);
   DPRINT("konec vyrazu.");
 
   //TODO free ident stack
   syntx_emptyVarStack();
   //TODO return symbol
+  return symbol;
 }
 
 

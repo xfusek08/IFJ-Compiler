@@ -16,7 +16,7 @@
 #include "Libs/syntaxAnalyzer.h"
 #include "Libs/stacks.h"
 #include "Libs/symtable.h"
-#include "Libs\Scanner.h"
+#include "Libs/Scanner.h"
 
 int main(int argc, char *argv[])
 {
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
   SToken token;
   scan_GetNextToken(&token);
 
-  syntx_processExpression(&token);
+  syntx_processExpression(&token, NULL);
 
   symbt_destroy();
   mmng_freeAll();
