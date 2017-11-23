@@ -502,20 +502,24 @@ void syntx_generateCodeForBoolOps(SToken *leftOperand, SToken *operator, SToken 
  * leftOperand expects constant or ident
  * operator expects one of available operators, otherwise throws apperr_runtimeError (in subfunction)
  * rightOperand expects constant, ident or NULL in case boolean NOT operator
- * partialResult reference variable to return result from part of expression back to the SyntaxAnalyzer
+ * partialResult reference variable to return result from part of expression back to the SyntaxAnalyzer - MUST BE VARIABLE!
  */
 void syntx_generateCode(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
 
   // checks data types, implicitly converts constants and generates code for implicit convertion of variables
-  if(rightOperand != NULL && operator->type != opBoolNot){
+  if(rightOperand != NULL && operator->type != opBoolNot){  // rightOperand is not bool NOT
     syntx_checkDataTypes(leftOperand, operator, rightOperand);
-  }else if(rightOperand == NULL && operator->type == opBoolNot){
+  }else if(rightOperand == NULL && operator->type == opBoolNot){  // rightOperand is bool NOT
     syntx_checkDataTypeOfBool(leftOperand);
   }else{  //for example: not string, not float, etc.
     scan_raiseCodeError(typeCompatibilityErr);  // prints error
   }
 
   // here are all data in right form
+
+  //Sets data type only according to first operand. Both operands already have on this line same data type - so it can work.
+  partialResult->symbol->dataType = leftOperand->symbol->dataType;
+
 
   // one of functions bellow prints instructions by operator type
   syntx_generateCodeForBasicOps(leftOperand, operator, rightOperand, partialResult);
@@ -798,9 +802,9 @@ void syntx_init()
 // test function
 void syntx_testFunction(){
   //char * var1Name = "LF@var1";
-  //char * var2Name= "LF@var2";
-  //char * var3Name = "LF@temp";
-  char *testingString = "promenna";
+  char * var2Name= "LF@var2";
+  char * var3Name = "LF@temp";
+  char *testingString = "konstanta";
 
 
   SToken token1;
@@ -819,19 +823,19 @@ void syntx_testFunction(){
   SToken token2;
   token2.type = NT_EXPR;
   token2.symbol = mmng_safeMalloc(sizeof(struct Symbol));
-  token2.symbol->type = symtConstant;
-  token2.symbol->data.stringVal = "ijuuhrg";
-  //token2.symbol->type = symtVariable;
-  //token2.symbol->ident = var2Name;
+  //token2.symbol->type = symtConstant;
+  //token2.symbol->data.stringVal = "ijuuhrg";
+  token2.symbol->type = symtVariable;
+  token2.symbol->ident = var2Name;
   token2.symbol->dataType = dtString;
 
   SToken token3;
   token3.type = NT_EXPR;
   token3.symbol = mmng_safeMalloc(sizeof(struct Symbol));
-  token3.symbol->type = symtConstant;
-  token3.symbol->data.intVal = 1;
-  //token3.symbol->type = symtVariable;
-  //token3.symbol->ident = var3Name;
+  //token3.symbol->type = symtConstant;
+  //token3.symbol->data.intVal = 1;
+  token3.symbol->type = symtVariable;
+  token3.symbol->ident = var3Name;
   token3.symbol->dataType = dtInt;
 
   syntx_generateCode(&token1, &oper, &token2, &token3);
