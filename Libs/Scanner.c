@@ -479,7 +479,6 @@ SToken scan_GetNextToken()
         {
           state = 0;
           tokenType = ident;
-          type = symtUnknown;
           while(state != 1)
           {
             tokenID[position++] = tolower(GLBScanner->line[GLBScanner->position++]);
@@ -618,8 +617,11 @@ SToken scan_GetNextToken()
     {
       symbol = symbt_findOrInsertSymb(tokenID);
     }
-    symbol->type = type;
-    symbol->dataType = dType;
+    if(type != symtUnknown)
+    {
+      symbol->type = type;
+      symbol->dataType = dType;
+    }
     if(dType == dtInt)
     {
       symbol->data.intVal = intVal;
