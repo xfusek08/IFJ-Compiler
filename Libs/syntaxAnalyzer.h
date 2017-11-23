@@ -15,9 +15,10 @@
 #define _SYNTAXANALYZER
 
 #include "Scanner.h"
+#include "symtable.h"
 
 void syntx_init();
-void syntx_processExpression(SToken *actToken, const char *frame, const char *ident, DataType datatype);
+TSymbol syntx_processExpression(SToken *actToken, TSymbol s);
 
 
 
