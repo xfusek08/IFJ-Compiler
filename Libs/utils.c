@@ -62,10 +62,26 @@ void util_PrintBuildFunc()
   printf("LABEL $$SubStr
   PUSHFRAME
   DEFVAR LF@%retval
-  MOVE LF@%retval string@
   DEFVAR LF@len
   DEFVAR LF@help
   STRLEN LF@len LF@p1
+  MOVE LF@%retval string@
+  JUMPIFEQ $$EndSubStr LF@%retval LF@p1
+  GT LF@help int@1 LF@p2
+  JUMPIFEQ $$EndSubStr LF@help bool@true
+  GT LF@help int@0 LF@p3
+  JUMPIFEQ $$SubStrExtra1 LF@help bool@true
+  SUB LF@help LF@len LF@p2
+  GT LF@help LF@p3 LF@help
+  JUMPIFEQ $$SubStrExtra2 LF@help bool@true 
+  JUMP $$SubStrStart
+LABEL $$SubStrExtra1
+  MOVE LF@p2 LF@len
+  JUMP $$SubStrStart
+LABEL $$SubStrExtra2
+  MOVE LF@p3 LF@len
+  SUB LF@p3 LF@p3 LF@p2
+LABEL $$SubStrStart
   ADD LF@p3 LF@p2 LF@p3
 LABEL $$CycleSubStr 
   GETCHAR LF@help LF@p1 LF@p2
