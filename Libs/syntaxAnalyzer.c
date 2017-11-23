@@ -678,18 +678,7 @@ int syntx_useRule(TTkList list)
 */
 TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
 {
-  //TODO
-  //kontrola symbolu
-  //pokud null vratit docasnou promennou
-  //else vratit stejny symvbol s vysledkem
-
- 
-  SToken auxToken;
-  auxToken.type = eol;
-  tlist->insertLast(tlist, &auxToken);
-  nextTokenIdent = 0; //reset ident generator
-  DPRINT("po pushnuti eol");
-
+  nextTokenIdent = 0; //reset identificator generator
   EGrSymb terminal;
   do {
      terminal = syntx_getFirstTerminal(tlist);
@@ -698,7 +687,6 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     DDPRINT("Analyzing token: %d", actToken->type);
     DDPRINT("First terminal on stack: %d", terminal);
 
-    EGrSymb tablesymb;
     if (actToken->symbol != NULL)
     {
       switch (actToken->symbol->type)
@@ -716,6 +704,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
         break;
       }
     }
+    EGrSymb tablesymb;
     if (!syntx_getPrecedence(terminal, actToken->type, &tablesymb))
     {
       DPRINT("Table: undefined precedence!.");
@@ -723,6 +712,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     }
     DDPRINT("Table: %d", tablesymb);
 
+    
     switch (tablesymb)
     {
     case precEqu:
@@ -730,10 +720,13 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
       *actToken = nextToken();
       break;
     case precLes:
-      auxToken.type = precLes;
-      tlist->postInsert(tlist, &auxToken);
-      tlist->insertLast(tlist, actToken);
-      *actToken = nextToken();
+      {
+        SToken auxToken;
+        auxToken.type = precLes;
+        tlist->postInsert(tlist, &auxToken);
+        tlist->insertLast(tlist, actToken);
+        *actToken = nextToken();
+      }
       break;
     case precGrt:
       if (!syntx_useRule(tlist))
@@ -751,10 +744,30 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
   } while (!(terminal == eol && actToken->type == eol) && actToken->type <= 24);
   DPRINT("konec vyrazu.");
 
-  //TODO free ident stack
+  if(!(tlist->first != NULL && tlist->first->next != NULL && tlist->first->next->next == NULL))
+  {
+    scan_raiseCodeError(syntaxErr);
+  }
+
+  //free ident stack
   syntx_emptyVarStack();
-  //TODO return symbol
-  return symbol;
+  SToken resultToken = tlist->last->token;
+  
+  if (symbol == NULL)
+  {
+    //return temporary variable with result
+    tlist->deleteLast(tlist);
+    return resultToken.symbol;
+  }
+  else {
+    //mov result from temporary variable to requested variable
+    SToken retT;
+    retT.dataType = NT_EXPR;
+    retT.symbol = symbol;
+    syntx_generateInstruction("MOV", &retT, &resultToken, NULL);
+    tlist->deleteLast(tlist);
+    return symbol;
+  }
 }
 
 
@@ -762,6 +775,9 @@ void syntx_init()
 {
   tlist = TTkList_create();
   identStack = TPStack_create();
+  SToken auxToken;
+  auxToken.type = eol;
+  tlist->insertLast(tlist, &auxToken);
   DPRINT("precedent syntax init");
 }
 
