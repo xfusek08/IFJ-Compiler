@@ -595,7 +595,7 @@ SToken sytx_getFreeVar()
   if (symbt_findSymb(ident) == NULL)
   {
     symbt_insertSymbOnTop(ident);
-    printf("DEFVAR %s", ident);
+    printf("DEFVAR %s\n", ident);
   }
   token.symbol->ident = ident;
   return token;
@@ -726,6 +726,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     }
     if (!syntx_getPrecedence(terminal, actToken->type, &tablesymb))
     {
+      DPRINT("Table: undefined precedence!.");
       scan_raiseCodeError(syntaxErr);
     }
     DDPRINT("Table: %d", tablesymb);

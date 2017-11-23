@@ -15,6 +15,7 @@
 #include "grammar.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "symtable.h"
 
 EGrSymb tokens[] = {ident, opPlus, ident, eol };
 
@@ -25,7 +26,28 @@ int scan_GetNextToken(SToken *token)
   {
     return 0;
   }
-  token->type = tokens[pos++];
+  if (pos == 0)
+  {
+    token->type = ident;
+    token->symbol = malloc(sizeof(struct Symbol));
+    token->symbol->type = symtVariable;
+    token->symbol->dataType = dtInt;
+    token->symbol->ident = "ident1";
+  }
+  else if (pos == 1) {
+    token->type = opPlus;
+  }else if (pos == 2) {
+    token->type = ident;
+    token->symbol = malloc(sizeof(struct Symbol));
+    token->symbol->type = symtVariable;
+    token->symbol->dataType = dtInt;
+    token->symbol->ident = "ident2";
+  }
+  else if (pos == 3)
+  {
+    token->type = eol;
+  }
+  pos++;
   return 1;
 }
 
