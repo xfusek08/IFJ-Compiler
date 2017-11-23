@@ -696,6 +696,10 @@ int syntx_useRule(TTkList list)
 */
 TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
 {
+  if (tlist == NULL)
+  {
+    apperr_runtimeError("syntx_processExpression(): Modul not initialized. Call syntx_init() first!");
+  }
   nextTokenIdent = 0; //reset identificator generator
   EGrSymb terminal = syntx_getFirstTerminal(tlist);
   do {
