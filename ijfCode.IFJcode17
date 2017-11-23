@@ -1,14 +1,13 @@
-#DEFVAR GF@a         # 1     4                      5
-#DEFVAR GF@b         # 1     4                      5
-#DEFVAR GF@c         # 1     4                      5
-#MOVE GF@a int@10    # 1     4     1                6
-#MOVE GF@b int@5     # 1     4     1                6
-#ADD GF@c GF@a GF@b  # 4     4     4     4         16
-#WRITE GF@c          # 4     4                      8
-                    # ==============================
-                    #                       SUMA  51
+.IFJcode17
                     
-Length:
+$$Main
+  CREATEFRAME
+  DEFVAR TF@s
+  MOVE TF@s string@Hi\032X!
+  CALL Length
+  RETURN
+
+$$Length
   PUSHFRAME 
   DEFVAR LF@p1
   DEFVAR LF@%retval
@@ -17,16 +16,16 @@ Length:
   RETURN
   
 
-SubStr:
+$$SubStr
   
   RETURN
 
 
-Asc:
+$$Asc
   
   RETURN
   
 
-Chr:
+$$Chr
   
   RETURN
