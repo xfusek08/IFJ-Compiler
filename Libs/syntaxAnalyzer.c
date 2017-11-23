@@ -108,7 +108,7 @@ void syntx_intToDoubleToken(SToken *token){
   if(token->symbol->type == symtConstant){ // converts only constant symbols
     token->symbol->data.doubleVal = syntx_intToDouble(token->symbol->data.intVal);
   }else if(token->symbol->type == symtVariable){ // converts variable
-    printf("INT2FLOAT %s %s", token->symbol->ident, token->symbol->ident);
+    printf("INT2FLOAT %s %s\n", token->symbol->ident, token->symbol->ident);
   }
 
   token->symbol->dataType = dtFloat;
@@ -123,7 +123,7 @@ void syntx_doubleToIntToken(SToken *token){
   if(token->symbol->type == symtConstant){ // converts only constant symbols
     token->symbol->data.intVal = syntx_doubleToInt(token->symbol->data.doubleVal);
   }else if(token->symbol->type == symtVariable){ // converts variable
-    printf("FLOAT2R2EINT %s %s", token->symbol->ident, token->symbol->ident); // half to even
+    printf("FLOAT2R2EINT %s %s\n", token->symbol->ident, token->symbol->ident); // half to even
   }
 
   token->symbol->dataType = dtInt;
@@ -148,13 +148,13 @@ int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *rightOperand){
   }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> double - double
 
     syntx_intToDoubleToken(rightOperand);
-    return 0; //TODO: maybe 1 - not clear from task
+    return 1; //TODO: maybe 0 - not clear from task
 
   }else if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtFloat){  // int - double -> double - double
 
     syntx_intToDoubleToken(leftOperand);
 
-    return 0;
+    return 1;
   }
 
   return 0; //other combinations are not allowed
@@ -172,12 +172,12 @@ int syntx_checkDataTypesOfDiv(SToken *leftOperand, SToken *rightOperand){
   }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> int - int
 
     syntx_doubleToIntToken(leftOperand);
-    return 0;
+    return 1;
 
   }else if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtFloat){  // int - double -> int - int
 
     syntx_doubleToIntToken(rightOperand);
-    return 0;
+    return 1;
   }
 
   return 0; //other combinations are not allowed
@@ -207,12 +207,12 @@ int syntx_checkDataTypesOfAgnOps(SToken *leftOperand, SToken *rightOperand){
   }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> double - double
 
     syntx_intToDoubleToken(rightOperand);
-    return 0;
+    return 1;
 
   }else if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtFloat){  // int - double -> int - int
 
     syntx_doubleToIntToken(rightOperand);
-    return 0;
+    return 1;
   }
 
   return 0; //other combinations are not allowed
@@ -275,9 +275,9 @@ void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOp
     if(syntx_checkDataTypesOfBoolOps(leftOperand, rightOperand) == 0){
       scan_raiseCodeError(typeCompatibilityErr);  // prints error
     }
+  }else{  // unknown operator
+    apperr_runtimeError("syntaxAnalyzer.c, syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOperand): unknown operator");
   }
-
-  apperr_runtimeError("syntaxAnalyzer.c, syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOperand): unknown operator");
 
 }
 
@@ -483,6 +483,14 @@ void syntx_generateCodeForBoolOps(SToken *leftOperand, SToken *operator, SToken 
       break;
   }
 }
+
+/**
+ * Generate code for boolean operations
+ */
+// void syntx_generateCodeForBoolOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
+//   printf("CREATEFRAME\n");
+
+// }
 
 
 /**
@@ -762,5 +770,48 @@ void syntx_init()
   tlist = TTkList_create();
   identStack = TPStack_create();
   DPRINT("precedent syntax init");
+}
+
+
+// test function
+void syntx_testFunction(){
+  //char * var1Name = "LF@var1";
+  //char * var2Name= "LF@var2";
+  //char * var3Name = "LF@temp";
+  char *testingString = "promenna";
+
+
+  SToken token1;
+  token1.type = NT_EXPR;
+  token1.symbol = mmng_safeMalloc(sizeof(struct Symbol));
+  token1.symbol->type = symtConstant;
+  token1.symbol->data.stringVal = testingString;
+  //token1.symbol->type = symtVariable;
+  //token1.symbol->ident = var1Name;
+  token1.symbol->dataType = dtString;
+
+  SToken oper;
+  oper.type = NT_EXPR;
+  oper.type = opPlus;
+
+  SToken token2;
+  token2.type = NT_EXPR;
+  token2.symbol = mmng_safeMalloc(sizeof(struct Symbol));
+  token2.symbol->type = symtConstant;
+  token2.symbol->data.stringVal = "ijuuhrg";
+  //token2.symbol->type = symtVariable;
+  //token2.symbol->ident = var2Name;
+  token2.symbol->dataType = dtString;
+
+  SToken token3;
+  token3.type = NT_EXPR;
+  token3.symbol = mmng_safeMalloc(sizeof(struct Symbol));
+  token3.symbol->type = symtConstant;
+  token3.symbol->data.intVal = 1;
+  //token3.symbol->type = symtVariable;
+  //token3.symbol->ident = var3Name;
+  token3.symbol->dataType = dtInt;
+
+  syntx_generateCode(&token1, &oper, &token2, &token3);
 }
 
