@@ -47,3 +47,12 @@ const char *util_dataTypeToString(const DataType dataType)
     default:         return "Unspecified";
   }
 }
+
+// Fuction prints build-in functions
+void util_PrintBuildFunc()
+{
+  printf("");
+  printf("");
+  printf("");
+  printf("");
+}

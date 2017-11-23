@@ -41,4 +41,10 @@ char *util_StrConcatenate(const char *str1, const char *str2);
  */
 const char *util_dataTypeToString(const DataType dataType);
 
+/**
+ * Fuction prints build-in functions
+ * \note These funcions are: Length, SubStr, Asc, Chr
+ */
+void util_PrintBuildFunc();
+
 #endif // _utils

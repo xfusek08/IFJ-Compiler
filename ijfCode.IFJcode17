@@ -1,0 +1,32 @@
+#DEFVAR GF@a         # 1     4                      5
+#DEFVAR GF@b         # 1     4                      5
+#DEFVAR GF@c         # 1     4                      5
+#MOVE GF@a int@10    # 1     4     1                6
+#MOVE GF@b int@5     # 1     4     1                6
+#ADD GF@c GF@a GF@b  # 4     4     4     4         16
+#WRITE GF@c          # 4     4                      8
+                    # ==============================
+                    #                       SUMA  51
+                    
+Length:
+  PUSHFRAME 
+  DEFVAR LF@p1
+  DEFVAR LF@%retval
+  STRLEN LF@%retval LF@p1 
+  POPFRAME
+  RETURN
+  
+
+SubStr:
+  
+  RETURN
+
+
+Asc:
+  
+  RETURN
+  
+
+Chr:
+  
+  RETURN
