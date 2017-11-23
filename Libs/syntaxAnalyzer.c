@@ -35,11 +35,11 @@ unsigned nextTokenIdent;
 int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn)
 {
   // check range
-  if(stackSymb > 21 || inputSymb > 21){
+  if(stackSymb > 25 || inputSymb > 25){
     return 0;
   }
 
-  EGrSymb precTable[22][22] = {
+  EGrSymb precTable[25][25] = {
              /* + */   /* - */  /* * */   /* / */  /* \ */  /* ( */  /* ) */  /* i */  /* , */  /* = */  /* <> */         /* < */  /* <= */ /* > */  /* >= */ /* += */ /* -= */ /* *= */ /* /= */ /* \= */ /* := */ /* AND*/ /* OR */ /* NOT*/ /* $ */
     /* +  */ {precGrt, precGrt, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* +  */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precUnd, precUnd, precUnd, precGrt},
     /* -  */ {precGrt, precGrt, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* -  */ precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precGrt, precUnd, precUnd, precUnd, precGrt},
