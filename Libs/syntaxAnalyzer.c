@@ -19,6 +19,8 @@
 #include "MMng.h"
 #include "symtable.h"
 
+//#define DPRINT(x) ((void)0)
+//#define DDPRINT(x,y) ((void)0)
 #define DPRINT(x) fprintf(stderr, x); fprintf(stderr, "\n")
 #define DDPRINT(x, y) fprintf(stderr, x, y); fprintf(stderr, "\n")
 
@@ -251,6 +253,8 @@ void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOp
      ){
       //checks compalibility of data types
       if(syntx_checkDataTypesOfBasicOp(leftOperand, rightOperand) == 0){
+        DDPRINT("left:%d", leftOperand->symbol->dataType);
+        DDPRINT("right:%d", rightOperand->symbol->dataType);
         scan_raiseCodeError(typeCompatibilityErr);  // prints error
       }
   }else if(operator->type == opDiv){  // if operator type is '\'
@@ -576,6 +580,7 @@ SToken sytx_getFreeVar()
   token.type = NT_EXPR_TMP;
   token.symbol = mmng_safeMalloc(sizeof(struct Symbol));
   token.symbol->type = symtVariable;
+  token.symbol->dataType = dtInt;
 
   //if stack not empty, return ident from stack
   if (identStack->count != 0)
@@ -591,6 +596,7 @@ SToken sytx_getFreeVar()
   //generate next ident
   char *ident = mmng_safeMalloc(sizeof(char) * 9); // LF@%T[1-9][0-9]{0,2}EOL = 9
   sprintf(ident, "LF@%%T%d", nextTokenIdent);
+  nextTokenIdent++;
   //if not defined, define ident
   if (symbt_findSymb(ident) == NULL)
   {
@@ -687,10 +693,8 @@ int syntx_useRule(TTkList list)
 TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
 {
   nextTokenIdent = 0; //reset identificator generator
-  EGrSymb terminal;
+  EGrSymb terminal = syntx_getFirstTerminal(tlist);
   do {
-     terminal = syntx_getFirstTerminal(tlist);
-
     //debug print
     DDPRINT("Analyzing token: %d", actToken->type);
     DDPRINT("First terminal on stack: %d", terminal);
@@ -745,7 +749,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     default:
       apperr_runtimeError("SyntaxAnalyzer.c: internal error!");
     }
-
+    terminal = syntx_getFirstTerminal(tlist);
     DPRINT("--------------------------------");
     DPRINT("-------konec-iterace------------");
     getchar(); //debug
@@ -764,8 +768,9 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
   if (symbol == NULL)
   {
     //return temporary variable with result
+    TSymbol symb = resultToken.symbol;
     tlist->deleteLast(tlist);
-    return resultToken.symbol;
+    return symb;
   }
   else {
     //mov result from temporary variable to requested variable

@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+//#define LISTP(x, y) ((void)0)
 #define LISTP(x, y) fprintf(stderr, x); fprintf(stderr, "\n"); TTkList_print(y)
 
 // =============================================================================
@@ -55,7 +56,7 @@ void tknl_deleteLast(TTkList list)
     list->first = NULL;
   }
   list->last = list->last->prev;
-  free(item);
+  mmng_safeFree(item);
   LISTP("TTkList: called deleteLast()", list);
 }
 
@@ -145,7 +146,7 @@ void tknl_postDelete(TTkList list)
       list->active->next->next->prev = list->active;
     }
     list->active->next = list->active->next->next;
-    free(item);
+    mmng_safeFree(item);
   }
   else {
     apperr_runtimeError("TTkList: error in postDelete() function, list is not active or active is last item.");
@@ -166,7 +167,7 @@ void tknl_preDelete(TTkList list)
       list->active->prev->prev->next = list->active;
     }
     list->active->prev = list->active->prev->prev;
-    free(item);
+    mmng_safeFree(item);
   }
   else {
     apperr_runtimeError("TTkList: error in preDelete() function, list is not active or active is first item.");

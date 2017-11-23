@@ -30,7 +30,8 @@ int main(int argc, char *argv[])
   SToken token;
   scan_GetNextToken(&token);
 
-  syntx_processExpression(&token, NULL);
+  TSymbol symbol = syntx_processExpression(&token, NULL);
+  fprintf(stderr, "Result in %s\n", symbol->ident);
 
   symbt_destroy();
   mmng_freeAll();

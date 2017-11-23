@@ -19,31 +19,68 @@
 
 EGrSymb tokens[] = {ident, opPlus, ident, eol };
 
+SToken makeIdent(char *identificator, DataType datType) 
+{
+  SToken token;
+  token.type = ident;
+  token.symbol = malloc(sizeof(struct Symbol));
+  token.symbol->type = symtVariable;
+  token.symbol->dataType = datType;
+  token.symbol->ident = identificator;
+  return token;
+}
+
 int scan_GetNextToken(SToken *token)
 {
   static int pos = 0;
-  if (pos > 3)
+  if (pos > 11)
   {
     return 0;
   }
+
   if (pos == 0)
   {
-    token->type = ident;
-    token->symbol = malloc(sizeof(struct Symbol));
-    token->symbol->type = symtVariable;
-    token->symbol->dataType = dtInt;
-    token->symbol->ident = "ident1";
+    *token = makeIdent("LF@ident1", dtInt);
   }
   else if (pos == 1) {
-    token->type = opPlus;
-  }else if (pos == 2) {
-    token->type = ident;
-    token->symbol = malloc(sizeof(struct Symbol));
-    token->symbol->type = symtVariable;
-    token->symbol->dataType = dtInt;
-    token->symbol->ident = "ident2";
+    token->type = opMul;
+  }
+  else if (pos == 2) {
+    *token = makeIdent("LF@ident2", dtInt);
   }
   else if (pos == 3)
+  {
+    token->type = opMns;
+  }
+  else if (pos == 4)
+  {
+    *token = makeIdent("LF@ident3", dtInt);
+  }
+  else if (pos == 5)
+  {
+    token->type = opMul;
+  }
+  else if (pos == 6)
+  {
+    *token = makeIdent("LF@ident4", dtInt);
+  }
+  else if (pos == 7)
+  {
+    token->type = opPlus;
+  }
+  else if (pos == 8)
+  {
+    *token = makeIdent("LF@ident5", dtInt);
+  }
+  else if (pos == 9)
+  {
+    token->type = opMul;
+  }
+  else if (pos == 10)
+  {
+    *token = makeIdent("LF@ident6", dtInt);
+  }
+  else if (pos == 11)
   {
     token->type = eol;
   }
