@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
   (void)argv;
 
   mmng_init();
+  //symbt_init("$$main");
   symbt_init();
 
   syntx_init();
@@ -32,6 +33,7 @@ int main(int argc, char *argv[])
 
   TSymbol symbol = syntx_processExpression(&token, NULL);
   fprintf(stderr, "Result in %s\n", symbol->ident);
+  //syntx_testFunction();
 
   symbt_destroy();
   mmng_freeAll();

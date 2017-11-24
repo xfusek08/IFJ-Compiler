@@ -430,7 +430,7 @@ void syntx_generateIdent(SToken *token){
 
 /**
  * Generates instructions
- * op3 could be NULL for two-operands instructions
+ * op3 can be NULL for two-operands instructions
  */
 void syntx_generateInstruction(char *instrName, SToken *op1, SToken *op2, SToken *op3){
       printf("%s ", instrName);
@@ -446,13 +446,29 @@ void syntx_generateInstruction(char *instrName, SToken *op1, SToken *op2, SToken
 
 /**
  * Generates instructions where fisrt argument in instruction is not Token but pointer to char
- * op3 could be NULL for two-operands instructions
+ * op3 can be NULL for two-operands instructions
  */
 void syntx_generateInstructionFstPosStr(char *instrName, char *op1, SToken *op2, SToken *op3){
       printf("%s ", instrName);
       printf("%s ", op1);
       printf(" ");
       syntx_generateIdent(op2);
+      if(op3 != NULL){ //if instruction has only two operands
+        printf(" ");
+        syntx_generateIdent(op3);
+      }
+      printf("\n");
+}
+
+/**
+ * Generates instructions where second argument in instruction is not Token but pointer to char
+ * op3 can be NULL for two-operands instructions
+ */
+void syntx_generateInstructionSecPosStr(char *instrName, SToken *op1, char *op2, SToken *op3){
+      printf("%s ", instrName);
+      syntx_generateIdent(op1);
+      printf(" ");
+      printf("%s ", op2);
       if(op3 != NULL){ //if instruction has only two operands
         printf(" ");
         syntx_generateIdent(op3);
@@ -520,7 +536,7 @@ void syntx_generateCodeForAsgnOps(SToken *leftOperand, SToken *operator, SToken 
   
   switch(operator->type){
     case asng:
-      syntx_generateInstruction("MOV", leftOperand, rightOperand, NULL);
+      syntx_generateInstruction("MOVE", leftOperand, rightOperand, NULL);
       break;
     case opPlusEq:
       syntx_generateInstruction("ADD", leftOperand, leftOperand, rightOperand);
@@ -598,16 +614,34 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
 // void syntx_generateCodeForVarDef(SToken *funcToken, int argIndex, SToken *argValue){
 //   TArgList args = funcToken->symbol->data.funcData.arguments;
 
-//   //checkFuncArgDataType();
+//   // check argument data type
+//   if(funcToken->symbol->data.funcData.arguments->get(args, argIndex)->dataType != argValue->symbol->dataType){
+//     scan_raiseCodeError(typeCompatibilityErr);  // prints error
+//   }
 
 //   // alocates memory for name of variable TF@ + name + \n
 //   char *varName = mmng_safeMalloc(sizeof(3 + strlen(funcToken->symbol->data.funcData.arguments->get(args, argIndex)->ident)) + 1);
+
+//   // set variable name
+//   varName = strcpy(varName, "TF@");
+//   varName = strcat(varName, funcToken->symbol->data.funcData.arguments->get(args, argIndex)->ident);
 
 //   // defines variable TF@xxxxxn where xxxxxn represents variable name in argument, xxxxxn is same name as in input code
 //   printf("DEFVAR %s\n", varName);
 //   syntx_generateInstructionFstPosStr("MOVE", varName, argValue, NULL);
 
 //   mmng_safeFree(varName);
+// }
+
+// /**
+//  * Generates code for function call, moves return value and sets data type of result
+//  */
+// void syntx_generateCodeForCallFunc(SToken *funcToken, SToken *result){
+//   printf("CALL %s\n", funcToken->symbol->data.funcData.label);
+//   syntx_generateInstructionSecPosStr("MOVE", result, "TF@̈́%%retval", NULL);
+
+//   // sets correct token data type corresponding to function return value
+//   result->symbol->dataType = funcToken->symbol->data.funcData.returnType;
 // }
 
 
@@ -621,11 +655,11 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
 void syntx_generateCode(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
 
   // checks data types, implicitly converts constants and generates code for implicit convertion of variables
-  if(rightOperand != NULL && operator->type != opBoolNot){  // rightOperand is not bool NOT
+  if(rightOperand != NULL && operator->type != opBoolNot){  // operator is not bool NOT
     syntx_checkDataTypes(leftOperand, operator, rightOperand);
-  }else if(rightOperand == NULL && operator->type == opBoolNot){  // rightOperand is bool NOT
+  }else if(rightOperand == NULL && operator->type == opBoolNot){  // operator is bool NOT
     syntx_checkDataTypeOfBool(leftOperand);
-  }else{  //for example: not string, not float, etc.
+  }else{  //for example: NOT string, NOT float, etc.
     scan_raiseCodeError(typeCompatibilityErr);  // prints error
   }
 
@@ -900,7 +934,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     SToken retT;
     retT.dataType = NT_EXPR;
     retT.symbol = symbol;
-    syntx_generateInstruction("MOV", &retT, &resultToken, NULL);
+    syntx_generateInstruction("MOVE", &retT, &resultToken, NULL);
     tlist->deleteLast(tlist);
     return symbol;
   }
@@ -937,7 +971,7 @@ void syntx_testFunction(){
 
   SToken oper;
   oper.type = NT_EXPR;
-  oper.type = asng;
+  oper.type = opBoolAnd;
 
   SToken token2;
   token2.type = NT_EXPR;
