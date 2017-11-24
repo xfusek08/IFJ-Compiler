@@ -79,7 +79,7 @@ int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn)
 }
 
 /**
- * Converts double to integer
+ * Converts double to integer - method half to even
  */
 int syntx_doubleToInt(double inputNum){
   int floorNum = inputNum;
@@ -165,8 +165,8 @@ int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *rightOperand){
  * Checks data types of two operands of opDiv (integer division)
  * Returns 1 if everything is OK, otherwise 0
  */
-int syntx_checkDataTypesOfDiv(SToken *leftOperand, SToken *rightOperand){
-  // TODO: really cast here - doubleToInt?
+int syntx_checkDataTypesOfIntegerDiv(SToken *leftOperand, SToken *rightOperand){
+  // CHECKME: really cast here - doubleToInt?
   if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){  // int - int
     return 1;
   }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> int - int
@@ -188,7 +188,7 @@ int syntx_checkDataTypesOfDiv(SToken *leftOperand, SToken *rightOperand){
  * Checks data types of two operands of assignment operators
  * Returns 1 if everything is OK, otherwise 0
  */
-int syntx_checkDataTypesOfAgnOps(SToken *leftOperand, SToken *rightOperand){
+int syntx_checkDataTypesOfAsgnOps(SToken *leftOperand, SToken *rightOperand){
   //TODO: optimalization
 
   if(leftOperand->symbol->type == symtConstant){  // if asigns to the constant -> error
@@ -254,18 +254,21 @@ void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOp
         scan_raiseCodeError(typeCompatibilityErr);  // prints error
       }
   }else if(operator->type == opDiv){  // if operator type is '\'
-    if(syntx_checkDataTypesOfDiv(leftOperand, rightOperand) == 0){
+    if(syntx_checkDataTypesOfIntegerDiv(leftOperand, rightOperand) == 0){
       scan_raiseCodeError(typeCompatibilityErr);  // prints error
     }
   }else if( // if operators are assignment operators
+     operator->type == asng ||
      operator->type == opPlusEq ||
      operator->type == opMnsEq ||
      operator->type == opMulEq ||
-     operator->type == opDivFlt ||
-     operator->type == opDiv ||
-     operator->type == asng
+     operator->type == opDivFltEq
   ){
-    if(syntx_checkDataTypesOfAgnOps(leftOperand, rightOperand) == 0){
+    if(syntx_checkDataTypesOfAsgnOps(leftOperand, rightOperand) == 0){
+      scan_raiseCodeError(typeCompatibilityErr);  // prints error
+    }
+  }else if(operator->type == opDivEq){ // if operator is \=
+    if(syntx_checkDataTypesOfIntegerDiv(leftOperand, rightOperand) == 0){
       scan_raiseCodeError(typeCompatibilityErr);  // prints error
     }
   }else if( // if operator is boolean operator (except opBoolNot)
@@ -423,16 +426,32 @@ void syntx_generateIdent(SToken *token){
 
 /**
  * Generates instructions
- * rightOperand could be NULL for two-operands instructions
+ * op3 could be NULL for two-operands instructions
  */
-void syntx_generateInstruction(char *instrName, SToken *partialResult, SToken *leftOperand, SToken *rightOperand){
+void syntx_generateInstruction(char *instrName, SToken *op1, SToken *op2, SToken *op3){
       printf("%s ", instrName);
-      syntx_generateIdent(partialResult);
+      syntx_generateIdent(op1);
       printf(" ");
-      syntx_generateIdent(leftOperand);
-      if(rightOperand != NULL){ //if instruction has only two operands
+      syntx_generateIdent(op2);
+      if(op3 != NULL){ //if instruction has only two operands
         printf(" ");
-        syntx_generateIdent(rightOperand);
+        syntx_generateIdent(op3);
+      }
+      printf("\n");
+}
+
+/**
+ * Generates instructions where fisrt argument in instruction is not Token but pointer to char
+ * op3 could be NULL for two-operands instructions
+ */
+void syntx_generateInstructionFstPosStr(char *instrName, char *op1, SToken *op2, SToken *op3){
+      printf("%s ", instrName);
+      printf("%s ", op1);
+      printf(" ");
+      syntx_generateIdent(op2);
+      if(op3 != NULL){ //if instruction has only two operands
+        printf(" ");
+        syntx_generateIdent(op3);
       }
       printf("\n");
 }
@@ -462,6 +481,9 @@ void syntx_generateCodeForBasicOps(SToken *leftOperand, SToken *operator, SToken
     default:
       break;
   }
+
+  //Sets data type only according to first operand. Both operands already have same data type - so it can work.
+  partialResult->symbol->dataType = leftOperand->symbol->dataType;
 }
 
 /**
@@ -482,14 +504,106 @@ void syntx_generateCodeForBoolOps(SToken *leftOperand, SToken *operator, SToken 
     default:
       break;
   }
+
+  //Sets data type only according to first operand. Both operands already have same data type - so it can work.
+  partialResult->symbol->dataType = leftOperand->symbol->dataType;
 }
 
 /**
- * Generate code for boolean operations
+ * Generates code for assign operations
  */
-// void syntx_generateCodeForBoolOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
-//   printf("CREATEFRAME\n");
+void syntx_generateCodeForAsgnOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
+  
+  switch(operator->type){
+    case asng:
+      syntx_generateInstruction("MOV", leftOperand, rightOperand, NULL);
+      break;
+    case opPlusEq:
+      syntx_generateInstruction("ADD", leftOperand, leftOperand, rightOperand);
+      break;
+    case opMnsEq:
+      syntx_generateInstruction("SUB", leftOperand, leftOperand, rightOperand);
+      break;
+    case opMulEq:
+      syntx_generateInstruction("MUL", leftOperand, leftOperand, rightOperand);
+      break;
+    case opDivFltEq:
+      syntx_generateInstruction("DIV", leftOperand, leftOperand, rightOperand);
+      break;
+    case opDivEq: // division integer by integer
+      syntx_generateInstruction("DIV", leftOperand, leftOperand, rightOperand);
+      syntx_generateInstruction("FLOAT2INT", leftOperand, leftOperand, NULL);
+      break;
+    default:
+      break;
+  }
 
+  //Sets data type only according to first operand. Both operands already have same data type - so it can work.
+  partialResult->symbol->dataType = leftOperand->symbol->dataType;
+}
+
+/**
+ * Generates code for relation operations
+ */
+void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
+  
+  switch(operator->type){
+    case opLes: // <
+      syntx_generateInstruction("LT", partialResult, leftOperand, rightOperand);
+      break;
+    case opGrt: // >
+      syntx_generateInstruction("GT", partialResult, leftOperand, rightOperand);
+      break;
+    case opLessEq:  // <=
+      syntx_generateInstruction("GT", partialResult, leftOperand, rightOperand);
+      syntx_generateInstruction("NOT", partialResult, partialResult, NULL);
+      break;
+    case opGrtEq: // >=
+      syntx_generateInstruction("LT", partialResult, leftOperand, rightOperand);
+      syntx_generateInstruction("NOT", partialResult, partialResult, NULL);
+      break;
+    case opEq:  // =
+      syntx_generateInstruction("EQ", partialResult, leftOperand, rightOperand);
+      break;
+    case opNotEq: // <>
+      syntx_generateInstruction("EQ", partialResult, leftOperand, rightOperand);
+      syntx_generateInstruction("NOT", partialResult, partialResult, NULL);
+      break;
+    default:
+      break;
+  }
+
+  //Sets partialResult (result from comparative operation) data type to boolean
+  partialResult->symbol->dataType = dtBool;
+}
+
+// /**
+//  * Generates code for create temporary frame
+//  */
+// void syntx_generateCodeForTempFrame(){
+//   printf("CREATEFRAME\n");
+// }
+
+// /**
+//  * Generates code for variable definition
+//  * 
+//  * funcToken represents function token
+//  * argIndex represents argument number from beginning
+//  * argValue represents constant or variable transmitted to the function
+//  */
+// void syntx_generateCodeForVarDef(SToken *funcToken, int argIndex, SToken *argValue){
+//   TArgList args = funcToken->symbol->data.funcData.arguments;
+
+//   //checkFuncArgDataType();
+
+//   // alocates memory for name of variable TF@ + name + \n
+//   char *varName = mmng_safeMalloc(sizeof(3 + strlen(funcToken->symbol->data.funcData.arguments->get(args, argIndex)->ident)) + 1);
+
+//   // defines variable TF@xxxxxn where xxxxxn represents variable name in argument, xxxxxn is same name as in input code
+//   printf("DEFVAR %s\n", varName);
+//   syntx_generateInstructionFstPosStr("MOVE", varName, argValue, NULL);
+
+//   mmng_safeFree(varName);
 // }
 
 
@@ -513,13 +627,14 @@ void syntx_generateCode(SToken *leftOperand, SToken *operator, SToken *rightOper
 
   // here are all data in right form
 
-  //Sets data type only according to first operand. Both operands already have on this line same data type - so it can work.
-  partialResult->symbol->dataType = leftOperand->symbol->dataType;
 
+  // NOTICE: data type for partialResult is setted in generateCodexxx functions!
 
-  // one of functions bellow prints instructions by operator type
-  syntx_generateCodeForBasicOps(leftOperand, operator, rightOperand, partialResult);
-  syntx_generateCodeForBoolOps(leftOperand, operator, rightOperand, partialResult);
+  // one of functions bellow prints instructions according to operator type
+  syntx_generateCodeForBasicOps(leftOperand, operator, rightOperand, partialResult);  // +, -, *, /, \, string +
+  syntx_generateCodeForBoolOps(leftOperand, operator, rightOperand, partialResult); // AND, OR, NOT
+  syntx_generateCodeForAsgnOps(leftOperand, operator, rightOperand, partialResult);  // +=, -=, *=, /=, \=
+  syntx_generateCodeForRelOps(leftOperand, operator, rightOperand, partialResult);  // <, >, <=, >=, =, <>
 
 }
 //radim konec*************
@@ -813,7 +928,7 @@ void syntx_testFunction(){
 
   SToken oper;
   oper.type = NT_EXPR;
-  oper.type = opPlus;
+  oper.type = asng;
 
   SToken token2;
   token2.type = NT_EXPR;
@@ -831,7 +946,7 @@ void syntx_testFunction(){
   //token3.symbol->data.intVal = 1;
   token3.symbol->type = symtVariable;
   token3.symbol->ident = var3Name;
-  token3.symbol->dataType = dtInt;
+  //token3.symbol->dataType = dtInt;
 
   syntx_generateCode(&token1, &oper, &token2, &token3);
 }
