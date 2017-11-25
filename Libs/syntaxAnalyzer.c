@@ -734,7 +734,7 @@ SToken sytx_getFreeVar()
   token.type = NT_EXPR_TMP;
   token.symbol = mmng_safeMalloc(sizeof(struct Symbol));
   token.symbol->type = symtVariable;
-  token.symbol->dataType = dtInt;
+  token.symbol->dataType = dtInt; //TODO: fix this 
 
   //if stack not empty, return ident from stack
   if (identStack->count != 0)
@@ -828,6 +828,7 @@ int syntx_useRule(TTkList list)
     ref_var = sytx_getFreeVar();
     syntx_generateCode(&list->active->token, &list->active->next->token, NULL, &ref_var);
       break;
+      //case +-
   default:
     return 0;
   }
@@ -864,6 +865,31 @@ int isExprEnded(TTkList list, SToken *actToken, EGrSymb terminal)
   return 0;
 }
 
+void syntx_parseFunction(TTkList list, SToken *actToken)
+{
+  //syntx_generateCodeForTempFrame();
+  SToken funcToken = *actToken;
+  *actToken = nextToken();
+  if (actToken->type != opLeftBrc)
+    scan_raiseCodeError(syntaxErr);
+  int argNum = 0;
+  while (actToken->type != opRightBrc)
+  {
+    *actToken = nextToken();
+    SToken argToken;
+    argToken.type = NT_EXPR;
+    argToken.symbol = syntx_processExpression(actToken, NULL);
+    if (actToken->type != opComma && actToken->type != opRightBrc)
+      scan_raiseCodeError(syntaxErr);
+    //syntx_generateCodeForVarDef(&funcToken, argNum, &argToken);
+    argNum++;
+  }
+  SToken returnVal;
+  returnVal = sytx_getFreeVar();
+  //syntx_generateCodeForCallFunc(&funcToken, &returnVal);
+  list->postInsert(list, returnVal); //insert expr to list?
+}
+
 /**
 * Precedent statement analyze
 */
@@ -888,7 +914,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
       switch (actToken->symbol->type)
       {
       case symtFuction:
-        //TODO: handle function identifier somehow
+        syntx_parseFunction(tlist, actToken);
         break;
       case symtVariable:
       case symtConstant:
@@ -971,7 +997,9 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     SToken retT;
     retT.dataType = NT_EXPR;
     retT.symbol = symbol;
-    syntx_generateInstruction("MOV", &retT, &resultToken, NULL); //TODO kontrola typu
+    SToken asgnT;
+    asgnT.type = asng;
+    syntx_generateCode(&retT, &asgnT, &resultToken, NULL);
     tlist->deleteLast(tlist);
     DDPRINT("Result in %s\n", symbol->ident);
     return symbol;
