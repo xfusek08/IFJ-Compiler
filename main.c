@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
   (void)argv;
 
   mmng_init();
+  //symbt_init("$$main");
   symbt_init();
 
   syntx_init();
