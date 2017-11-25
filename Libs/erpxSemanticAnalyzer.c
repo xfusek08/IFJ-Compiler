@@ -491,8 +491,10 @@ void syntx_generateCodeForBasicOps(SToken *leftOperand, SToken *operator, SToken
       break;
   }
 
-  //Sets data type only according to first operand. Both operands already have same data type - so it can work.
-  partialResult->symbol->dataType = leftOperand->symbol->dataType;
+  if(partialResult != NULL){
+    //Sets data type only according to first operand. Both operands already have same data type - so it can work.
+    partialResult->symbol->dataType = leftOperand->symbol->dataType;
+  }
 }
 
 /**
@@ -514,8 +516,10 @@ void syntx_generateCodeForBoolOps(SToken *leftOperand, SToken *operator, SToken 
       break;
   }
 
-  //Sets data type only according to first operand. Both operands already have same data type - so it can work.
-  partialResult->symbol->dataType = leftOperand->symbol->dataType;
+  if(partialResult != NULL){
+    //Sets data type only according to first operand. Both operands already have same data type - so it can work.
+    partialResult->symbol->dataType = leftOperand->symbol->dataType;
+  }
 }
 
 /**
@@ -547,8 +551,10 @@ void syntx_generateCodeForAsgnOps(SToken *leftOperand, SToken *operator, SToken 
       break;
   }
 
-  //Sets data type only according to first operand. Both operands already have same data type - so it can work.
-  partialResult->symbol->dataType = leftOperand->symbol->dataType;
+  if(partialResult != NULL){
+    //Sets data type only according to first operand. Both operands already have same data type - so it can work.
+    partialResult->symbol->dataType = leftOperand->symbol->dataType;
+  }
 }
 
 /**
@@ -581,9 +587,11 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
     default:
       break;
   }
-
-  //Sets partialResult (result from comparative operation) data type to boolean
-  partialResult->symbol->dataType = dtBool;
+  
+  if(partialResult != NULL){
+    //Sets partialResult (result from comparative operation) data type to boolean
+    partialResult->symbol->dataType = dtBool;
+  }
 }
 
 // /**
