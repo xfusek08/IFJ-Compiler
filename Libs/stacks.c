@@ -15,8 +15,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-//#define LISTP(x, y) ((void)0)
-#define LISTP(x, y) fprintf(stderr, x); fprintf(stderr, "\n"); TTkList_print(y)
+#define LISTP(x, y) ((void)0)
+//#define LISTP(x, y) fprintf(stderr, x); fprintf(stderr, "\n"); TTkList_print(y)
 
 // =============================================================================
 // ====================== support functions ====================================

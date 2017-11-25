@@ -23,6 +23,7 @@
 //#define DDPRINT(x,y) ((void)0)
 #define DPRINT(x) fprintf(stderr, x); fprintf(stderr, "\n")
 #define DDPRINT(x, y) fprintf(stderr, x, y); fprintf(stderr, "\n")
+#define LISTPRINT(x) TTkList_print(x)
 
 TTkList tlist; //list used as stack in syntx_processExpression
 TPStack identStack; //list of free unused identificators
@@ -691,18 +692,44 @@ int syntx_useRule(TTkList list)
   return 1;
 }
 
+int isExpressionType(EGrSymb type)
+{
+  return type <= eol ? 1 : 0;
+}
+
+int isExprEnded(TTkList list, SToken *actToken, EGrSymb terminal)
+{
+  if (list->first->next != NULL && list->first->next->next == NULL)
+  {
+    if (actToken->type == opRightBrc)
+      return 1;
+  }
+  if (terminal == eol && actToken->type == eol)
+  {
+    return 1;
+  }
+  if (!isExpressionType(actToken->type))
+  {
+    return 1;
+  }
+  return 0;
+}
+
 /**
 * Precedent statement analyze
 */
 TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
 {
   if (tlist == NULL)
-  {
     apperr_runtimeError("syntx_processExpression(): Modul not initialized. Call syntx_init() first!");
-  }
+  if (!isExpressionType(actToken->type))
+    scan_raiseCodeError(syntaxErr);
+
   nextTokenIdent = 0; //reset identificator generator
   EGrSymb terminal = syntx_getFirstTerminal(tlist);
-  do {
+
+  while (1)
+  {
     //debug print
     DDPRINT("Analyzing token: %d", actToken->type);
     DDPRINT("First terminal on stack: %d", terminal);
@@ -732,7 +759,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     }
     DDPRINT("Table: %d", tablesymb);
 
-    
+
     switch (tablesymb)
     {
     case precEqu:
@@ -740,14 +767,14 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
       *actToken = nextToken();
       break;
     case precLes:
-      {
-        SToken auxToken;
-        auxToken.type = precLes;
-        tlist->postInsert(tlist, &auxToken);
-        tlist->insertLast(tlist, actToken);
-        *actToken = nextToken();
-      }
-      break;
+    {
+      SToken auxToken;
+      auxToken.type = precLes;
+      tlist->postInsert(tlist, &auxToken);
+      tlist->insertLast(tlist, actToken);
+      *actToken = nextToken();
+    }
+    break;
     case precGrt:
       if (!syntx_useRule(tlist))
       {
@@ -757,27 +784,37 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     default:
       apperr_runtimeError("SyntaxAnalyzer.c: internal error!");
     }
-    terminal = syntx_getFirstTerminal(tlist);
+
     DPRINT("--------------------------------");
+    LISTPRINT(tlist);
     DPRINT("-------konec-iterace------------");
     getchar(); //debug
-  } while (!(terminal == eol && actToken->type == eol) && actToken->type <= 24);
-  DPRINT("konec vyrazu.");
 
-  if(!(tlist->first != NULL && tlist->first->next != NULL && tlist->first->next->next == NULL))
+    terminal = syntx_getFirstTerminal(tlist);
+    if (isExprEnded(tlist, actToken, terminal))
+    {
+      break;
+    }
+  }
+  DPRINT("End of expression.");
+
+  //test correct ending
+  if(!(tlist->first != NULL && tlist->first->next != NULL && tlist->first->next->next == NULL))  
   {
     scan_raiseCodeError(syntaxErr);
   }
 
   //free ident stack
   syntx_emptyVarStack();
+
+  //return result
   SToken resultToken = tlist->last->token;
-  
   if (symbol == NULL)
   {
     //return temporary variable with result
     TSymbol symb = resultToken.symbol;
     tlist->deleteLast(tlist);
+    DDPRINT("Result in %s\n", symb->ident);
     return symb;
   }
   else {
@@ -785,8 +822,9 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     SToken retT;
     retT.dataType = NT_EXPR;
     retT.symbol = symbol;
-    syntx_generateInstruction("MOV", &retT, &resultToken, NULL);
+    syntx_generateInstruction("MOV", &retT, &resultToken, NULL); //TODO kontrola typu
     tlist->deleteLast(tlist);
+    DDPRINT("Result in %s\n", symbol->ident);
     return symbol;
   }
 }

@@ -18,6 +18,7 @@
 #include "symtable.h"
 
 //note: Be carefull with changing values of enum, isTerminal() rely on them.
+//note: eol is used to limit expression symbols ( (symbol <= eol) ===> symbol is valid expression symbol )
 typedef enum
 {
   /* TERMINALS */

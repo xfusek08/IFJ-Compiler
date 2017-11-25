@@ -30,8 +30,10 @@ int main(int argc, char *argv[])
   SToken token;
   scan_GetNextToken(&token);
 
-  TSymbol symbol = syntx_processExpression(&token, NULL);
-  fprintf(stderr, "Result in %s\n", symbol->ident);
+  TSymbol symbol = mmng_safeMalloc(sizeof(struct Symbol));
+  symbol->ident = "LF@myVar";
+  symbol->type = symtVariable;
+  syntx_processExpression(&token, symbol);
 
   symbt_destroy();
   mmng_freeAll();
