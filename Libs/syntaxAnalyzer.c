@@ -599,13 +599,6 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
 }
 
 // /**
-//  * Generates code for create temporary frame
-//  */
-// void syntx_generateCodeForTempFrame(){
-//   printf("CREATEFRAME\n");
-// }
-
-// /**
 //  * Generates code for variable definition
 //  * 
 //  * funcToken represents function token
@@ -614,6 +607,10 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
 //  */
 // void syntx_generateCodeForVarDef(SToken *funcToken, int argIndex, SToken *argValue){
 //   TArgList args = funcToken->symbol->data.funcData.arguments;
+
+//   // creates temporary frame
+//   if(argIndex == 0)
+//       printf("CREATEFRAME\n");
 
 //   // check argument data type
 //   if(funcToken->symbol->data.funcData.arguments->get(args, argIndex)->dataType != argValue->symbol->dataType){
@@ -635,9 +632,21 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
 // }
 
 // /**
-//  * Generates code for function call, moves return value and sets data type of result
+//  * Generates code for function call, moves return value, checks arguments count and sets data type of result
+//  * 
+//  * funcToken represents function token
+//  * argIndex represents argument number from beginning
+//  * result updates result variable data type
 //  */
-// void syntx_generateCodeForCallFunc(SToken *funcToken, SToken *result){
+// void syntx_generateCodeForCallFunc(SToken *funcToken, int argIndex, SToken *result){
+
+//   // checks arguments count
+//   if(funcToken->symbol->data.funcData.arguments->count > argIndex + 1){  // too much arguments
+//     scan_raiseCodeError(typeCompatibilityErr);  // prints error
+//   }else if(funcToken->symbol->data.funcData.arguments->count < argIndex + 1){  // too few arguments
+//     scan_raiseCodeError(typeCompatibilityErr);  // prints error
+//   }
+
 //   printf("CALL %s\n", funcToken->symbol->data.funcData.label);
 //   syntx_generateInstructionSecPosStr("MOVE", result, "TF@̈́%%retval", NULL);
 
