@@ -125,6 +125,7 @@ int syntx_useRule(TTkList list)
   }
   list->next(list);
   
+  SToken ret_var; //token for auxiliary variable with result
   switch (list->getActive(list)->type)
   {
   case ident:
@@ -162,12 +163,11 @@ int syntx_useRule(TTkList list)
       list->preDelete(list);
     }
     else {
-      SToken ref_var;
-      ref_var = sytx_getFreeVar();
-      syntx_generateCode(arg1, arg2, arg3, &ref_var);
+      ret_var = sytx_getFreeVar();
+      syntx_generateCode(arg1, arg2, arg3, &ret_var);
       list->postDelete(list);
       list->postDelete(list);
-      list->postInsert(list, &ref_var);
+      list->postInsert(list, &ret_var);
       list->next(list);
       list->preDelete(list);
     }
@@ -175,11 +175,31 @@ int syntx_useRule(TTkList list)
   case kwNot:
     if (list->active->next == NULL)
       return 0;
-    SToken ref_var;
-    ref_var = sytx_getFreeVar();
-    syntx_generateCode(&list->active->token, &list->active->next->token, NULL, &ref_var);
-      break;
-      //case +-
+    ret_var = sytx_getFreeVar();
+    syntx_generateCode(&list->active->token, &list->active->next->token, NULL, &ret_var);
+    list->postDelete(list);
+    list->postInsert(list, &ret_var);
+    list->next(list);
+    list->preDelete(list);
+    break;
+  case opPlus:
+  case opMns:
+    //unary plus and minus
+    if (list->active->next == NULL)
+      return 0;
+    ret_var = sytx_getFreeVar();
+    SToken zeroT;
+    zeroT.type = ident;
+    zeroT.symbol = mmng_safeMalloc(sizeof(struct Symbol));
+    zeroT.symbol->type = symtConstant;
+    zeroT.symbol->dataType = dtInt;
+    zeroT.symbol->data.intVal = 0;
+    syntx_generateCode(&list->active->token, &list->active->next->token, &zeroT, &ret_var);
+    list->postDelete(list);
+    list->postInsert(list, &ret_var);
+    list->next(list);
+    list->preDelete(list);
+    break;
   default:
     return 0;
   }
@@ -334,6 +354,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     SToken retT;
     retT.dataType = NT_EXPR;
     retT.symbol = symbol;
+    retT.symbol->dataType = resultToken.symbol->dataType;
     SToken asgnT;
     asgnT.type = asng;
     syntx_generateCode(&retT, &asgnT, &resultToken, NULL);

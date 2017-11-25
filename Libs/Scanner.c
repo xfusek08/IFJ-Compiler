@@ -43,18 +43,18 @@ int scan_GetNextToken(SToken *token)
     *token = makeIdent("LF@ident1", dtInt);
   }
   else if (pos == 1) {
-    token->type = opMul;
+    token->type = opPlus;
   }
   else if (pos == 2) {
-    *token = makeIdent("LF@ident2", dtInt);
+    token->type = opPlus;
   }
   else if (pos == 3)
   {
-    token->type = opMns;
+    *token = makeIdent("LF@ident3", dtInt);
   }
   else if (pos == 4)
   {
-    *token = makeIdent("LF@ident3", dtInt);
+    token->type = eol;
   }
   else if (pos == 5)
   {
