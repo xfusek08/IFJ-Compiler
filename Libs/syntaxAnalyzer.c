@@ -85,7 +85,7 @@ SToken sytx_getFreeVar()
   token.type = NT_EXPR_TMP;
   token.symbol = mmng_safeMalloc(sizeof(struct Symbol));
   token.symbol->type = symtVariable;
-  token.symbol->dataType = dtInt; //TODO: fix this 
+  token.symbol->dataType = dtUnspecified;
 
   //if stack not empty, return ident from stack
   if (identStack->count != 0)
@@ -215,10 +215,9 @@ int isExprEnded(TTkList list, SToken *actToken, EGrSymb terminal)
   }
   return 0;
 }
-
+/*
 void syntx_parseFunction(TTkList list, SToken *actToken)
 {
-  //syntx_generateCodeForTempFrame();
   SToken funcToken = *actToken;
   *actToken = nextToken();
   if (actToken->type != opLeftBrc)
@@ -238,9 +237,9 @@ void syntx_parseFunction(TTkList list, SToken *actToken)
   SToken returnVal;
   returnVal = sytx_getFreeVar();
   //syntx_generateCodeForCallFunc(&funcToken, &returnVal);
-  list->postInsert(list, returnVal); //insert expr to list?
+  list->postInsert(list, &returnVal); //insert expr to list?
 }
-
+*/
 /**
 * Precedent statement analyze
 */
@@ -262,7 +261,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
       switch (actToken->symbol->type)
       {
       case symtFuction:
-        syntx_parseFunction(tlist, actToken);
+        //syntx_parseFunction(tlist, actToken);
         break;
       case symtVariable:
       case symtConstant:
@@ -310,7 +309,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     terminal = syntx_getFirstTerminal(tlist);
     DPRINT("--------------------------------");
     DPRINT("-------konec-iterace------------");
-    getchar(); //debug
+    //getchar(); //debug
   } while (!(terminal == eol && actToken->type == eol) && actToken->type <= 24);
   DPRINT("konec vyrazu.");
 
