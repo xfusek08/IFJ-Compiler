@@ -20,11 +20,18 @@
 #include "symtable.h"
 #include "erpxSemanticAnalyzer.h"
 
-//#define DPRINT(x) ((void)0)
-//#define DDPRINT(x,y) ((void)0)
+//=============================== DEBUG MACROS =========================================
+#define _PRECDEBUG //To turn of debug prints in this module, comment this line
+#ifndef _PRECDEBUG
+#define DPRINT(x) ((void)0)
+#define DDPRINT(x,y) ((void)0)
+#define LISTPRINT(x) ((void)0)
+#else
 #define DPRINT(x) fprintf(stderr, x); fprintf(stderr, "\n")
 #define DDPRINT(x, y) fprintf(stderr, x, y); fprintf(stderr, "\n")
 #define LISTPRINT(x) TTkList_print(x)
+#endif
+//======================================================================================
 
 TTkList tlist; //list used as stack in syntx_processExpression
 TPStack identStack; //list of free unused identificators
@@ -261,6 +268,43 @@ void syntx_parseFunction(TTkList list, SToken *actToken)
   list->postInsert(list, &returnVal); //insert expr to list?
 }
 */
+
+void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
+{
+  EGrSymb tablesymb;
+  if (!syntx_getPrecedence(terminal, actToken->type, &tablesymb))
+  {
+    DPRINT("Table: undefined precedence!.");
+    scan_raiseCodeError(syntaxErr);
+  }
+  DDPRINT("Table: %d", tablesymb);
+
+
+  switch (tablesymb)
+  {
+  case precEqu:
+    list->insertLast(list, actToken);
+    *actToken = nextToken();
+    break;
+  case precLes:
+  {
+    SToken auxToken;
+    auxToken.type = precLes;
+    list->postInsert(list, &auxToken);
+    list->insertLast(list, actToken);
+    *actToken = nextToken();
+  }
+  break;
+  case precGrt:
+    if (!syntx_useRule(tlist))
+    {
+      scan_raiseCodeError(syntaxErr);
+    }
+    break;
+  default:
+    apperr_runtimeError("SyntaxAnalyzer.c: internal error!");
+  }
+}
 /**
 * Precedent statement analyze
 */
@@ -295,39 +339,9 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
         break;
       }
     }
-    EGrSymb tablesymb;
-    if (!syntx_getPrecedence(terminal, actToken->type, &tablesymb))
-    {
-      DPRINT("Table: undefined precedence!.");
-      scan_raiseCodeError(syntaxErr);
-    }
-    DDPRINT("Table: %d", tablesymb);
-
     
-    switch (tablesymb)
-    {
-    case precEqu:
-      tlist->insertLast(tlist, actToken);
-      *actToken = nextToken();
-      break;
-    case precLes:
-      {
-        SToken auxToken;
-        auxToken.type = precLes;
-        tlist->postInsert(tlist, &auxToken);
-        tlist->insertLast(tlist, actToken);
-        *actToken = nextToken();
-      }
-      break;
-    case precGrt:
-      if (!syntx_useRule(tlist))
-      {
-        scan_raiseCodeError(syntaxErr);
-      }
-      break;
-    default:
-      apperr_runtimeError("SyntaxAnalyzer.c: internal error!");
-    }
+    syntx_tableLogic(tlist, terminal, actToken);
+
     terminal = syntx_getFirstTerminal(tlist);
     DPRINT("--------------------------------");
     LISTPRINT(tlist);
