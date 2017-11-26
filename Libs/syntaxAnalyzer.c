@@ -24,6 +24,7 @@
 //#define DDPRINT(x,y) ((void)0)
 #define DPRINT(x) fprintf(stderr, x); fprintf(stderr, "\n")
 #define DDPRINT(x, y) fprintf(stderr, x, y); fprintf(stderr, "\n")
+#define LISTPRINT(x) TTkList_print(x)
 
 TTkList tlist; //list used as stack in syntx_processExpression
 TPStack identStack; //list of free unused identificators
@@ -266,12 +267,13 @@ void syntx_parseFunction(TTkList list, SToken *actToken)
 TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
 {
   if (tlist == NULL)
-  {
     apperr_runtimeError("syntx_processExpression(): Modul not initialized. Call syntx_init() first!");
-  }
+  if (!isExpressionType(actToken->type))
+    scan_raiseCodeError(syntaxErr);
   nextTokenIdent = 0; //reset identificator generator
   EGrSymb terminal = syntx_getFirstTerminal(tlist);
-  do {
+  while (1)
+  {
     //debug print
     DDPRINT("Analyzing token: %d", actToken->type);
     DDPRINT("First terminal on stack: %d", terminal);
@@ -328,11 +330,17 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     }
     terminal = syntx_getFirstTerminal(tlist);
     DPRINT("--------------------------------");
+    LISTPRINT(tlist);
     DPRINT("-------konec-iterace------------");
+    if (isExprEnded(tlist, actToken, terminal))
+    {
+      break;
+    }
     //getchar(); //debug
-  } while (!(terminal == eol && actToken->type == eol) && actToken->type <= 24);
-  DPRINT("konec vyrazu.");
+  }
+  DPRINT("End of expression.");
 
+  //test correct ending
   if(!(tlist->first != NULL && tlist->first->next != NULL && tlist->first->next->next == NULL))
   {
     scan_raiseCodeError(syntaxErr);
@@ -340,13 +348,15 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
 
   //free ident stack
   syntx_emptyVarStack();
-  SToken resultToken = tlist->last->token;
-  
+
+  //return result
+  SToken resultToken = tlist->last->token;  
   if (symbol == NULL)
   {
     //return temporary variable with result
     TSymbol symb = resultToken.symbol;
     tlist->deleteLast(tlist);
+    DDPRINT("Result in %s\n", symb->ident);
     return symb;
   }
   else {
@@ -359,6 +369,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     asgnT.type = asng;
     syntx_generateCode(&retT, &asgnT, &resultToken, NULL);
     tlist->deleteLast(tlist);
+    DDPRINT("Result in %s\n", symbol->ident);
     return symbol;
   }
 }
