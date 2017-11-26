@@ -30,6 +30,28 @@ SToken makeIdent(char *identificator, DataType datType)
   return token;
 }
 
+SToken makeConst(int val)
+{
+  SToken token;
+  token.type = ident;
+  token.symbol = malloc(sizeof(struct Symbol));
+  token.symbol->type = symtConstant;
+  token.symbol->dataType = dtInt;
+  token.symbol->data.intVal = val;
+  return token;
+}
+
+SToken makeString(char *val)
+{
+  SToken token;
+  token.type = ident;
+  token.symbol = malloc(sizeof(struct Symbol));
+  token.symbol->type = symtConstant;
+  token.symbol->dataType = dtString;
+  token.symbol->data.stringVal = val;
+  return token;
+}
+
 int scan_GetNextToken(SToken *token)
 {
   static int pos = 0;
@@ -40,33 +62,33 @@ int scan_GetNextToken(SToken *token)
 
   if (pos == 0)
   {
-    *token = makeIdent("LF@ident1", dtInt);
+    token->type = opBoolNot;
   }
   else if (pos == 1) {
-    token->type = opPlus;
+    *token = makeIdent("LF@a", dtBool);
   }
   else if (pos == 2) {
-    token->type = opPlus;
+    token->type = eol;
   }
   else if (pos == 3)
   {
-    *token = makeIdent("LF@ident3", dtInt);
+    *token = makeString("World");
   }
   else if (pos == 4)
   {
-    token->type = eol;
+    token->type = opMul;
   }
   else if (pos == 5)
   {
-    token->type = opMul;
+    *token = makeConst(2);
   }
   else if (pos == 6)
   {
-    *token = makeIdent("LF@ident4", dtInt);
+    token->type = eol;
   }
   else if (pos == 7)
   {
-    token->type = opPlus;
+    *token = makeIdent("LF@ident4", dtInt);
   }
   else if (pos == 8)
   {
@@ -90,6 +112,6 @@ int scan_GetNextToken(SToken *token)
 
 void scan_raiseCodeError(ErrType typchyby)
 {
-  fprintf(stderr, "Scanner> some error!\n");
+  fprintf(stderr, "Scanner> some error! %d\n", typchyby);
   exit(typchyby);
 }

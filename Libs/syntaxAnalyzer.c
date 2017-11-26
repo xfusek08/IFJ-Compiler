@@ -137,10 +137,12 @@ int syntx_useRule(TTkList list)
   switch (list->getActive(list)->type)
   {
   case ident:
+    DPRINT("Using rule EXPR --> ident");
     list->getActive(list)->type = NT_EXPR;
     break;
   case NT_EXPR:
   case NT_EXPR_TMP:
+    DPRINT("Using rule EXPR --> EXPR op EXPR");
     if (list->active->next == NULL)
       return 0;
     if (list->active->next->next == NULL)
@@ -151,7 +153,11 @@ int syntx_useRule(TTkList list)
     if (arg1->symbol->type == symtConstant && arg3->symbol->type == symtConstant)
     {
       SToken t = syntx_doArithmeticOp(arg1, arg2, arg3);
+      list->postDelete(list);
+      list->postDelete(list);
       list->postInsert(list, &t);
+      list->next(list);
+      list->preDelete(list);
     }
     else if(arg1->type == NT_EXPR_TMP && arg3->type == NT_EXPR_TMP){
       syntx_generateCode(arg1, arg2, arg3, arg1);
@@ -180,17 +186,19 @@ int syntx_useRule(TTkList list)
       list->preDelete(list);
     }
     break;
-  case kwNot:
+  case opBoolNot:
+    DPRINT("Using rule EXPR --> kwNot EXPR");
     if (list->active->next == NULL)
       return 0;
     ret_var = sytx_getFreeVar();
-    syntx_generateCode(&list->active->token, &list->active->next->token, NULL, &ret_var);
+    syntx_generateCode(&list->active->next->token, &list->active->token, NULL, &ret_var);
     list->postDelete(list);
     list->postInsert(list, &ret_var);
     list->next(list);
     list->preDelete(list);
     break;
   case opPlus:
+    DPRINT("Using rule EXPR --> opPlus EXPR");
     //unary plus
     if (list->active->next == NULL)
       return 0;
@@ -198,6 +206,7 @@ int syntx_useRule(TTkList list)
     list->preDelete(list);
     break;
   case opMns:
+    DPRINT("Using rule EXPR --> opMns EXPR");
     //unary minus
     if (list->active->next == NULL)
       return 0;
