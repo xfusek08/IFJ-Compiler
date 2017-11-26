@@ -75,7 +75,6 @@ char *grammarToString(EGrSymb symb)
     "opBoolNot",
 		"opBoolAnd",
 		"opBoolOr",
-    "asng",
 		"eol",
     "opSemcol",
 		"dataType",

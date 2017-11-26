@@ -302,7 +302,6 @@ void ck_NT_ASSINGEXT(SToken *actToken, TSymbol symbol)
   {
     // 6. NT_ASSINGEXT -> asgn NT_EXPR
     case opEq:
-      NEXT_CHECK_TOKEN(actToken, asng);
       NEXT_TOKEN(actToken);
       // vtsledek expression bude ulozen v promenne symbol
       syntx_processExpression(actToken, symbol);
