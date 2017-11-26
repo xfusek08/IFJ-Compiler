@@ -251,7 +251,7 @@ void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOp
       scan_raiseCodeError(typeCompatibilityErr, "err");  // prints error
     }
   }else if( // if operators are assignment operators
-     operator->type == asng ||
+     operator->type == opEq ||
      operator->type == opPlusEq ||
      operator->type == opMnsEq ||
      operator->type == opMulEq ||
@@ -529,7 +529,7 @@ void syntx_generateCodeForBoolOps(SToken *leftOperand, SToken *operator, SToken 
 void syntx_generateCodeForAsgnOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
 
   switch(operator->type){
-    case asng:
+    case opEq:
       syntx_generateInstruction("MOVE", leftOperand, rightOperand, NULL);
       break;
     case opPlusEq:

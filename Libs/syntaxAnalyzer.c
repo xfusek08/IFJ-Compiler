@@ -420,7 +420,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     retT.symbol = symbol;
     retT.symbol->dataType = resultToken.symbol->dataType;
     SToken asgnT;
-    asgnT.type = asng;
+    asgnT.type = opEq;
     syntx_generateCode(&retT, &asgnT, &resultToken, NULL);
     tlist->deleteLast(tlist);
     DDPRINT("Result in %s\n", symbol->ident);
