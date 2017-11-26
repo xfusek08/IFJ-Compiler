@@ -301,7 +301,7 @@ void ck_NT_ASSINGEXT(SToken *actToken, TSymbol symbol)
   switch (actToken->type)
   {
     // 6. NT_ASSINGEXT -> asgn NT_EXPR
-    case asng:
+    case opEq:
       NEXT_CHECK_TOKEN(actToken, asng);
       NEXT_TOKEN(actToken);
       // vtsledek expression bude ulozen v promenne symbol

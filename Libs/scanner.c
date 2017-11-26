@@ -135,17 +135,21 @@ EGrSymb isKeyWord(char *tokenID)
   "print", "return", "scope", "subStr", "then", "while", "continue", "elseif", "exit", "false", "for",
   "next", "shared", "static", "true", "to", "until"};  //32 kWordNumber
   int i = 0;
-  EGrSymb tokenType = ident;
   //Compare keyWords
   while(i < KWORDNUMBER)
   {
     if(strcmp(tokenID, wArray[i]) == 0)
     {
-      tokenType = i + 20;
+      EGrSymb tokenType = ident;
+      if (i < 3)
+        tokenType = i + 20;
+      else
+        tokenType = i + 25;
+      return tokenType;
     }
     i++;
   }
-  return tokenType;
+  return ident;
 }
 
 //Comparing given string with dataTypes
@@ -294,7 +298,7 @@ SToken scan_GetNextToken()
         tokenType = opComma;
         allowed = true;
         break;
-      case ':':
+      /*case ':':
         if(GLBScanner->line[GLBScanner->position] == '=')
         {
           tokenType = asng;
@@ -305,7 +309,7 @@ SToken scan_GetNextToken()
           scan_raiseCodeError(lexicalErr, NULL);
         }
         allowed = true;
-        break;
+        break;*/
       case '\'':
         position--;
         delete_comment(true);

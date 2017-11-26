@@ -7,32 +7,37 @@
 * This file contains enummeration of grammar (terminal + non-terminals) and definition of token provided by scanner and processed by parsers.
 *
 * \author  Pavel Vosyka (xvosyk00)
-* \date    13.11.2017 - Petr Fusek
+* \date    21.11.2017 - Pavel Vosyka
 */
 /******************************************************************************/
 
 #ifndef _Grammar
 #define _Grammar
 
+//note: Be carefull with changing values of enum, isTerminal() rely on them.
+//note: eol is used to limit expression symbols ( (symbol <= eol) ===> symbol is valid expression symbol )
 typedef enum
 {
   /* TERMINALS */
-  /* operators */
-  opPlus, opMns, opMul, opDiv, opDivFlt, opPlusEq, opMnsEq, opMulEq, opDivEq, opDivFltEq, opEq, opNotEq, opLes, opGrt,
-  opLessEq, opGrtEq, opLeftBrc, opRightBrc, opSemcol, opComma,
+
+  /* operators and other*/
+  /* DON'T CHANGE IT PART - used to index the array */
+  opPlus = 0, opMns, opMul, opDivFlt, opDiv, opLeftBrc, opRightBrc, ident, opComma,
+  opEq, opNotEq, opLes, opLessEq, opGrt, opGrtEq, opPlusEq, opMnsEq, opMulEq, opDivEq, opDivFltEq,
   /*boolean operators*/
   opBoolNot, opBoolAnd, opBoolOr,
+
+  eol,
+  /* END OF DON'T CHANGE IT PART */
+  opSemcol, dataType, eof,
 
   /* key words */
   kwAs, kwAsc, kwDeclare, kwDim, kwDo, kwElse, kwEnd, kwFunction, kwIf, kwInput, kwLength, kwLoop,
   kwPrint, kwReturn, kwScope, kwSubStr, kwThen, kwWhile, kwContinue, kwElseif, kwExit, kwFalse, kwFor,
   kwNext, kwShared, kwStatic, kwTrue, kwTo, kwUntil,
 
-  /* other */
-  ident, asng, eol, eof, dataType,
-
   /* NON-TERMINALS */
-  NT_PROG,          // Program - staritng non-terminal
+  NT_PROG = 1000,          // Program - staritng non-terminal
   NT_DD,            // definitions and declarations section
   NT_ASSINGEXT,     // Assignement (...  [as datatype])
   NT_SCOPE,         // Scope statement where local variables can be owerriten.
@@ -47,7 +52,10 @@ typedef enum
   NT_INIF_EXT,      // extension of body of if statement
   NT_EXPR_LIST,     // list of expression for print function
   NT_EXPR,          // one expresion
-  NT_ARGUMENT_LIST  // list of expression separated by comma
+  NT_ARGUMENT_LIST,  // list of expression separated by comma
+  NT_EXPR_TMP,      // one expresion, indicates result in auxiliary variable (for code optimization)
+  /* Precedence table symbols */
+  precLes, precEqu, precGrt, precUnd
 } EGrSymb;
 
 /* GRAMMAR RULES:
@@ -99,7 +107,7 @@ first(NT_STAT) = {
 17. NT_STAT -> kwPrint NT_EXPR_LIST
 18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf
 19. NT_STAT -> kwDim ident kwAs dataType NT_ASSINGEXT
-20. NT_STAT -> ident asng NT_EXPR
+20. NT_STAT -> ident opEq NT_EXPR
 21. NT_STAT -> kwContinue
 22. NT_STAT -> kwExit
 23. NT_STAT -> NT_SCOPE

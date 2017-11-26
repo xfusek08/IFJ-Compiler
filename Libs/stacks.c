@@ -8,53 +8,210 @@
 */
 /******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "stacks.h"
 #include "MMng.h"
 #include "grammar.h"
 #include "appErr.h"
+#include <stdlib.h>
+#include <stdio.h>
+
+#define LISTP(x, y) ((void)0)
+//#define LISTP(x, y) fprintf(stderr, x); fprintf(stderr, "\n"); TTkList_print(y)
 
 // =============================================================================
 // ====================== support functions ====================================
 // =============================================================================
-/****** GRAMMAR STACK ********/
+/****** TOKEN STACK ********/
 
-void ist_push(TGrStack stack, EGrSymb val)
+void tknl_insertLast(TTkList list, SToken *token)
 {
-  if (stack->count == stack->size)
+  TTkListItem *item = mmng_safeMalloc(sizeof(TTkListItem));
+  item->next = NULL;
+  item->token = *token;
+  if (list->last != NULL)
   {
-    stack->grArray = mmng_safeRealloc(stack->grArray, stack->size * sizeof(EGrSymb) + stack->size * sizeof(EGrSymb) * STACK_REALLOC_MULTIPLIER);
+    item->prev = list->last;
+    list->last->next = item;
   }
-  stack->grArray[stack->count++] = val;
+  else {
+    list->first = item;
+    list->last = NULL;
+  }
+  list->last = item;
+  LISTP("TTkList: called insertLast()", list);
 }
 
-void ist_pop(TGrStack stack)
+void tknl_deleteLast(TTkList list)
 {
-  if (stack->count == 0)
+  if (list->last == NULL)
   {
-    apperr_runtimeError("TGrStack: Trying to pop empty stack!");
+    apperr_runtimeError("TTkList: Trying to delete item from empty list!");
   }
-  stack->count--;
+  TTkListItem *item = list->last;
+  if (list->last->prev != NULL)
+  {
+    list->last->prev->next = NULL;
+  }
+  else if(list->last == list->first){
+    list->first = NULL;
+  }
+  list->last = list->last->prev;
+  mmng_safeFree(item);
+  LISTP("TTkList: called deleteLast()", list);
 }
 
-EGrSymb ist_top(TGrStack stack)
+int tknl_isEmpty(TTkList list)
 {
-  if (stack->count == 0)
-  {
-    apperr_runtimeError("TGrStack: Trying read from empty stack!");
-  }
-  return stack->grArray[stack->count-1];
+  if (list->first != NULL)
+    return 1;
+  return 0;
 }
 
-void ist_destroy(TGrStack stack)
+SToken *tknl_getLast(TTkList list)
 {
-  if (stack->count != 0)
+  if (list->last == NULL)
   {
-    apperr_runtimeError("TGrStack: Trying to destroy non-empty stack!");
+    apperr_runtimeError("TTkList: Trying read from empty list!");
   }
-  mmng_safeFree(stack->grArray);
-  mmng_safeFree(stack);
+  return &list->last->token;
+}
+
+void tknl_destroy(TTkList list)
+{
+  if (list->first != NULL)
+  {
+    apperr_runtimeError("TTkList: Trying to destroy non-empty list!");
+  }
+  mmng_safeFree(list);
+}
+
+void tknl_activate(TTkList list)
+{
+  list->active = list->last;
+  LISTP("TTkList: called activate()", list);
+}
+
+void tknl_prev(TTkList list)
+{
+  list->active = list->active->prev;
+  LISTP("TTkList: called prev()", list);
+}
+
+void tknl_next(TTkList list)
+{
+  list->active = list->active->next;
+  LISTP("TTkList: called next()", list);
+}
+
+SToken *tknl_getActive(TTkList list)
+{
+  if(list->active != NULL)
+    return &list->active->token;
+  return NULL;
+}
+
+void tknl_postInsert(TTkList list, SToken *token)
+{
+  if (list->active != NULL)
+  {
+    TTkListItem *newitem = mmng_safeMalloc(sizeof(TTkListItem));
+    newitem->token = *token;
+    newitem->prev = list->active;
+    if (list->active == list->last)
+    {
+      list->last = newitem;
+    }
+    else {
+      list->active->next->prev = newitem;
+    }
+    newitem->next = list->active->next;
+    list->active->next = newitem;
+  }
+  else {
+    apperr_runtimeError("TTkList: Trying to postInsert on inactive list!");
+  }
+  LISTP("TTkList: called postInsert()", list);
+}
+
+void tknl_postDelete(TTkList list)
+{
+  if (list->active != NULL && list->active->next != NULL)
+  {
+    TTkListItem *item = list->active->next;
+    if (list->active->next->next == NULL)
+    {
+      list->last = list->active;
+    }
+    else {
+      list->active->next->next->prev = list->active;
+    }
+    list->active->next = list->active->next->next;
+    mmng_safeFree(item);
+  }
+  else {
+    apperr_runtimeError("TTkList: error in postDelete() function, list is not active or active is last item.");
+  }
+  LISTP("TTkList: called postDelete()", list);
+}
+
+void tknl_preDelete(TTkList list)
+{
+  if (list->active != NULL && list->active->prev != NULL)
+  {
+    TTkListItem *item = list->active->prev;
+    if (list->active->prev->prev == NULL)
+    {
+      list->first = list->active;
+    }
+    else {
+      list->active->prev->prev->next = list->active;
+    }
+    list->active->prev = list->active->prev->prev;
+    mmng_safeFree(item);
+  }
+  else {
+    apperr_runtimeError("TTkList: error in preDelete() function, list is not active or active is first item.");
+  }
+  LISTP("TTkList: called preDelete()", list);
+}
+
+void TTkList_print(TTkList list)
+{
+  TTkListItem *item = list->first;
+  if (item == NULL) {
+    fprintf(stderr, "List is empty.\n");
+    return;
+  }
+  fprintf(stderr, "-first--");
+  while (item->next != NULL) {
+    if (item == list->active)
+    {
+      fprintf(stderr, ">>");
+    }
+    fprintf(stderr, "|%d|", item->token.type);
+    if (item == list->active)
+    {
+      fprintf(stderr, "<<--");
+    }
+    else {
+      fprintf(stderr, "----");
+    }
+    item = item->next;
+  }
+  if (list->last == item)
+  {
+    if (item != list->active) {
+      fprintf(stderr, "|%d|--last-\n", item->token.type);
+    }
+    else
+    {
+      fprintf(stderr, ">>|%d|<<-last-\n", item->token.type);
+    }
+  }
+  else {
+    fprintf(stderr, "!!List is corrupted!!\n");
+    apperr_runtimeError("TTkList is corrupted!");
+  }
 }
 
 /****** POINTER STACK ********/
@@ -100,17 +257,26 @@ void pst_destroy(TPStack stack)
 // ====================== Interface implementation =============================
 // =============================================================================
 
-TGrStack TGrStack_create()
+TTkList TTkList_create()
 {
-  TGrStack stack = mmng_safeMalloc(sizeof(struct grammarStack));
-  stack->grArray = mmng_safeMalloc(sizeof(EGrSymb)*STACK_INITIAL_SIZE);
-  stack->size = STACK_INITIAL_SIZE;
-  stack->count = 0;
-  stack->push = ist_push;
-  stack->pop = ist_pop;
-  stack->top = ist_top;
-  stack->destroy = ist_destroy;
-  return stack;
+  TTkList List = mmng_safeMalloc(sizeof(struct tokenList));
+  List->first = NULL;
+  List->last = NULL;
+
+  List->insertLast = tknl_insertLast;
+  List->deleteLast = tknl_deleteLast;
+  List->getLast = tknl_getLast;
+  List->isEmpty = tknl_isEmpty;
+  List->activate = tknl_activate;
+  List->prev = tknl_prev;
+  List->next = tknl_next;
+  List->getActive = tknl_getActive;
+  List->postInsert = tknl_postInsert;
+  List->postDelete = tknl_postDelete;
+  List->preDelete = tknl_preDelete;
+  List->destroy = tknl_destroy;
+
+  return List;
 }
 
 TPStack TPStack_create()
