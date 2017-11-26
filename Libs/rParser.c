@@ -18,15 +18,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "appErr.h"
-#include "MMng.h"
-#include "utils.h"
 #include "scanner.h"
-#include "symtable.h"
-#include "grammar.h"
-#include "rParser.h"
+#include "MMng.h"
 #include "syntaxAnalyzer.h"
-#include "stacks.h"
+#include "utils.h"
 
 void raiseUnexpToken(SToken *actToken, EGrSymb expected);
 
@@ -199,7 +194,7 @@ void writeExpression(SToken *actToken)
 void raiseUnexpToken(SToken *actToken, EGrSymb expected)
 {
   char *message = mmng_safeMalloc(sizeof (char) * 100);
-  sprintf(message, "\"%s\" token expected, \"%s\" got.", TokenTypeStringss[expected], TokenTypeStringss[(*actToken).type]);
+  sprintf(message, "\"%s\" token expected, \"%s\" got.", grammarToString(expected), grammarToString((*actToken).type));
   scan_raiseCodeError(syntaxErr, message);
 }
 
@@ -333,6 +328,7 @@ void ck_NT_SCOPE(SToken *actToken)
       mmng_safeFree(label);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
+
       CHECK_TOKEN(actToken, kwEnd); // statement list must ends on end key word
       NEXT_CHECK_TOKEN(actToken, kwScope);
       NEXT_TOKEN(actToken);
@@ -468,8 +464,26 @@ void ck_NT_STAT(SToken *actToken)
       NEXT_TOKEN(actToken);
       ck_NT_EXPR_LIST(actToken);
       break;
-    // 18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf eol
+    // 18. NT_STAT -> kwIf NT_EXPR kwThen eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf
     case kwIf:
+      NEXT_TOKEN(actToken);
+      TSymbol symbol = syntx_processExpression(actToken, NULL);
+      char *iflabel = symbt_getNewLocalLabel();
+      NEXT_CHECK_TOKEN(actToken, kwThen);
+      NEXT_CHECK_TOKEN(actToken, eol);
+      printf("JUMPIFNEQ %s$else %s bool@true\n", iflabel, symbol->ident);
+      symbt_pushFrame(iflabel, true);
+      NEXT_TOKEN(actToken);
+      ck_NT_STAT_LIST(actToken);
+      printf("JUMP %s$endif\n", iflabel);
+      printf("LABEL %s$else\n", iflabel);
+      ck_NT_INIF_EXT(actToken);
+      CHECK_TOKEN(actToken, kwEnd);
+      NEXT_CHECK_TOKEN(actToken, kwIf);
+      printf("LABEL %s$endif\n", iflabel);
+      symbt_popFrame();
+      mmng_safeFree(iflabel);
+      NEXT_TOKEN(actToken);
       break;
     // 19. NT_STAT -> kwDim ident kwAs dataType NT_ASSINGEXT
     case kwDim:
@@ -516,8 +530,9 @@ void ck_NT_STAT(SToken *actToken)
         TSymbol symbol = symbt_findOrInsertSymb("%%retval");
         syntx_processExpression(actToken, symbol);
         char *epiloglabel = util_StrConcatenate(symbt_getActFuncLabel(), "$epilog");
-        printf("JMP %s\n", epiloglabel);
+        printf("JUMP %s\n", epiloglabel);
         mmng_safeFree(epiloglabel);
+        NEXT_TOKEN(actToken);
       }
       else
         scan_raiseCodeError(anotherSemanticErr, "Return can not be used outside of function.");
@@ -559,13 +574,44 @@ void ck_NT_FORSTEP(SToken *actToken)
 }
 
 // extension of body of if statement
-// first(NT_INIF_EXT) = { kwElsif -> (33); kwElse -> (34); else -> (35 [epsilon]) }
+// first(NT_INIF_EXT) = { kwElseif -> (33); kwElse -> (34); else -> (35 [epsilon]) }
 void ck_NT_INIF_EXT(SToken *actToken)
 {
-  (void)actToken;
-  // 33. NT_INIF_EXT -> kwElsif NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT
-  // 34. NT_INIF_EXT -> kwElse eol NT_STAT_LIST
-  // 35. NT_INIF_EXT -> (epsilon)
+  switch (actToken->type)
+  {
+    // 33. NT_INIF_EXT -> kwElseif NT_EXPR kwThen eol NT_STAT_LIST NT_INIF_EXT
+    case kwElseif:
+      NEXT_TOKEN(actToken);
+      TSymbol symbol = syntx_processExpression(actToken, NULL);
+      char *iflabel = symbt_getNewLocalLabel();
+      NEXT_CHECK_TOKEN(actToken, kwThen);
+      NEXT_CHECK_TOKEN(actToken, eol);
+      printf("JUMPIFNEQ %s$else %s bool@true\n", iflabel, symbol->ident);
+      NEXT_TOKEN(actToken);
+      symbt_pushFrame(iflabel, true);
+      ck_NT_STAT_LIST(actToken);
+      symbt_popFrame();
+      printf("JUMP %s$endif\n", symbt_getActLocalLabel());
+      printf("LABEL %s$else\n", iflabel);
+      mmng_safeFree(iflabel);
+      ck_NT_INIF_EXT(actToken);
+      break;
+    // 34. NT_INIF_EXT -> kwElse eol NT_STAT_LIST
+    case kwElse:
+      NEXT_CHECK_TOKEN(actToken, eol);
+      NEXT_TOKEN(actToken);
+      char *frameLabel = symbt_getNewLocalLabel();
+      symbt_pushFrame(frameLabel, true);
+      mmng_safeFree(frameLabel);
+      ck_NT_STAT_LIST(actToken);
+      symbt_popFrame();
+      mmng_safeFree(frameLabel);
+      break;
+    // 35. NT_INIF_EXT -> (epsilon)
+    default:
+      // let it be
+      break;
+  }
 }
 
 // list of expression for print function
@@ -596,6 +642,7 @@ void ck_NT_EXPR_LIST(SToken *actToken)
 
 void rparser_processProgram()
 {
+  // start compile to code
   printf(".IFJcode17\n");
   printf("JUMP %s\n", symbt_getActFuncLabel());
   SToken token = scan_GetNextToken();

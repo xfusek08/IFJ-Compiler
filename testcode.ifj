@@ -2,9 +2,13 @@
 /' Program 2: Vypocet faktorialu (rekurzivne) '/
 Declare Function factorial (n As Integer) As Integer
 Function factorial (n As Integer) As Integer
-  Dim temp_result As Integer
-  Dim decremented_n As Integer
-  Dim result As Integer
+  if a then
+    Dim temp_result As Integer
+  elseif b then
+    Dim decremented_n As Integer
+  else
+    Dim result As Integer
+  end if
 End Function
 
 Scope 'Hlavni telo programu

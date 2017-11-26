@@ -173,7 +173,7 @@ void *mmng_safeRealloc(void *pointer, size_t size)
   // delete old pointer
   TMMPList_deletePointer(GLBPointerList, pointer);
   // store new pointer
-  TMMPList_addPointer(GLBPointerList, pointer);
+  TMMPList_addPointer(GLBPointerList, newPointer);
   return newPointer;
 }
 

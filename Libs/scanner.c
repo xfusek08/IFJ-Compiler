@@ -14,7 +14,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <math.h>
-#include "Scanner.h"
+#include "scanner.h"
 #include "symtable.h"
 #include "MMng.h"
 
@@ -67,8 +67,7 @@ void scan_raiseCodeError(ErrType typchyby, char *message)
     GLBScanner->curentLine,
     GLBScanner->position,
     GLBScanner->line,
-    message
-  );
+    message);
 }
 
 

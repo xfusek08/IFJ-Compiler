@@ -14,9 +14,6 @@
 #ifndef _Grammar
 #define _Grammar
 
-#include "utils.h"
-#include "symtable.h"
-
 typedef enum
 {
   /* TERMINALS */
@@ -52,15 +49,6 @@ typedef enum
   NT_EXPR,          // one expresion
   NT_ARGUMENT_LIST  // list of expression separated by comma
 } EGrSymb;
-
-/**
- * Struct representing one token of analysis
- */
-typedef struct {
-  EGrSymb type;       /*!< terminal lextype from grammar */
-  TSymbol symbol;     /*!< Symbol evided in symbol table, NULL if there is no need of additional information */
-  DataType dataType;  /*!< This attribute is used only if token type is dataType (we need remember wich data type) and symbol of such of token is unnecessary */
-} SToken;
 
 /* GRAMMAR RULES:
 
@@ -109,7 +97,7 @@ first(NT_STAT) = {
   else -> (error) }
 16. NT_STAT -> kwInput ident
 17. NT_STAT -> kwPrint NT_EXPR_LIST
-18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf eol
+18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf
 19. NT_STAT -> kwDim ident kwAs dataType NT_ASSINGEXT
 20. NT_STAT -> ident asng NT_EXPR
 21. NT_STAT -> kwContinue
@@ -131,8 +119,8 @@ first(NT_FORSTEP) = { kwStep -> (31); else -> (32 [epsilon]) }
 31. NT_FORSTEP -> kwStep NT_EXPR
 32. NT_FORSTEP -> (epsilon)
 
-first(NT_INIF_EXT) = { kwElsif -> (33); kwElse -> (34); else -> (35 [epsilon]) }
-33. NT_INIF_EXT -> kwElsif NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT
+first(NT_INIF_EXT) = { kwElseif -> (33); kwElse -> (34); else -> (35 [epsilon]) }
+33. NT_INIF_EXT -> kwElseif NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT
 34. NT_INIF_EXT -> kwElse eol NT_STAT_LIST
 35. NT_INIF_EXT -> (epsilon)
 

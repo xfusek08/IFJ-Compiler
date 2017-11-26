@@ -15,6 +15,7 @@
 #define _STACKSLIB
 
 #include "grammar.h"
+
 /*Capacity of newly initialized stack*/
 #define STACK_INITIAL_SIZE 30
 /*Indicates how much space stack realloc when its full.

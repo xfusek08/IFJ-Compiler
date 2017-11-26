@@ -8,12 +8,12 @@
 */
 /******************************************************************************/
 
+#include <stdio.h>
+#include <stdlib.h>
 #include "stacks.h"
 #include "MMng.h"
 #include "grammar.h"
 #include "appErr.h"
-#include <stdlib.h>
-#include <stdio.h>
 
 // =============================================================================
 // ====================== support functions ====================================

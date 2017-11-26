@@ -9,6 +9,7 @@
 /******************************************************************************/
 
 // references
+#include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
@@ -190,7 +191,7 @@ TSTNode TSTNode_create(char *key)
   TSTNode newNode = (TSTNode)mmng_safeMalloc(sizeof(struct STNode));
   newNode->balance = 0;
   newNode->key = util_StrHardCopy(key); // new hard copy of string
-  newNode->symbol = TSymbol_create(newNode->key);
+  newNode->symbol = TSymbol_create(key);
   newNode->parent = NULL;
   newNode->left = NULL;
   newNode->right = NULL;
@@ -706,7 +707,7 @@ char *symbt_getNewLocalLabel()
   TSymTable actTable = getFirstNonTransparetFrame();
   char *cntString = mmng_safeMalloc(
     sizeof(char) * (strlen(actTable->frameLabel) + 12));
-  sprintf(cntString, "%s$L%u", actTable->frameLabel, actTable->localLabelCnt);
+  sprintf(cntString, "%s$L%u", actTable->frameLabel, actTable->localLabelCnt++);
   return cntString;
 }
 

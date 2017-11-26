@@ -13,10 +13,9 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include "Libs/MMng.h"
-#include "Libs/stacks.h"
 #include "Libs/symtable.h"
 #include "Libs/rParser.h"
-#include "Libs/Scanner.h"
+#include "Libs/scanner.h"
 
 int main(int argc, char *argv[])
 {

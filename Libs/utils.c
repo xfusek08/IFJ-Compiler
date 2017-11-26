@@ -9,11 +9,10 @@
  */
 /******************************************************************************/
 
+#include <stdio.h>
 #include <string.h>
 #include "MMng.h"
 #include "utils.h"
-
-#include "grammar.h"
 
 // hard string copy
 char *util_StrHardCopy(const char *str)
@@ -28,7 +27,7 @@ char *util_StrConcatenate(const char *str1, const char *str2)
 {
   if (str1 != NULL && str2 != NULL)
   {
-    char *str = mmng_safeMalloc(sizeof(char) * (strlen(str1) + strlen(str2)));
+    char *str = mmng_safeMalloc(sizeof(char) * (strlen(str1) + strlen(str2) + 1));
     strcpy(str, str1);
     strcat(str, str2);
     return str;

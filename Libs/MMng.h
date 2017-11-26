@@ -18,7 +18,7 @@
 
 #ifndef _MMng
 #define _MMng
-#include <stdio.h>
+
 /**
  * Initialization
  *
