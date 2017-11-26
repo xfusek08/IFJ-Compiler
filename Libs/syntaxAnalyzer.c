@@ -191,8 +191,14 @@ int syntx_useRule(TTkList list)
     list->preDelete(list);
     break;
   case opPlus:
+    //unary plus
+    if (list->active->next == NULL)
+      return 0;
+    list->next(list);
+    list->preDelete(list);
+    break;
   case opMns:
-    //unary plus and minus
+    //unary minus
     if (list->active->next == NULL)
       return 0;
     ret_var = sytx_getFreeVar();
@@ -202,7 +208,7 @@ int syntx_useRule(TTkList list)
     zeroT.symbol->type = symtConstant;
     zeroT.symbol->dataType = dtInt;
     zeroT.symbol->data.intVal = 0;
-    syntx_generateCode(&list->active->token, &list->active->next->token, &zeroT, &ret_var);
+    syntx_generateCode(&zeroT, &list->active->token, &list->active->next->token, &ret_var);
     list->postDelete(list);
     list->postInsert(list, &ret_var);
     list->next(list);
@@ -269,8 +275,37 @@ void syntx_parseFunction(TTkList list, SToken *actToken)
 }
 */
 
+int syntx_processUnaryOps(TTkList list, SToken *actToken)
+{
+  EGrSymb last = list->last->token.type;
+  if (last == opPlus && actToken->type == opPlus)
+  {
+    return 1;
+  }
+  else if (last == opPlus && actToken->type == opMns)
+  {
+    list->last->token.type = opMns;
+    return 1;
+  }
+  else if (last == opMns && actToken->type == opPlus) 
+  {
+    return 1;
+  }
+  else if (last == opMns && actToken->type == opMns)
+  {
+    list->last->token.type = opPlus;
+    return 1;
+  }
+  return 0;
+}
+
 void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
 {
+  if (syntx_processUnaryOps(list, actToken)) //check for unary operator optimalization
+  {
+    *actToken = nextToken();
+    return;
+  }
   EGrSymb tablesymb;
   if (!syntx_getPrecedence(terminal, actToken->type, &tablesymb))
   {
@@ -345,7 +380,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     terminal = syntx_getFirstTerminal(tlist);
     DPRINT("--------------------------------");
     LISTPRINT(tlist);
-    DPRINT("-------konec-iterace------------");
+    DPRINT("-------konec-iterace------------\n");
     if (isExprEnded(tlist, actToken, terminal))
     {
       break;
