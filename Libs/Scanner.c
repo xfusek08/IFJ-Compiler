@@ -62,17 +62,17 @@ int scan_GetNextToken(SToken *token)
 
   if (pos == 0)
   {
-    token->type = opBoolNot;
+    *token = makeString("Hello ");
   }
   else if (pos == 1) {
-    *token = makeIdent("LF@a", dtBool);
+    token->type = opPlus;
   }
   else if (pos == 2) {
-    token->type = eol;
+    *token = makeString("World");
   }
   else if (pos == 3)
   {
-    *token = makeString("World");
+    token->type = eol;
   }
   else if (pos == 4)
   {
