@@ -421,8 +421,12 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     retT.symbol = symbol;
     SToken asgnT;
     asgnT.type = opEq;
-
-    syntx_generateCode(&retT, &asgnT, &resultToken, NULL);
+    DDPRINT("retT je %d", retT.symbol->dataType);
+    DDPRINT("result je %d", resultToken.symbol->dataType);
+    syntx_checkDataTypes(&retT, &asgnT, &resultToken);
+    syntx_generateCodeForAsgnOps(&retT, &asgnT, &resultToken, NULL);
+    //syntx_generateCode(&retT, &asgnT, &resultToken, NULL);
+    DPRINT("po");
     tlist->deleteLast(tlist);
     DDPRINT("Result in %s\n", symbol->ident);
     return symbol;
