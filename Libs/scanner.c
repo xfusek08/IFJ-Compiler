@@ -142,9 +142,9 @@ EGrSymb isKeyWord(char *tokenID)
     {
       EGrSymb tokenType = ident;
       if (i < 3)
-        tokenType = i + 20;
+        tokenType = i + 21;
       else
-        tokenType = i + 24;
+        tokenType = i + 25;
       return tokenType;
     }
     i++;

@@ -67,6 +67,7 @@ char *grammarToString(EGrSymb symb)
 		"opLessEq",
 		"opGrt",
 		"opGrtEq",
+    "asgn",
 		"opPlusEq",
 		"opMnsEq",
 		"opMulEq",
