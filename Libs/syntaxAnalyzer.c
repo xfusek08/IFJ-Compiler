@@ -254,7 +254,7 @@ int isExprEnded(TTkList list, SToken *actToken, EGrSymb terminal)
   }
   return 0;
 }
-/*
+
 void syntx_parseFunction(TTkList list, SToken *actToken)
 {
   SToken funcToken = *actToken;
@@ -278,7 +278,7 @@ void syntx_parseFunction(TTkList list, SToken *actToken)
   //syntx_generateCodeForCallFunc(&funcToken, &returnVal);
   list->postInsert(list, &returnVal); //insert expr to list?
 }
-*/
+
 
 int syntx_processUnaryOps(TTkList list, SToken *actToken)
 {

@@ -593,61 +593,61 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
   }
 }
 
-// /**
-//  * Generates code for variable definition
-//  *
-//  * funcToken represents function token
-//  * argIndex represents argument number from beginning
-//  * argValue represents constant or variable transmitted to the function
-//  */
-// void syntx_generateCodeForVarDef(SToken *funcToken, int argIndex, SToken *argValue){
-//   TArgList args = funcToken->symbol->data.funcData.arguments;
+ /**
+  * Generates code for variable definition
+  *
+  * funcToken represents function token
+  * argIndex represents argument number from beginning
+  * argValue represents constant or variable transmitted to the function
+  */
+ void syntx_generateCodeForVarDef(SToken *funcToken, int argIndex, SToken *argValue){
+   TArgList args = funcToken->symbol->data.funcData.arguments;
 
-//   // creates temporary frame
-//   if(argIndex == 0)
-//       printf("CREATEFRAME\n");
+   // creates temporary frame
+   if(argIndex == 0)
+       printf("CREATEFRAME\n");
 
-//   // check argument data type
-//   if(funcToken->symbol->data.funcData.arguments->get(args, argIndex)->dataType != argValue->symbol->dataType){
-//     scan_raiseCodeError(typeCompatibilityErr, "err");  // prints error
-//   }
+   // check argument data type
+   if(funcToken->symbol->data.funcData.arguments->get(args, argIndex)->dataType != argValue->symbol->dataType){
+     scan_raiseCodeError(typeCompatibilityErr, "err");  // prints error
+   }
 
-//   // alocates memory for name of variable TF@ + name + \n
-//   char *varName = mmng_safeMalloc(sizeof(3 + strlen(funcToken->symbol->data.funcData.arguments->get(args, argIndex)->ident)) + 1);
+   // alocates memory for name of variable TF@ + name + \n
+   char *varName = mmng_safeMalloc(sizeof(3 + strlen(funcToken->symbol->data.funcData.arguments->get(args, argIndex)->ident)) + 1);
 
-//   // set variable name
-//   varName = strcpy(varName, "TF@");
-//   varName = strcat(varName, funcToken->symbol->data.funcData.arguments->get(args, argIndex)->ident);
+   // set variable name
+   varName = strcpy(varName, "TF@");
+   varName = strcat(varName, funcToken->symbol->data.funcData.arguments->get(args, argIndex)->ident);
 
-//   // defines variable TF@xxxxxn where xxxxxn represents variable name in argument, xxxxxn is same name as in input code
-//   printf("DEFVAR %s\n", varName);
-//   syntx_generateInstructionFstPosStr("MOVE", varName, argValue, NULL);
+   // defines variable TF@xxxxxn where xxxxxn represents variable name in argument, xxxxxn is same name as in input code
+   printf("DEFVAR %s\n", varName);
+   syntx_generateInstructionFstPosStr("MOVE", varName, argValue, NULL);
 
-//   mmng_safeFree(varName);
-// }
+   mmng_safeFree(varName);
+ }
 
-// /**
-//  * Generates code for function call, moves return value, checks arguments count and sets data type of result
-//  *
-//  * funcToken represents function token
-//  * argIndex represents argument number from beginning
-//  * result updates result variable data type
-//  */
-// void syntx_generateCodeForCallFunc(SToken *funcToken, int argIndex, SToken *result){
+ /**
+  * Generates code for function call, moves return value, checks arguments count and sets data type of result
+  *
+  * funcToken represents function token
+  * argIndex represents argument number from beginning
+  * result updates result variable data type
+  */
+ void syntx_generateCodeForCallFunc(SToken *funcToken, int argIndex, SToken *result){
 
-//   // checks arguments count
-//   if(funcToken->symbol->data.funcData.arguments->count > argIndex + 1){  // too much arguments
-//     scan_raiseCodeError(typeCompatibilityErr, "err");  // prints error
-//   }else if(funcToken->symbol->data.funcData.arguments->count < argIndex + 1){  // too few arguments
-//     scan_raiseCodeError(typeCompatibilityErr, "err");  // prints error
-//   }
+   // checks arguments count
+   if(funcToken->symbol->data.funcData.arguments->count > argIndex + 1){  // too much arguments
+     scan_raiseCodeError(typeCompatibilityErr, "err");  // prints error
+   }else if(funcToken->symbol->data.funcData.arguments->count < argIndex + 1){  // too few arguments
+     scan_raiseCodeError(typeCompatibilityErr, "err");  // prints error
+   }
 
-//   printf("CALL %s\n", funcToken->symbol->data.funcData.label);
-//   syntx_generateInstructionSecPosStr("MOVE", result, "TF@̈́%%retval", NULL);
+   printf("CALL %s\n", funcToken->symbol->data.funcData.label);
+   syntx_generateInstructionSecPosStr("MOVE", result, "TF@̈́%%retval", NULL);
 
-//   // sets correct token data type corresponding to function return value
-//   result->symbol->dataType = funcToken->symbol->data.funcData.returnType;
-// }
+   // sets correct token data type corresponding to function return value
+   result->symbol->dataType = funcToken->symbol->data.funcData.returnType;
+ }
 
 
 /**
