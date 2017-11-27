@@ -149,6 +149,8 @@ int syntx_useRule(TTkList list)
     if (arg1->symbol->type == symtConstant && arg3->symbol->type == symtConstant)
     {
       SToken t = syntx_doArithmeticOp(arg1, arg2, arg3);
+      DDPRINT("%d", t.type);
+      DDPRINT("%d", t.symbol->dataType);
       list->postDelete(list);
       list->postDelete(list);
       list->postInsert(list, &t);
@@ -393,6 +395,9 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     }
     //getchar(); //debug
   }
+
+  while (syntx_useRule(tlist));
+
   DPRINT("End of expression.");
 
   //test correct ending
@@ -410,6 +415,17 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
   {
     //return temporary variable with result
     TSymbol symb = resultToken.symbol;
+    //In case of constant
+    SToken TempT;
+    if (symb->type == symtConstant)
+    {
+      SToken asgnT;
+      asgnT.type = opEq;
+      TempT = sytx_getFreeVar();
+      syntx_generateCodeForAsgnOps(&TempT, &asgnT, &resultToken, NULL);
+      symb = TempT.symbol;
+    }
+    //delete last token and return
     tlist->deleteLast(tlist);
     DDPRINT("Result in %s\n", symb->ident);
     return symb;
@@ -426,7 +442,6 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     syntx_checkDataTypes(&retT, &asgnT, &resultToken);
     syntx_generateCodeForAsgnOps(&retT, &asgnT, &resultToken, NULL);
     //syntx_generateCode(&retT, &asgnT, &resultToken, NULL);
-    DPRINT("po");
     tlist->deleteLast(tlist);
     DDPRINT("Result in %s\n", symbol->ident);
     return symbol;
