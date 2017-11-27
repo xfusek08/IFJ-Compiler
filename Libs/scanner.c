@@ -271,6 +271,11 @@ SToken scan_GetNextToken()
           tokenType = opLessEq;
           GLBScanner->position++;
         }
+        else if(GLBScanner->line[GLBScanner->position] == '>')
+        {
+          tokenType = opNotEq;
+          GLBScanner->position++;
+        }
         allowed = true;
         break;
       case '>':
@@ -298,18 +303,6 @@ SToken scan_GetNextToken()
         tokenType = opComma;
         allowed = true;
         break;
-      /*case ':':
-        if(GLBScanner->line[GLBScanner->position] == '=')
-        {
-          tokenType = asng;
-          GLBScanner->position++;
-        }
-        else
-        {
-          scan_raiseCodeError(lexicalErr, NULL);
-        }
-        allowed = true;
-        break;*/
       case '\'':
         position--;
         delete_comment(true);
@@ -448,11 +441,6 @@ SToken scan_GetNextToken()
           sprintf(hasStr, "s@%d", GLBScanner->alocStr);
           GLBScanner->alocStr++;
           stringVal = util_StrHardCopy(tokenID);
-        }
-        else if(GLBScanner->line[GLBScanner->position] == '=')
-        {
-          GLBScanner->position++;
-          tokenType = opNotEq;
         }
         else
         {
