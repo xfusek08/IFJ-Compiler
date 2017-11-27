@@ -44,6 +44,14 @@ int isTerminal(EGrSymb symb)
   return symb < 1000 ? 1 : 0;
 }
 
+int isBoolResult(SToken *arg2)
+{
+  if (arg2->type == opEq || arg2->type == opGrt || arg2->type == opLes || arg2->type == opLessEq || arg2->type == opGrtEq || arg2->type == opNotEq)
+    return 1;
+  return 0;
+}
+
+
 /**
 * returns closest terminal to top of the stack (its acually list).
 \post Token with terminal in list is set as active item
@@ -148,14 +156,23 @@ int syntx_useRule(TTkList list)
     SToken *arg3 = &list->active->next->next->token;
     if (arg1->symbol->type == symtConstant && arg3->symbol->type == symtConstant)
     {
-      SToken t = syntx_doArithmeticOp(arg1, arg2, arg3);
-      DDPRINT("%d", t.type);
-      DDPRINT("%d", t.symbol->dataType);
-      list->postDelete(list);
-      list->postDelete(list);
-      list->postInsert(list, &t);
+      if (isBoolResult(arg2))
+      {
+        ret_var = sytx_getFreeVar();
+        syntx_generateCode(arg1, arg2, arg3, &ret_var);
+        list->postInsert(list, &ret_var);
+      }
+      else
+      {
+        SToken t = syntx_doArithmeticOp(arg1, arg2, arg3);
+        list->postInsert(list, &t);
+        DDPRINT("%d", t.type);
+        DDPRINT("%d", t.symbol->dataType);
+      }
       list->next(list);
       list->preDelete(list);
+      list->postDelete(list);
+      list->postDelete(list);
     }
     else if(arg1->type == NT_EXPR_TMP && arg3->type == NT_EXPR_TMP){
       syntx_generateCode(arg1, arg2, arg3, arg1);
