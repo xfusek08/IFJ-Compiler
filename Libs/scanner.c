@@ -271,6 +271,11 @@ SToken scan_GetNextToken()
           tokenType = opLessEq;
           GLBScanner->position++;
         }
+        else if(GLBScanner->line[GLBScanner->position] == '>')
+        {
+          tokenType = opNotEq;
+          GLBScanner->position++;
+        }
         allowed = true;
         break;
       case '>':
@@ -298,18 +303,6 @@ SToken scan_GetNextToken()
         tokenType = opComma;
         allowed = true;
         break;
-      /*case ':':
-        if(GLBScanner->line[GLBScanner->position] == '=')
-        {
-          tokenType = asng;
-          GLBScanner->position++;
-        }
-        else
-        {
-          scan_raiseCodeError(lexicalErr, NULL);
-        }
-        allowed = true;
-        break;*/
       case '\'':
         position--;
         delete_comment(true);
@@ -369,7 +362,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr, NULL);
+                  scan_raiseCodeError(lexicalErr, "Wrong character inside string constant.");
                 }
                 break;
               case 2:
@@ -415,7 +408,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr, NULL);
+                  scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\n.");
                 }
                 break;
               case 3:
@@ -425,7 +418,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr, NULL);
+                  scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\xxx, where x is number.");
                 }
                 break;
               case 4:
@@ -435,7 +428,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr, NULL);
+                  scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\xxx, where x is number.");
                 }
                 break;
             }
@@ -449,14 +442,9 @@ SToken scan_GetNextToken()
           GLBScanner->alocStr++;
           stringVal = util_StrHardCopy(tokenID);
         }
-        else if(GLBScanner->line[GLBScanner->position] == '=')
-        {
-          GLBScanner->position++;
-          tokenType = opNotEq;
-        }
         else
         {
-          scan_raiseCodeError(lexicalErr, NULL);
+          scan_raiseCodeError(lexicalErr, "Wrong character after !, maybe you want to write !\"\".");
         }
         break;
       //End of line
@@ -524,7 +512,7 @@ SToken scan_GetNextToken()
             }
             else
             {
-              scan_raiseCodeError(lexicalErr, NULL);
+              scan_raiseCodeError(lexicalErr, "Wrong character inside identifier.");
             }
             allowed = true;
           }
@@ -563,7 +551,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr, NULL);
+                  scan_raiseCodeError(lexicalErr, "Wrong character inside int constant.");
                 }
                 break;
               case 1:
@@ -581,7 +569,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr, NULL);
+                  scan_raiseCodeError(lexicalErr, "Wrong character inside double constant.");
                 }
                 break;
               case 2:
@@ -592,7 +580,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr, NULL);
+                  scan_raiseCodeError(lexicalErr, "Wrong character after e, alowed are +,-,[0-9].");
                 }
                 break;
             }
@@ -608,7 +596,7 @@ SToken scan_GetNextToken()
         //Error
         else
         {
-          scan_raiseCodeError(lexicalErr, NULL);
+          scan_raiseCodeError(lexicalErr, "Unknown character in this context.");
         }
     }
   }
