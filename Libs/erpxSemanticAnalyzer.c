@@ -17,6 +17,7 @@
 #include "MMng.h"
 #include "symtable.h"
 #include "erpxSemanticAnalyzer.h"
+#include "utils.h"
 
 
 /**
@@ -380,9 +381,7 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
     }else if(leftOperand->symbol->dataType == dtString && rightOperand->symbol->dataType == dtString){  // string - string
 
       if(oper->type == opPlus){
-        token.symbol->data.stringVal = mmng_safeMalloc(sizeof(char) * (strlen(leftOperand->symbol->data.stringVal) + strlen(rightOperand->symbol->data.stringVal) + 1));
-        strcat(token.symbol->data.stringVal, leftOperand->symbol->data.stringVal); // adds two strings
-        strcat(token.symbol->data.stringVal, rightOperand->symbol->data.stringVal); // adds two strings
+        token.symbol->data.stringVal = util_StrConcatenate(leftOperand->symbol->data.stringVal, rightOperand->symbol->data.stringVal);        
         token.symbol->dataType = dtString;
       }
 

@@ -418,7 +418,6 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     SToken retT;
     retT.dataType = NT_EXPR;
     retT.symbol = symbol;
-    retT.symbol->dataType = resultToken.symbol->dataType;
     SToken asgnT;
     asgnT.type = opEq;
     syntx_generateCode(&retT, &asgnT, &resultToken, NULL);
