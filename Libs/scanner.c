@@ -504,6 +504,7 @@ SToken scan_GetNextToken()
                 {
                   boolVal = false;
                 }
+                tokenType = ident;
               }
               else if(dType != dtUnspecified)
               {
