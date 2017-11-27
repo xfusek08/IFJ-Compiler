@@ -20,9 +20,9 @@ int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn)
 
 SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOperand);
 
-// void syntx_generateCodeForVarDef(SToken *funcToken, int argIndex, SToken *argValue);
+void syntx_generateCodeForVarDef(SToken *funcToken, int argIndex, SToken *argValue);
 
-// void syntx_generateCodeForCallFunc(SToken *funcToken, int argIndex, SToken *result);
+void syntx_generateCodeForCallFunc(SToken *funcToken, int argIndex, SToken *result);
 
 void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand, SToken *partialResult);
 

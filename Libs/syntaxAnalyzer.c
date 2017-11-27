@@ -260,7 +260,7 @@ void syntx_parseFunction(TTkList list, SToken *actToken)
   SToken funcToken = *actToken;
   *actToken = nextToken();
   if (actToken->type != opLeftBrc)
-    scan_raiseCodeError(syntaxErr);
+    scan_raiseCodeError(syntaxErr, "err");
   int argNum = 0;
   while (actToken->type != opRightBrc)
   {
@@ -269,13 +269,13 @@ void syntx_parseFunction(TTkList list, SToken *actToken)
     argToken.type = NT_EXPR;
     argToken.symbol = syntx_processExpression(actToken, NULL);
     if (actToken->type != opComma && actToken->type != opRightBrc)
-      scan_raiseCodeError(syntaxErr);
-    //syntx_generateCodeForVarDef(&funcToken, argNum, &argToken);
+      scan_raiseCodeError(syntaxErr, "err");
+    syntx_generateCodeForVarDef(&funcToken, argNum, &argToken);
     argNum++;
   }
   SToken returnVal;
   returnVal = sytx_getFreeVar();
-  //syntx_generateCodeForCallFunc(&funcToken, &returnVal);
+  syntx_generateCodeForCallFunc(&funcToken, argNum, &returnVal);
   list->postInsert(list, &returnVal); //insert expr to list?
 }
 
@@ -350,6 +350,7 @@ void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
 */
 TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
 {
+  fprintf(stderr, "typ %d", symbol->dataType);
   if (tlist == NULL)
     apperr_runtimeError("syntx_processExpression(): Modul not initialized. Call syntx_init() first!");
   if (!isExpressionType(actToken->type))
@@ -420,6 +421,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     retT.symbol = symbol;
     SToken asgnT;
     asgnT.type = opEq;
+    
     syntx_generateCode(&retT, &asgnT, &resultToken, NULL);
     tlist->deleteLast(tlist);
     DDPRINT("Result in %s\n", symbol->ident);
