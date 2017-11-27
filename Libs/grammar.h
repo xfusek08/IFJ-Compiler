@@ -23,7 +23,7 @@ typedef enum
   /* operators and other*/
   /* DON'T CHANGE IT PART - used to index the array */
   opPlus = 0, opMns, opMul, opDivFlt, opDiv, opLeftBrc, opRightBrc, ident, opComma,
-  opEq, opNotEq, opLes, opLessEq, opGrt, opGrtEq, opPlusEq, opMnsEq, opMulEq, opDivEq, opDivFltEq,
+  opEq, opNotEq, opLes, opLessEq, opGrt, opGrtEq, asgn, opPlusEq, opMnsEq, opMulEq, opDivEq, opDivFltEq,
   /*boolean operators*/
   opBoolNot, opBoolAnd, opBoolOr,
 
