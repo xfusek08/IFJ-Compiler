@@ -408,7 +408,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr, "Wrong character after \, maybe you want to write \n.");
+                  scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\n.");
                 }
                 break;
               case 3:
@@ -418,7 +418,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr, "Wrong character after \, maybe you want to write \xxx, where x is number.");
+                  scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\xxx, where x is number.");
                 }
                 break;
               case 4:
@@ -428,7 +428,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr, "Wrong character after \, maybe you want to write \xxx, where x is number.");
+                  scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\xxx, where x is number.");
                 }
                 break;
             }
