@@ -580,7 +580,7 @@ SToken scan_GetNextToken()
                 }
                 else
                 {
-                  scan_raiseCodeError(lexicalErr, "Wrong character after e, alowed are +,-,[0-9].);
+                  scan_raiseCodeError(lexicalErr, "Wrong character after e, alowed are +,-,[0-9].");
                 }
                 break;
             }
