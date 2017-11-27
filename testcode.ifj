@@ -1,11 +1,13 @@
 
 Declare Function factorial (n As Integer) As Integer
 Function factorial (n As Integer) As Integer
-  dim a as integer = 1 + 5 + 6
-  return 0
+  dim a as integer
+  dim b as integer
+  if a = b then
+  end if
 End Function
 
 Scope 'Hlavni telo programu
 dim a as double
-
+  factorial(12)
 End Scope

@@ -511,6 +511,7 @@ void ck_NT_STAT(SToken *actToken)
       actSymbol->ident = util_StrConcatenate("LF@", actSymbol->ident);
       mmng_safeFree(preident);
       printf("DEFVAR %s\n", actSymbol->ident);
+      symbt_printSymb(actSymbol);
       NEXT_TOKEN(actToken);
       ck_NT_ASSINGEXT(actToken, actSymbol);
       break;

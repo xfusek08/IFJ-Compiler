@@ -46,37 +46,32 @@ void apperr_codeError(ErrType type, int row, int col, char *line, char *message)
   }
 
   fprintf( stderr, "\033[33m[%d:%d]\033[0m:\n", row, col);
-  fprintf( stderr, "%s\n", message);
+  if (message != NULL)
+    fprintf(stderr, "%s\n", message);
 
-  unsigned int i = 1;
   int consoleRowNum = 0;
 
-  while(i <= strlen(line))
+  unsigned int i = 0;
+  unsigned int linewidth = strlen(line);
+  while (i < linewidth)
   {
     int j = 0;
-    for(; j < 80 && i <= strlen(line); j++)
-    {
-      putchar(line[i+j-1]);
-    }
+    for (; j < 80 && (i + j) < linewidth; j++)
+      putchar(line[i + j]);
 
     i += j;
 
-    printf("\n");
+    int rowFirstCharPosition = (consoleRowNum)*80;
 
-    int rowFirstCharPosition = (consoleRowNum)*80 + 1;
-
-    if(rowFirstCharPosition <= col && col < rowFirstCharPosition + 80)
+    if(rowFirstCharPosition < col && col < rowFirstCharPosition + 80)
     {
       for(int j = 1; j <= (col-1)%80; j++)
-      {
         printf(" ");
-      }
       printf("\x1B[31m^\x1B[0m\n");
     }
 
     consoleRowNum++;
   }
-
   mmng_freeAll();
   exit(type);
 }
