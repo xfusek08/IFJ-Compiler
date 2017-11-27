@@ -137,6 +137,7 @@ void processFunction(SToken *actToken)
     actSymbol->data.funcData.arguments = parList;
   }
   actSymbol->data.funcData.isDefined = true;
+  parList = actSymbol->data.funcData.arguments;
 
   // body of function
   symbt_pushFrame(actSymbol->data.funcData.label, false, false); // lets create local variable frame for function
@@ -172,8 +173,8 @@ void processFunction(SToken *actToken)
   printf("LABEL %s$epilog\n", actSymbol->data.funcData.label);
   printf("POPFRAME\n");
   printf("RETURN\n");
-  symbt_popFrame();
   symbt_printSymb(actSymbol);
+  symbt_popFrame();
 }
 
 void writeExpression(SToken *actToken)
@@ -245,7 +246,6 @@ void ck_NT_DD(SToken *actToken)
     case kwDeclare:
       NEXT_CHECK_TOKEN(actToken, kwFunction);
       NEXT_CHECK_TOKEN(actToken, ident);
-
       // load ident to symbtable
       actSymbol = actToken->symbol;
       if (actSymbol->type == symtUnknown)
@@ -517,8 +517,6 @@ void ck_NT_STAT(SToken *actToken)
       actSymbol->ident = util_StrConcatenate("LF@", actSymbol->ident);
       mmng_safeFree(preident);
       printf("DEFVAR %s\n", actSymbol->ident);
-      symbt_print();
-      symbt_printSymb(actSymbol);
       NEXT_TOKEN(actToken);
       ck_NT_ASSINGEXT(actToken, actSymbol);
       break;
@@ -562,7 +560,6 @@ void ck_NT_STAT(SToken *actToken)
         char *epiloglabel = util_StrConcatenate(symbt_getActFuncLabel(), "$epilog");
         printf("JUMP %s\n", epiloglabel);
         mmng_safeFree(epiloglabel);
-        NEXT_TOKEN(actToken);
       }
       else
         scan_raiseCodeError(anotherSemanticErr, "Return can not be used outside of function.");

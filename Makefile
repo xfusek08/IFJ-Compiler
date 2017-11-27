@@ -9,7 +9,7 @@ OBJS = $(patsubst %.c,%.o,$(SOURCES))
 all: $(EXECUTABLE) clean
 
 #setting debug flags
-debug: CFLAGS += -g -DDEBUG -DPRECDEBUG #-DST_DEBUG
+debug: CFLAGS += -g -DDEBUG #-DPRECDEBUG #-DST_DEBUG
 debug: $(EXECUTABLE) clean
 
 test: debug $(EXECUTABLE)
