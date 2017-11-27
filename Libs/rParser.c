@@ -138,20 +138,30 @@ void processFunction(SToken *actToken)
 
   // body of function
   symbt_pushFrame(actSymbol->data.funcData.label, false); // lets create local variable frame for function
-  printf("LABEL %s\n", actSymbol->data.funcData.label);
-  printf("PUSHFRAME\n");
-  printf("DEFVAR LF@%%retval\n");
+
+  // define return variable and params in symbol table
+  TSymbol tmpSymb = symbt_insertSymbOnTop("%retval");
+  tmpSymb->type = symtVariable;
+  tmpSymb->dataType = actSymbol->data.funcData.returnType;
+  char *preident = tmpSymb->ident;
+  tmpSymb->ident = util_StrConcatenate("LF@", tmpSymb->ident);
+  mmng_safeFree(preident);
+
   // fill frame with argument symbols
   for (int i = 0; i < parList->count; i++)
   {
     TArgument actArg = parList->get(parList, i);
-    TSymbol symb = symbt_insertSymbOnTop(actArg->ident);
-    char *preident = symb->ident;
-    symb->ident = util_StrConcatenate("LF@", symb->ident);
+    tmpSymb = symbt_insertSymbOnTop(actArg->ident);
+    preident = tmpSymb->ident;
+    tmpSymb->ident = util_StrConcatenate("LF@", tmpSymb->ident);
     mmng_safeFree(preident);
-    symb->type = symtVariable;
-    symb->dataType = actArg->dataType;
+    tmpSymb->type = symtVariable;
+    tmpSymb->dataType = actArg->dataType;
   }
+
+  printf("LABEL %s\n", actSymbol->data.funcData.label);
+  printf("PUSHFRAME\n");
+  printf("DEFVAR LF@%%retval\n");
   NEXT_TOKEN(actToken);
   ck_NT_STAT_LIST(actToken);
   CHECK_TOKEN(actToken, kwEnd); // statement list must ends on end key word
@@ -303,7 +313,7 @@ void ck_NT_ASSINGEXT(SToken *actToken, TSymbol symbol)
     // 6. NT_ASSINGEXT -> asgn NT_EXPR
     case opEq:
       NEXT_TOKEN(actToken);
-      // vtsledek expression bude ulozen v promenne symbol
+      // result will be stored in symbol
       syntx_processExpression(actToken, symbol);
       break;
     // 7. NT_ASSINGEXT -> (epsilon)
@@ -526,7 +536,7 @@ void ck_NT_STAT(SToken *actToken)
       if (symbt_cntFuncFrames() > 1)
       {
         NEXT_TOKEN(actToken);
-        TSymbol symbol = symbt_findOrInsertSymb("%%retval");
+        TSymbol symbol = symbt_findOrInsertSymb("%retval");
         syntx_processExpression(actToken, symbol);
         char *epiloglabel = util_StrConcatenate(symbt_getActFuncLabel(), "$epilog");
         printf("JUMP %s\n", epiloglabel);

@@ -350,7 +350,6 @@ void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
 */
 TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
 {
-  fprintf(stderr, "typ %d", symbol->dataType);
   if (tlist == NULL)
     apperr_runtimeError("syntx_processExpression(): Modul not initialized. Call syntx_init() first!");
   if (!isExpressionType(actToken->type))
@@ -421,7 +420,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     retT.symbol = symbol;
     SToken asgnT;
     asgnT.type = opEq;
-    
+
     syntx_generateCode(&retT, &asgnT, &resultToken, NULL);
     tlist->deleteLast(tlist);
     DDPRINT("Result in %s\n", symbol->ident);
