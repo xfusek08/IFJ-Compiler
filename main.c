@@ -28,20 +28,22 @@ int main(int argc, char *argv[])
   scan_init();
   syntx_init();
 
-  rparser_processProgram();
   /*
+  rparser_processProgram();
+  */
+  ///*
   int i = 0;
   SToken token;
   token.type = eol;
   while(token.type != eof)
   {
     token = scan_GetNextToken();
-    printf("%d: Token: %s \n", i, TokenTypeStrings[token.type]);
+    printf("%d: Token: %s \n", i, grammarToString(token.type));
     if(token.symbol != NULL)
       symbt_printSymb(token.symbol);
     i++;
   }
-  */
+  //*/
   scan_destroy();
   symbt_destroy();
   mmng_freeAll();

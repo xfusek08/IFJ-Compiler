@@ -376,6 +376,8 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
         //ok
         break;
       case symtUnknown:
+        symbt_print();
+        symbt_printSymb(actToken->symbol);
         scan_raiseCodeError(semanticErr, "Undefined symbol.");
         break;
       }

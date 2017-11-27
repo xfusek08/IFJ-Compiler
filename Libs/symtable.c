@@ -39,6 +39,7 @@ typedef struct SymTable *TSymTable;
 struct SymTable {
   TSTNode root;               // root of table
   bool isTransparent;         // true if finding symbol is suppose to continue to lower table on stack (scope)
+  bool isLoop;                // flag if frame is loop
   char *frameLabel;           // label of frame
   unsigned int localLabelCnt; // counter of local labels
 };
@@ -330,7 +331,7 @@ void TSTNode_balanceFromBottom(TSTNode node)
   }
 }
 
-// Finds symbol with corresponding key, NULL if not found
+// Finds node with corresponding key, NULL if not found
 TSTNode TSTNode_find(TSTNode self, char *key)
 {
   if (key == NULL)
@@ -497,13 +498,14 @@ TSTNode TSTNode_delete(TSTNode self, char *key, bool *deleted)
 // =============================================================================
 
 // constructor of TSymTable
-TSymTable TSymTable_create(char *frameLabel, bool transparent)
+TSymTable TSymTable_create(char *frameLabel, bool transparent, bool isLoop)
 {
   TSymTable newST = (TSymTable)mmng_safeMalloc(sizeof(struct SymTable));
   newST->isTransparent = transparent;
   newST->root = NULL;
   newST->frameLabel = util_StrHardCopy(frameLabel);
   newST->localLabelCnt = 0;
+  newST->isLoop = isLoop;
   return newST;
 }
 
@@ -578,7 +580,7 @@ void symbt_init(char *mainLabel)
     apperr_runtimeError("symbt_init(): Symbol table is already initialized.");
 
   GLBSymbTabStack = TPStack_create();
-  symbt_pushFrame(mainLabel, false); // insert global frame
+  symbt_pushFrame(mainLabel, false, false); // insert global frame
 }
 
 //  Free of all symbol table stack
@@ -599,10 +601,10 @@ void symbt_destroy()
 }
 
 // Creates new instance of symbol table on top of the stack
-void symbt_pushFrame(char *label, bool transparent)
+void symbt_pushFrame(char *label, bool transparent, bool isLopp)
 {
   symbt_assertIfNotInit();
-  GLBSymbTabStack->push(GLBSymbTabStack, TSymTable_create(label, transparent));
+  GLBSymbTabStack->push(GLBSymbTabStack, TSymTable_create(label, transparent, isLopp));
 }
 
 // Frees destroys symbol table on top of the stack.
@@ -695,6 +697,18 @@ char *symbt_getActFuncLabel()
   return getFirstNonTransparetFrame()->frameLabel;
 }
 
+// Gets label of first loop frame from top of frame stack (used for exit and continue)
+char *symbt_getActLoopLabel()
+{
+  int i = GLBSymbTabStack->count - 1;
+  TSymTable actTable = GLBSymbTabStack->ptArray[i];
+  for(;!(actTable->isLoop) && i >= 0; i--) // serach first non loop frame
+    actTable = GLBSymbTabStack->ptArray[i];
+  if (!actTable->isLoop)
+    return NULL;
+  return actTable->frameLabel;
+}
+
 // Gets label of actual frame on top of frame stack
 char *symbt_getActLocalLabel()
 {
@@ -745,8 +759,10 @@ void symbt_print()
 {
   for (int i = GLBSymbTabStack->count - 1; i >= 0; i--)
   {
-    printf("\nSymbol table [%d] -----------------------------------------------\n\n", i);
-    TSTNode_print(((TSymTable)GLBSymbTabStack->ptArray[i])->root, 0);
+    TSymTable table = GLBSymbTabStack->ptArray[i];
+    printf("\nSymbol table [%s]\n\n", table->frameLabel);
+    TSTNode_print(table->root, 0);
+    printf("\n-------------------------------------------------------------------\n");
   }
 }
 

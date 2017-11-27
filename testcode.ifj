@@ -2,8 +2,9 @@
 Declare Function factorial (n As Integer) As Integer
 Function factorial (n As Integer) As Integer
   dim a as integer
-  dim b as integer
-  if a = b then
+  return 1 + 2
+  if 1 then
+    dim b as integer
   end if
 End Function
 

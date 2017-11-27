@@ -140,11 +140,12 @@ void symbt_destroy();
 
 /**
  * Creates new instance of symbol table on top of the stack
- * \param bool transparent flag true if created frame is suppose to be transparent
  * \param char *label sets label of frame
+ * \param bool transparent flag true if created frame is suppose to be transparent
+ * \param bool isLopp marks label as loop
  * (searching for symbols continues on next table on stack)
  */
-void symbt_pushFrame(char *label, bool transparent);
+void symbt_pushFrame(char *label, bool transparent, bool isLopp);
 
 /**
  * Frees destroys symbol table on top of the stack.
@@ -206,6 +207,12 @@ void symbt_deleteSymb(char *ident);
  * Gets label of first non-transparent frame from top of frame stack (used as function label)
  */
 char *symbt_getActFuncLabel();
+
+/**
+ * Gets label of first loop frame from top of frame stack (used for exit and continue)
+ * NULL if not exists
+ */
+char *symbt_getActLoopLabel();
 
 /**
  * Gets label of actual frame on top of frame stack
