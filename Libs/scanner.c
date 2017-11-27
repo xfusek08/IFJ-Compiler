@@ -101,9 +101,7 @@ void delete_comment(bool isLine)
     if(GLBScanner->lastToken.type != eol)
     {
       while(GLBScanner->line[charCounter] != '\0' && GLBScanner->line[charCounter] != EOF && GLBScanner->line[charCounter] != '\n')
-      {
         charCounter++;
-      }
       GLBScanner->position = charCounter;
     }
     else
@@ -164,22 +162,20 @@ DataType isDataType(char *tokenID)
   while(i < DTYPENUMBER)
   {
     if(strcmp(tokenID, sArray[i]) == 0) //maybe as long as != Until
-    {
       dType = i + 1;
-    }
     i++;
   }
   return dType;
 }
 
-bool isEndChar()
+bool isEndChar(char endChar)
 {
-  return GLBScanner->line[GLBScanner->position - 1] == '+' || GLBScanner->line[GLBScanner->position - 1] == '-'
-  || isspace(GLBScanner->line[GLBScanner->position - 1]) || GLBScanner->line[GLBScanner->position - 1] == '*'
-  || GLBScanner->line[GLBScanner->position - 1] == '/' || GLBScanner->line[GLBScanner->position - 1] == '\\'
-  || GLBScanner->line[GLBScanner->position - 1] == '=' || GLBScanner->line[GLBScanner->position - 1] == EOF
-  || GLBScanner->line[GLBScanner->position - 1] == 33 || GLBScanner->line[GLBScanner->position - 1] == '('
-  || GLBScanner->line[GLBScanner->position - 1] == ')' || GLBScanner->line[GLBScanner->position - 1] == ';';
+  return endChar == '+' || endChar == '-'
+  || isspace(endChar) || endChar == '*'
+  || endChar == '/' || endChar == '\\'
+  || endChar == '=' || endChar == EOF
+  || endChar == 33 || endChar == '('
+  || endChar == ')' || endChar == ';';
 }
 
 
@@ -334,9 +330,7 @@ SToken scan_GetNextToken()
                   position--;
                 }
                 else if((tokenID[position - 1]) == '\\')
-                {
                   state = 2;
-                }
                 else if(tokenID[position - 1] > 31 && tokenID[position - 1] != '#')
                 {
                   state = 1;
@@ -361,15 +355,11 @@ SToken scan_GetNextToken()
                   }
                 }
                 else
-                {
                   scan_raiseCodeError(lexicalErr, "Wrong character inside string constant.");
-                }
                 break;
               case 2:
                 if(isdigit(tokenID[position - 1]))
-                {
                   state = 3;
-                }
                 else if(tokenID[position - 1] == 'n')
                 {
                   tokenID[position - 2] = 92;
@@ -407,29 +397,19 @@ SToken scan_GetNextToken()
                   state = 1;
                 }
                 else
-                {
                   scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\n.");
-                }
                 break;
               case 3:
                 if(isdigit(tokenID[position - 1]))
-                {
                   state = 4;
-                }
                 else
-                {
                   scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\xxx, where x is number.");
-                }
                 break;
               case 4:
                 if(isdigit(tokenID[position - 1]))
-                {
                   state = 1;
-                }
                 else
-                {
                   scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\xxx, where x is number.");
-                }
                 break;
             }
           }
@@ -443,9 +423,7 @@ SToken scan_GetNextToken()
           stringVal = util_StrHardCopy(tokenID);
         }
         else
-        {
           scan_raiseCodeError(lexicalErr, "Wrong character after !, maybe you want to write !\"\".");
-        }
         break;
       //End of line
       case '\n':
@@ -481,10 +459,8 @@ SToken scan_GetNextToken()
             if((tokenID[position - 1] > 96 && tokenID[position - 1] < 123) //value of a-z
             || (tokenID[position - 1] > 47 && tokenID[position - 1] < 58) //value of 0-9
             || tokenID[position - 1] == '_')
-            {
               state = 0;
-            }
-            else if(isEndChar())
+            else if(isEndChar(GLBScanner->line[GLBScanner->position - 1]))
             {
               position--;
               GLBScanner->position--;
@@ -497,24 +473,16 @@ SToken scan_GetNextToken()
                 type = symtConstant;
                 dType = dtBool;
                 if(tokenType == kwTrue)
-                {
                   boolVal = true;
-                }
                 else
-                {
                   boolVal = false;
-                }
                 tokenType = ident;
               }
               else if(dType != dtUnspecified)
-              {
                 tokenType = dataType;
-              }
             }
             else
-            {
               scan_raiseCodeError(lexicalErr, "Wrong character inside identifier.");
-            }
             allowed = true;
           }
         }
@@ -531,18 +499,12 @@ SToken scan_GetNextToken()
             {
               case 0:
                 if(GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58)
-                {
                   state = 0;
-                }
                 else if(GLBScanner->line[GLBScanner->position - 1] == '.')
-                {
                   state = 1;
-                }
                 else if(GLBScanner->line[GLBScanner->position - 1] == 'e' || GLBScanner->line[GLBScanner->position - 1] == 'E')
-                {
                   state = 2;
-                }
-                else if(isEndChar())
+                else if(isEndChar(GLBScanner->line[GLBScanner->position - 1]))
                 {
                   state = 3;
                   GLBScanner->position--;
@@ -551,16 +513,12 @@ SToken scan_GetNextToken()
                   dType = dtInt;
                 }
                 else
-                {
                   scan_raiseCodeError(lexicalErr, "Wrong character inside int constant.");
-                }
                 break;
               case 1:
                 if(GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58)
-                {
                   state = 1;
-                }
-                else if(isEndChar())
+                else if(isEndChar(GLBScanner->line[GLBScanner->position - 1]))
                 {
                   state = 3;
                   GLBScanner->position--;
@@ -569,20 +527,14 @@ SToken scan_GetNextToken()
                   dType = dtFloat;
                 }
                 else
-                {
                   scan_raiseCodeError(lexicalErr, "Wrong character inside double constant.");
-                }
                 break;
               case 2:
                 if((GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58)
                 || GLBScanner->line[GLBScanner->position - 1] == '+' || GLBScanner->line[GLBScanner->position - 1] == '-')
-                {
                   state = 1;
-                }
                 else
-                {
                   scan_raiseCodeError(lexicalErr, "Wrong character after e, alowed are +,-,[0-9].");
-                }
                 break;
             }
             allowed = true;
@@ -596,9 +548,7 @@ SToken scan_GetNextToken()
         }
         //Error
         else
-        {
           scan_raiseCodeError(lexicalErr, "Unknown character in this context.");
-        }
     }
   }
   //Filing returning token with values
@@ -611,30 +561,20 @@ SToken scan_GetNextToken()
       mmng_safeFree(hasStr);
     }
     else
-    {
       symbol = symbt_findOrInsertSymb(tokenID);
-    }
     if(type != symtUnknown)
     {
       symbol->type = type;
       symbol->dataType = dType;
     }
     if(dType == dtInt)
-    {
       symbol->data.intVal = intVal;
-    }
     else if(dType == dtFloat)
-    {
       symbol->data.doubleVal = doubleVal;
-    }
     else if(dType == dtString)
-    {
       symbol->data.stringVal = stringVal;
-    }
     else if(dType == dtBool)
-    {
       symbol->data.boolVal = boolVal;
-    }
   }
   SToken token;
   token.dataType = dType;
