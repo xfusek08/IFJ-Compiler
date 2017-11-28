@@ -336,7 +336,7 @@ void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
   if (!syntx_getPrecedence(terminal, actToken->type, &tablesymb))
   {
     DPRINT("Table: undefined precedence!");
-    scan_raiseCodeError(syntaxErr, "");
+    scan_raiseCodeError(syntaxErr, "Incorrect expression. Undefined precedence.");
   }
   DDPRINT("Table: %d", tablesymb);
 
@@ -359,7 +359,7 @@ void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
   case precGrt:
     if (!syntx_useRule(tlist))
     {
-      scan_raiseCodeError(syntaxErr, "");
+      scan_raiseCodeError(syntaxErr, "Incorrect expression.");
     }
     break;
   default:
