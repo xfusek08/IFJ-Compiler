@@ -433,15 +433,15 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     //return temporary variable with result
     TSymbol symb = resultToken.symbol;
     //In case of constant
-    SToken TempT;
-    if (symb->type == symtConstant)
-    {
-      SToken asgnT;
-      asgnT.type = opEq;
-      TempT = sytx_getFreeVar();
-      syntx_generateCodeForAsgnOps(&TempT, &asgnT, &resultToken, NULL);
-      symb = TempT.symbol;
-    }
+    //SToken TempT;
+    //if (symb->type == symtConstant)
+    //{
+      //SToken asgnT;
+      //asgnT.type = opEq;
+      //TempT = sytx_getFreeVar();
+      //syntx_generateCodeForAsgnOps(&TempT, &asgnT, &resultToken, NULL);
+      //symb = TempT.symbol;
+    //}
     //delete last token and return
     tlist->deleteLast(tlist);
     DDPRINT("Result in %s\n", symb->ident);
