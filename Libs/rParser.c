@@ -97,8 +97,8 @@ void printSymbolToOperand(TSymbol symbol)
   {
     switch (symbol->dataType)
     {
-      case dtInt: printf("int@% d", symbol->data.intVal); break;
-      case dtFloat: printf("float@% g", symbol->data.doubleVal); break;
+      case dtInt: printf("int@%d", symbol->data.intVal); break;
+      case dtFloat: printf("float@%g", symbol->data.doubleVal); break;
       case dtString: printf("string@%s", symbol->data.stringVal); break;
       case dtBool: printf("bool@%s", (symbol->data.boolVal) ? "true" : "false"); break;
       default:
@@ -649,7 +649,8 @@ void ck_NT_STAT(SToken *actToken)
 
       // set STEP Value
       TSymbol stepSymb = ck_NT_FORSTEP(actToken);
-      if (stepSymb->dataType != dtInt || stepSymb->dataType != dtFloat)
+      symbt_printSymb(stepSymb);
+      if (stepSymb->dataType != dtInt && stepSymb->dataType != dtFloat)
         scan_raiseCodeError(semanticErr, "Step value has no valid data type. Only double or integer is allowed.");
       if (actSymbol->dataType == dtInt && stepSymb->dataType == dtFloat)
         scan_raiseCodeError(semanticErr, "Step value has incompatible datatype with iterator.");
@@ -659,7 +660,7 @@ void ck_NT_STAT(SToken *actToken)
         if (stepSymb->type == symtConstant) // is constant
           stepSymb->data.intVal = syntx_doubleToInt(stepSymb->data.doubleVal);
         else // is variable
-          printf("FLOAT2INT %s %s", stepSymb->ident, stepSymb->ident);
+          printf("FLOAT2INT %s %s\n", stepSymb->ident, stepSymb->ident);
       }
 
       CHECK_TOKEN(actToken, eol);
@@ -667,14 +668,14 @@ void ck_NT_STAT(SToken *actToken)
 
       NEXT_TOKEN(actToken);
       // check condition
-      printf("DEFVAR LF@%%forisless");
+      printf("DEFVAR LF@%%forisless\n");
       printf("LABEL %s$loop\n", forlabel);
       printf("GT LF@%%forisless %s ", actSymbol->ident);
       printSymbolToOperand(toSymb);
       printf("\n");
-      printf("JUMPIFEQ %s$loopend LF@%%forisless bool@true", forlabel);
+      printf("JUMPIFEQ %s$loopend LF@%%forisless bool@true\n", forlabel);
 
-
+      // inner statements
       ck_NT_STAT_LIST(actToken);
 
       // increment iterator
@@ -685,6 +686,7 @@ void ck_NT_STAT(SToken *actToken)
       printf("JUMP %s$loop\n", forlabel);
       printf("LABEL %s$loopend\n", forlabel);
       CHECK_TOKEN(actToken, kwNext);
+      NEXT_TOKEN(actToken);
       symbt_popFrame();
       mmng_safeFree(forlabel);
       break;

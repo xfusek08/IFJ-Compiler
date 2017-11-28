@@ -388,7 +388,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
       switch (actToken->symbol->type)
       {
       case symtFuction:
-        //syntx_parseFunction(tlist, actToken);
+        syntx_parseFunction(tlist, actToken);
         break;
       case symtVariable:
       case symtConstant:
@@ -453,7 +453,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     retT.dataType = NT_EXPR;
     retT.symbol = symbol;
     SToken asgnT;
-    asgnT.type = opEq;
+    asgnT.type = asgn;
     DDPRINT("retT je %d", retT.symbol->dataType);
     DDPRINT("result je %d", resultToken.symbol->dataType);
     syntx_checkDataTypes(&retT, &asgnT, &resultToken);
