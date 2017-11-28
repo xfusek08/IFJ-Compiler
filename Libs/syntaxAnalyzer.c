@@ -276,6 +276,7 @@ int isExprEnded(TTkList list, SToken *actToken, EGrSymb terminal)
 
 void syntx_parseFunction(TTkList list, SToken *actToken)
 {
+  DPRINT("printing");
   SToken funcToken = *actToken;
   *actToken = nextToken();
   if (actToken->type != opLeftBrc)
@@ -374,6 +375,7 @@ void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
 */
 TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
 {
+  DPRINT("entering expr");
   if (tlist == NULL)
     apperr_runtimeError("syntx_processExpression(): Modul not initialized. Call syntx_init() first!");
   if (!isExpressionType(actToken->type))
