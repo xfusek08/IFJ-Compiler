@@ -13,6 +13,45 @@
 #include <string.h>
 #include "MMng.h"
 #include "utils.h"
+#include <stdarg.h>
+
+#define UTILS_ARR_CHUNK 1000
+
+unsigned arrPos = 0;
+char *Iarr;
+unsigned arrSize;
+
+void printInstruction(const char *arg, ...)
+{
+  if (arrSize == 0)
+  {
+    Iarr = mmng_safeMalloc(sizeof(char) * UTILS_ARR_CHUNK);
+    arrSize = UTILS_ARR_CHUNK;
+  }
+  
+  int counter = 0;
+  for (unsigned i = 0; i < strlen(arg); i++)
+  {
+    if(arg[i] == '%')
+      counter++;
+  }
+
+  if (counter * 10 + strlen(arg) + arrPos > arrSize)
+  {
+    Iarr = mmng_safeRealloc(Iarr, sizeof(char) * (arrSize + UTILS_ARR_CHUNK));
+  }
+
+  va_list ap;
+  va_start(ap, arg);
+  arrPos += vsprintf(&(Iarr[arrPos]), arg, ap);
+  va_end(ap);
+}
+
+void flushCode()
+{
+  printf("%s", Iarr);
+  arrPos = 0;
+}
 
 // hard string copy
 char *util_StrHardCopy(const char *str)

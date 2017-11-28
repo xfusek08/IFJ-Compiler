@@ -26,6 +26,10 @@ typedef enum {
 } DataType;
 
 
+void printInstruction(const char *, ...);
+
+void flushCode();
+
 /**
  * Fuction create hard copy of given string
  * \note Memory is allocated here and free has to be called.

@@ -4,13 +4,16 @@ function add(n as integer , p as integer) as integer
 end function
 
 Scope 'Hlavni telo programu
-  add(1, 2)
-  /'
+  'add(1 , 2)
+  Dim a as integer
+  input a
+  print a;
   for i as integer = 0 to 10
-    for j as integer = 0 to 10
+	dim j as boolean = false
+	for j as integer = 0 to 10
       print !"("; i; !","; j; !") ";
     next
     print !"\n";
+	print j; !"\n";
   next
-  '/
 End Scope

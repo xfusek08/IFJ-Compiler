@@ -277,7 +277,7 @@ void TSTNode_rotateRight(TSTNode self)
     return;
 
   #ifdef ST_DEBUG
-  printf("RotRight: %s\n", self->key);
+  fprintf(stderr, "RotRight: %s\n", self->key);
   #endif // ST_DEBUG
 
   // change parent pointer to left child
@@ -305,7 +305,7 @@ void TSTNode_rotateLeft(TSTNode self)
     return;
 
   #ifdef ST_DEBUG
-  printf("RotLeft: %s\n", self->key);
+  fprintf(stderr, "RotLeft: %s\n", self->key);
   #endif // ST_DEBUG
 
   // change parent pointer to left child
@@ -335,7 +335,7 @@ void TSTNode_balanceFromBottom(TSTNode node)
   while (node != NULL)
   {
     #ifdef ST_DEBUG
-    printf("Balancing: %s\n", node->key);
+    fprintf(stderr, "Balancing: %s\n", node->key);
     #endif // ST_DEBUG
 
     balanceFactor = TSTNode_height(node->left) - TSTNode_height(node->right);
@@ -390,14 +390,14 @@ TSTNode TSTNode_insert(TSTNode self, char *key)
   int compRes = strcmp(self->key, key);
 
   #ifdef ST_DEBUG
-  printf(" \"%s\" ", key);
+  fprintf(stderr, " \"%s\" ", key);
   if (compRes == 0)
-    printf("is equal to");
+    fprintf(stderr, "is equal to");
   else if (compRes > 0)
-    printf("is smaller then");
+    fprintf(stderr, "is smaller then");
   else
-    printf("is bigger then");
-  printf(" \"%s\"\n", self->key);
+    fprintf(stderr, "is bigger then");
+  fprintf(stderr, " \"%s\"\n", self->key);
   #endif // ST_DEBUG
 
   if (compRes == 0)                             // key is self
@@ -636,7 +636,7 @@ void symbt_pushFrame(char *label, bool transparent, bool isLopp)
   symbt_assertIfNotInit();
   GLBSymbTabStack->push(GLBSymbTabStack, TSymTable_create(label, transparent, isLopp));
   if (GLBSymbTabStack->count > 1)
-    printf("CREATEFRAME\n");
+    printInstruction("CREATEFRAME\n");
 }
 
 // Frees destroys symbol table on top of the stack.
@@ -649,11 +649,12 @@ void symbt_popFrame()
     while (table->redefVarStack->count > 0)
     {
       TRedefSymb redefSymb = table->redefVarStack->top(table->redefVarStack);
-      printf("POPS %s\n", redefSymb->symbol->ident);
+      printInstruction("POPS %s\n", redefSymb->symbol->ident);
       redefSymb->symbol->dataType = redefSymb->origDataType;
       table->redefVarStack->pop(table->redefVarStack);
     }
-
+    if (!table->isTransparent)
+      flushCode();
     TSymTable_destroy(table);
     GLBSymbTabStack->pop(GLBSymbTabStack);
   }
@@ -776,7 +777,7 @@ void symbt_pushRedefVar(TSymbol symbol)
 
   TSymTable actTable = GLBSymbTabStack->top(GLBSymbTabStack);
   actTable->redefVarStack->push(actTable->redefVarStack, TRedefSymb_create(symbol));
-  printf("PUSHS %s\n", symbol->ident);
+  printInstruction("PUSHS %s\n", symbol->ident);
 }
 
 
@@ -797,11 +798,11 @@ void TSTNode_print(TSTNode node, int depht)
     for (int i = 0; i < depht; i++)
     {
       if (i + 1 == depht)
-        printf(" •--");
+        fprintf(stderr, " •--");
       else
-        printf("    ");
+        fprintf(stderr, "    ");
     }
-    printf("[%s]\n", node->key);
+    fprintf(stderr, "[%s]\n", node->key);
 
     if (node->left != NULL)
       TSTNode_print(node->left, depht + 1);
@@ -814,9 +815,9 @@ void symbt_print()
   for (int i = GLBSymbTabStack->count - 1; i >= 0; i--)
   {
     TSymTable table = GLBSymbTabStack->ptArray[i];
-    printf("\nSymbol table [%s]\n\n", table->frameLabel);
+    fprintf(stderr, "\nSymbol table [%s]\n\n", table->frameLabel);
     TSTNode_print(table->root, 0);
-    printf("\n-------------------------------------------------------------------\n");
+    fprintf(stderr, "\n-------------------------------------------------------------------\n");
   }
 }
 
@@ -831,45 +832,45 @@ void symbt_printSymb(TSymbol symbol)
     case symtVariable: stype = "variable"; break;
     case symtConstant: stype = "constant"; break;
   }
-  printf("Symbol: %p\n", symbol);
-  printf("  identifier:   %s\n", symbol->ident);
-  printf("  key:          %s\n", symbol->key);
-  printf("  type:         %s\n", stype);
-  printf("  data type:    %s\n", util_dataTypeToString(symbol->dataType));
-  printf("  data: ");
+  fprintf(stderr, "Symbol: %p\n", symbol);
+  fprintf(stderr, "  identifier:   %s\n", symbol->ident);
+  fprintf(stderr, "  key:          %s\n", symbol->key);
+  fprintf(stderr, "  type:         %s\n", stype);
+  fprintf(stderr, "  data type:    %s\n", util_dataTypeToString(symbol->dataType));
+  fprintf(stderr, "  data: ");
   switch(symbol->type)
   {
     case symtUnknown:
     case symtVariable:
-      printf("NULL\n");
+      fprintf(stderr, "NULL\n");
       break;
     case symtConstant:
       switch(symbol->dataType)
       {
-        case dtUnspecified: printf("NULL\n"); break;
-        case dtInt: printf("%d (integer) \n", symbol->data.intVal); break;
-        case dtFloat: printf("%lf (double)\n", symbol->data.doubleVal); break;
-        case dtString: printf("\"%s\" (string)\n", symbol->data.stringVal); break;
-        case dtBool: printf("%s (boolean)\n", (symbol->data.boolVal) ? "True" : "False"); break;
+        case dtUnspecified: fprintf(stderr, "NULL\n"); break;
+        case dtInt: fprintf(stderr, "%d (integer) \n", symbol->data.intVal); break;
+        case dtFloat: fprintf(stderr, "%lf (double)\n", symbol->data.doubleVal); break;
+        case dtString: fprintf(stderr, "\"%s\" (string)\n", symbol->data.stringVal); break;
+        case dtBool: fprintf(stderr, "%s (boolean)\n", (symbol->data.boolVal) ? "True" : "False"); break;
       }
       break;
     case symtFuction:
-      printf(" Function:\n");
+      fprintf(stderr, " Function:\n");
       TArgList arguments = symbol->data.funcData.arguments;
-      printf("\n    Label: \"%s\"\n", symbol->data.funcData.label);
-      printf("    Return type: %s\n", util_dataTypeToString(symbol->data.funcData.returnType));
-      printf("    Defined: %s\n", (symbol->data.funcData.isDefined) ? "True" : "False");
-      printf("    Argument count: %d\n", arguments->count);
-      printf("    Arguments: [");
+      fprintf(stderr, "\n    Label: \"%s\"\n", symbol->data.funcData.label);
+      fprintf(stderr, "    Return type: %s\n", util_dataTypeToString(symbol->data.funcData.returnType));
+      fprintf(stderr, "    Defined: %s\n", (symbol->data.funcData.isDefined) ? "True" : "False");
+      fprintf(stderr, "    Argument count: %d\n", arguments->count);
+      fprintf(stderr, "    Arguments: [");
       TArgument arg = arguments->get(arguments, 0);
       for (int i = 0; i < arguments->count && arg != NULL; i++)
       {
         arg = arguments->get(arguments, i);
-        printf("(%s as %s)", arg->ident, util_dataTypeToString(arg->dataType));
+        fprintf(stderr, "(%s as %s)", arg->ident, util_dataTypeToString(arg->dataType));
         if (i + 1 < arguments->count)
-          printf("; ");
+          fprintf(stderr, "; ");
       }
-      printf("]\n");
+      fprintf(stderr, "]\n");
       break;
   }
 }

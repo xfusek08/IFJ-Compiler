@@ -10,7 +10,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include "syntaxAnalyzer.h"
 #include "grammar.h"
 #include "scanner.h"
@@ -118,7 +117,7 @@ SToken sytx_getFreeVar()
   if (symbt_findSymb(ident) == NULL)
   {
     symbt_insertSymbOnTop(ident);
-    printf("DEFVAR %s\n", ident);
+    printInstruction("DEFVAR %s\n", ident);
   }
   token.symbol->ident = ident;
   return token;
@@ -374,6 +373,7 @@ void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
 */
 TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
 {
+  DPRINT("entering expr");
   if (tlist == NULL)
     apperr_runtimeError("syntx_processExpression(): Modul not initialized. Call syntx_init() first!");
   if (!isExpressionType(actToken->type))
