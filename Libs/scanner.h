@@ -25,6 +25,15 @@
 #define CHUNK 20
 
 /**
+ * Struct representing one token of analysis
+ */
+typedef struct {
+  EGrSymb type;       /*!< terminal lextype from grammar */
+  TSymbol symbol;     /*!< Symbol evided in symbol table, NULL if there is no need of additional information */
+  DataType dataType;  /*!< This attribute is used only if token type is dataType (we need remember wich data type) and symbol of such of token is unnecessary */
+} SToken;
+
+/**
  * Initialization
  *
  * Function prepares internal data structures and allows using another functions of lexical analyzer.
