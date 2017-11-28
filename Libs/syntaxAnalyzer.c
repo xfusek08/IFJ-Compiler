@@ -455,7 +455,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     asgnT.type = asgn;
     DDPRINT("retT je %d", retT.symbol->dataType);
     DDPRINT("result je %d", resultToken.symbol->dataType);
-    syntx_checkDataTypes(&retT, &asgnT, &resultToken, NULL);
+    syntx_checkDataTypes(&retT, &asgnT, &resultToken);
     syntx_generateCodeForAsgnOps(&retT, &asgnT, &resultToken, NULL);
     //syntx_generateCode(&retT, &asgnT, &resultToken, NULL);
     tlist->deleteLast(tlist);
