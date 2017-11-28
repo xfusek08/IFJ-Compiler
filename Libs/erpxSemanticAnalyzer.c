@@ -17,6 +17,7 @@
 #include "MMng.h"
 #include "symtable.h"
 #include "erpxSemanticAnalyzer.h"
+#include "syntaxAnalyzer.h"
 #include "utils.h"
 
 
@@ -97,12 +98,13 @@ double syntx_intToDouble(int inputNum){
 /**
  * Implicitly converts token from int to double
  */
-void syntx_intToDoubleToken(SToken *token){
+void syntx_intToDoubleToken(SToken *token, SToken *convertedVar){
 
   if(token->symbol->type == symtConstant){ // converts only constant symbols
     token->symbol->data.doubleVal = syntx_intToDouble(token->symbol->data.intVal);
-  }else if(token->symbol->type == symtVariable){ // converts variable
-    printf("INT2FLOAT %s %s\n", token->symbol->ident, token->symbol->ident);
+  }else if(token->symbol->type == symtVariable && convertedVar != NULL){ // converts variable
+    printf("INT2FLOAT %s %s\n", convertedVar->symbol->ident, token->symbol->ident);
+    token->symbol = convertedVar->symbol; // symbol of passed operand (right or left) will overwritten by converter value - pointer to symbol in list (stack) will by changed
   }
 
   token->symbol->dataType = dtFloat;
@@ -112,12 +114,13 @@ void syntx_intToDoubleToken(SToken *token){
 /**
  * Implicitly converts token from double to int
  */
-void syntx_doubleToIntToken(SToken *token){
+void syntx_doubleToIntToken(SToken *token, SToken *convertedVar){
 
   if(token->symbol->type == symtConstant){ // converts only constant symbols
     token->symbol->data.intVal = syntx_doubleToInt(token->symbol->data.doubleVal);
-  }else if(token->symbol->type == symtVariable){ // converts variable
-    printf("FLOAT2R2EINT %s %s\n", token->symbol->ident, token->symbol->ident); // half to even
+  }else if(token->symbol->type == symtVariable && convertedVar != NULL){ // converts variable
+    printf("FLOAT2R2EINT %s %s\n", convertedVar->symbol->ident, token->symbol->ident); // half to even
+    token->symbol = convertedVar->symbol; // symbol of passed operand (right or left) will overwritten by converter value - pointer to symbol in list (stack) will by changed
   }
 
   token->symbol->dataType = dtInt;
@@ -128,7 +131,7 @@ void syntx_doubleToIntToken(SToken *token){
  * Checks data types of two operands
  * Returns 1 if everything is OK, otherwise 0
  */
-int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *rightOperand){
+int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *rightOperand, SToken *convertedVar){
   //TODO: optimalization
   // enabled data types pairs
   if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){  // int - int
@@ -141,12 +144,12 @@ int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *rightOperand){
     return 1;
   }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> double - double
 
-    syntx_intToDoubleToken(rightOperand);
+    syntx_intToDoubleToken(rightOperand, convertedVar);
     return 1; //TODO: maybe 0 - not clear from task
 
   }else if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtFloat){  // int - double -> double - double
 
-    syntx_intToDoubleToken(leftOperand);
+    syntx_intToDoubleToken(leftOperand, convertedVar);
 
     return 1;
   }
@@ -159,18 +162,18 @@ int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *rightOperand){
  * Checks data types of two operands of opDiv (integer division)
  * Returns 1 if everything is OK, otherwise 0
  */
-int syntx_checkDataTypesOfIntegerDiv(SToken *leftOperand, SToken *rightOperand){
+int syntx_checkDataTypesOfIntegerDiv(SToken *leftOperand, SToken *rightOperand, SToken *convertedVar){
   // CHECKME: really cast here - doubleToInt?
   if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){  // int - int
     return 1;
   }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> int - int
 
-    syntx_doubleToIntToken(leftOperand);
+    syntx_doubleToIntToken(leftOperand, convertedVar);
     return 1;
 
   }else if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtFloat){  // int - double -> int - int
 
-    syntx_doubleToIntToken(rightOperand);
+    syntx_doubleToIntToken(rightOperand, convertedVar);
     return 1;
   }
 
@@ -182,7 +185,7 @@ int syntx_checkDataTypesOfIntegerDiv(SToken *leftOperand, SToken *rightOperand){
  * Checks data types of two operands of assignment operators
  * Returns 1 if everything is OK, otherwise 0
  */
-int syntx_checkDataTypesOfAsgnOps(SToken *leftOperand, SToken *rightOperand){
+int syntx_checkDataTypesOfAsgnOps(SToken *leftOperand, SToken *rightOperand, SToken *convertedVar){
   //TODO: optimalization
 
   if(leftOperand->symbol->type == symtConstant){  // if asigns to the constant -> error
@@ -200,12 +203,12 @@ int syntx_checkDataTypesOfAsgnOps(SToken *leftOperand, SToken *rightOperand){
     return 1;
   }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> double - double
 
-    syntx_intToDoubleToken(rightOperand);
+    syntx_intToDoubleToken(rightOperand, convertedVar);
     return 1;
 
   }else if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtFloat){  // int - double -> int - int
 
-    syntx_doubleToIntToken(rightOperand);
+    syntx_doubleToIntToken(rightOperand, convertedVar);
     return 1;
   }
 
@@ -229,7 +232,7 @@ int syntx_checkDataTypesOfBoolOps(SToken *leftOperand, SToken *rightOperand){
 /**
  * Checks data types, implicitly converts constants and generates code for implicit convertion of variables
  */
-void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOperand){
+void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *convertedVar){
 
   // if operator type is +, -, *, /, <, >, <=, >=, =, <>, +=, -=, /=, \=, :=
   if(operator->type == opPlus ||
@@ -244,11 +247,11 @@ void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOp
      operator->type == opNotEq
      ){
       //checks compalibility of data types
-      if(syntx_checkDataTypesOfBasicOp(leftOperand, rightOperand) == 0){
+      if(syntx_checkDataTypesOfBasicOp(leftOperand, rightOperand, convertedVar) == 0){
         scan_raiseCodeError(typeCompatibilityErr, "Error during arithmetic or relational operation.");  // prints error
       }
   }else if(operator->type == opDiv){  // if operator type is '\'
-    if(syntx_checkDataTypesOfIntegerDiv(leftOperand, rightOperand) == 0){
+    if(syntx_checkDataTypesOfIntegerDiv(leftOperand, rightOperand, convertedVar) == 0){
       scan_raiseCodeError(typeCompatibilityErr, "Error during integer division.");  // prints error
     }
   }else if( // if operators are assignment operators
@@ -258,11 +261,11 @@ void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOp
      operator->type == opMulEq ||
      operator->type == opDivFltEq
   ){
-    if(syntx_checkDataTypesOfAsgnOps(leftOperand, rightOperand) == 0){
+    if(syntx_checkDataTypesOfAsgnOps(leftOperand, rightOperand, convertedVar) == 0){
       scan_raiseCodeError(typeCompatibilityErr, "Error during assignment operation.");  // prints error
     }
   }else if(operator->type == opDivEq){ // if operator is \=
-    if(syntx_checkDataTypesOfIntegerDiv(leftOperand, rightOperand) == 0){
+    if(syntx_checkDataTypesOfIntegerDiv(leftOperand, rightOperand, convertedVar) == 0){
       scan_raiseCodeError(typeCompatibilityErr, "Error during integer division and assignment.");  // prints error
     }
   }else if( // if operator is boolean operator (except opBoolNot)
@@ -648,7 +651,7 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
    }
 
    printf("CALL %s\n", funcToken->symbol->data.funcData.label);
-   syntx_generateInstructionSecPosStr("MOVE", result, "TF@̈́%%retval", NULL);
+   syntx_generateInstructionSecPosStr("MOVE", result, "TF@%%retval", NULL);
 
    // sets correct token data type corresponding to function return value
    result->symbol->dataType = funcToken->symbol->data.funcData.returnType;
@@ -664,9 +667,12 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
  */
 void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand, SToken *partialResult){
 
+  SToken temp = sytx_getFreeVar();
+  SToken *convertedVar = &temp;
+
   // checks data types, implicitly converts constants and generates code for implicit convertion of variables
   if(rightOperand != NULL && oper->type != opBoolNot){  // operator is not bool NOT
-    syntx_checkDataTypes(leftOperand, oper, rightOperand);
+    syntx_checkDataTypes(leftOperand, oper, rightOperand, convertedVar);
   }else if(rightOperand == NULL && oper->type == opBoolNot){  // operator is bool NOT
     syntx_checkDataTypeOfBool(leftOperand);
   }else{  //for example: NOT string, NOT float, etc.

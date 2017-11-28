@@ -18,8 +18,12 @@
 #include "symtable.h"
 #include "scanner.h"
 
-void syntx_init();
+SToken syntx_freeVar(SToken *var);
+
+SToken sytx_getFreeVar();
 
 TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol);
+
+void syntx_init();
 
 #endif // _SYNTAXANALYZER
