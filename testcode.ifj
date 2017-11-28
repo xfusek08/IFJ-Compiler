@@ -2,9 +2,11 @@
 
 
 Scope 'Hlavni telo programu
-  dim a as integer = 1
   dim i as double = 5
-  for i = 0 to 20 step a
+  for i = 0 to 20 step 1
     print i; !"\n";
+    if i > 15 then
+      exit
+    end if
   next
 End Scope

@@ -575,16 +575,18 @@ void ck_NT_STAT(SToken *actToken)
     // 21. NT_STAT -> kwContinue
     case kwContinue:
       if (symbt_getActLoopLabel() != NULL)
-        printf("JUMP %s$loop", symbt_getActLoopLabel());
+        printf("JUMP %s$loop\n", symbt_getActLoopLabel());
       else
         scan_raiseCodeError(semanticErr, "\"Continue\" command can be used only in loop.");
+      NEXT_TOKEN(actToken);
       break;
     // 22. NT_STAT -> kwExit
     case kwExit:
       if (symbt_getActLoopLabel() != NULL)
-        printf("JUMP %s$loopend", symbt_getActLoopLabel());
+        printf("JUMP %s$loopend\n", symbt_getActLoopLabel());
       else
         scan_raiseCodeError(semanticErr, "\"Exit\" command can be used only in loop.");
+      NEXT_TOKEN(actToken);
       break;
     // 23. NT_STAT -> NT_SCOPE
     case kwScope:
