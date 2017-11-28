@@ -54,7 +54,8 @@ dkms.conf
 # Documentation
 Documentation/
 
-# linux executible
 ifjcompile
-
 *.stackdump
+IFJCode17Interp/
+.vscode/
+*.ifjcode17

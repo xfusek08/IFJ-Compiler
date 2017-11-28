@@ -4,7 +4,7 @@
 Scope 'Hlavni telo programu
   dim a as integer = 1
   dim i as double = 5
-  for i = 0 to 20 step a + 5
-    a += 1
+  for i = 0 to 20 step a
+    print i; !"\n";
   next
 End Scope

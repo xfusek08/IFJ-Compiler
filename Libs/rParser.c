@@ -110,6 +110,27 @@ void printSymbolToOperand(TSymbol symbol)
     printf("%s", symbol->ident);
 }
 
+// balance numeric symbol types
+void balanceNumTypes(TSymbol symb1, TSymbol symb2)
+{
+  if (symb1->dataType == dtInt && symb2->dataType == dtFloat)
+  {
+    symb1->dataType = dtFloat;
+    if (symb1->type == symtConstant) // is constant
+      symb1->data.doubleVal = syntx_intToDouble(symb1->data.intVal);
+    else // is variable
+      printf("INT2FLOAT %s %s", symb1->ident, symb1->ident);
+  }
+  else if (symb1->dataType == dtFloat && symb2->dataType == dtInt)
+  {
+    symb2->dataType = dtFloat;
+    if (symb2->type == symtConstant) // is constant
+      symb2->data.doubleVal = syntx_intToDouble(symb2->data.intVal);
+    else // is variable
+      printf("INT2FLOAT %s %s\n", symb2->ident, symb2->ident);
+  }
+}
+
 // function for defining function
 // 3. NT_DD -> kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_STAT_LIST kwEnd kwFunction eol NT_DD
 void processFunction(SToken *actToken)
@@ -205,10 +226,7 @@ void writeExpression(SToken *actToken)
   if (actToken->type == ident || actToken->type == opLeftBrc) // NT_EXPR
   {
     // evaluate expression
-    //printf("token %s\n", grammarToString(actToken->type));
-    //symbt_printSymb(actToken->symbol);
     TSymbol actSymbol = syntx_processExpression(actToken, NULL);
-    symbt_printSymb(actSymbol);
     printf("WRITE ");
     printSymbolToOperand(actSymbol);
     printf("\n");
@@ -347,6 +365,8 @@ void ck_NT_SCOPE(SToken *actToken)
       NEXT_CHECK_TOKEN(actToken, eol);
       char *label = symbt_getNewLocalLabel();
       symbt_pushFrame(label, true, false);
+      printf("CREATEFRAME\n");
+      printf("PUSHFRAME\n");
       mmng_safeFree(label);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
@@ -354,6 +374,7 @@ void ck_NT_SCOPE(SToken *actToken)
       CHECK_TOKEN(actToken, kwEnd); // statement list must ends on end key word
       NEXT_CHECK_TOKEN(actToken, kwScope);
       NEXT_TOKEN(actToken);
+      printf("POPFRAME\n");
       symbt_popFrame();
       break;
     default:
@@ -481,9 +502,6 @@ void ck_NT_STAT(SToken *actToken)
       break;
     // 17. NT_STAT -> kwPrint NT_EXPR opSemcol NT_EXPR_LIST
     case kwPrint:
-      NEXT_TOKEN(actToken);
-      writeExpression(actToken);
-      NEXT_CHECK_TOKEN(actToken, opSemcol);
       NEXT_TOKEN(actToken);
       ck_NT_EXPR_LIST(actToken);
       break;
@@ -628,40 +646,16 @@ void ck_NT_STAT(SToken *actToken)
       TSymbol toSymb = syntx_processExpression(actToken, NULL);
       if (toSymb->dataType != dtInt && toSymb->dataType != dtFloat)
         scan_raiseCodeError(semanticErr, "To value has no valid data type. Only double or integer is allowed.");
-
       // balance comparing data types
-      if (actSymbol->dataType == dtInt && toSymb->dataType == dtFloat)
-      {
-        actSymbol->dataType = dtFloat;
-        if (actSymbol->type == symtConstant) // is constant
-          actSymbol->data.doubleVal = syntx_intToDouble(actSymbol->data.intVal);
-        else // is variable
-          printf("INT2FLOAT %s %s", actSymbol->ident, actSymbol->ident);
-      }
-      if (actSymbol->dataType == dtFloat && toSymb->dataType == dtInt)
-      {
-        toSymb->dataType = dtFloat;
-        if (toSymb->type == symtConstant) // is constant
-          toSymb->data.doubleVal = syntx_intToDouble(toSymb->data.intVal);
-        else // is variable
-          printf("INT2FLOAT %s %s", toSymb->ident, toSymb->ident);
-      }
+      balanceNumTypes(actSymbol, toSymb);
 
       // set STEP Value
       TSymbol stepSymb = ck_NT_FORSTEP(actToken);
-      symbt_printSymb(stepSymb);
+      //symbt_printSymb(stepSymb);
       if (stepSymb->dataType != dtInt && stepSymb->dataType != dtFloat)
         scan_raiseCodeError(semanticErr, "Step value has no valid data type. Only double or integer is allowed.");
-      if (actSymbol->dataType == dtInt && stepSymb->dataType == dtFloat)
-        scan_raiseCodeError(semanticErr, "Step value has incompatible datatype with iterator.");
-      if (actSymbol->dataType == dtFloat && stepSymb->dataType == dtInt)
-      {
-        stepSymb->dataType = dtInt;
-        if (stepSymb->type == symtConstant) // is constant
-          stepSymb->data.intVal = syntx_doubleToInt(stepSymb->data.doubleVal);
-        else // is variable
-          printf("FLOAT2INT %s %s\n", stepSymb->ident, stepSymb->ident);
-      }
+      // balance comparing data types
+      balanceNumTypes(actSymbol, stepSymb);
 
       CHECK_TOKEN(actToken, eol);
       // end of for initialization
@@ -850,7 +844,6 @@ void ck_NT_EXPR_LIST(SToken *actToken)
     // 36. NT_EXPR_LIST -> NT_EXPR opSemcol NT_EXPR_LIST
     case opLeftBrc:
     case ident:
-      NEXT_TOKEN(actToken);
       writeExpression(actToken);
       CHECK_TOKEN(actToken, opSemcol);
       NEXT_TOKEN(actToken);
