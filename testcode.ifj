@@ -4,12 +4,16 @@
 Scope 'Hlavni telo programu
   dim a as integer = 0
   dim i as double = 5
-  for i = 0 to 20 step 1
-    dim a as boolean
-    'a += i
-    print i; !": "; a; !"\n";
-    if i > 15 then
-      exit
-    end if
+
+  print !"\n"; i; !"\n\n";
+
+  for i as integer = 0 to 20 step 1
+    print i; !": ";
+    for i as integer = 0 to 20 step 1
+      print i; !" ";
+    next
+    print !"\n";
   next
+
+  print !"\n"; i; !"\n\n";
 End Scope

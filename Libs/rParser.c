@@ -84,7 +84,7 @@ void ck_NT_ARGUMENT_LIS(SToken *actToken); 	// list of expression separated by c
 // =============================================================================
 
 // adds frame as prefix to symbol identifier
-void addPrefixToSymbolIdent(const char *prefix, TSymbol symbol)
+void addPrefixToSymbolIdent(char *prefix, TSymbol symbol)
 {
   char *preident = symbol->ident;
   symbol->ident = util_StrConcatenate(prefix, symbol->ident);
@@ -233,6 +233,23 @@ void writeExpression(SToken *actToken)
   }
   else
     scan_raiseCodeError(semanticErr, "Expression expected.");
+}
+
+void defOrRedefVariable(TSymbol symbolVar)
+{
+  if (symbolVar->type == symtUnknown)
+  {
+    symbolVar->type = symtVariable;
+    addPrefixToSymbolIdent("LF@", symbolVar);
+    printf("DEFVAR %s\n", symbolVar->ident);
+  }
+  else
+  {
+    if (symbolVar->type == symtVariable)
+      symbt_pushRedefVar(symbolVar);
+    else
+      scan_raiseCodeError(syntaxErr, "Cannot redefine non variable identifier.");
+  }
 }
 
 void raiseUnexpToken(SToken *actToken, EGrSymb expected)
@@ -532,19 +549,8 @@ void ck_NT_STAT(SToken *actToken)
     case kwDim:
       NEXT_CHECK_TOKEN(actToken, ident);
       actSymbol = actToken->symbol;
-      if (actSymbol->type == symtUnknown)
-      {
-        actSymbol->type = symtVariable;
-        addPrefixToSymbolIdent("LF@", actSymbol);
-        printf("DEFVAR %s\n", actSymbol->ident);
-      }
-      else
-      {
-        if (actSymbol->type == symtVariable)
-          symbt_pushRedefVar(actSymbol);
-        else
-          scan_raiseCodeError(syntaxErr, "Cannot redefine non variable identifier.");
-      }
+
+      defOrRedefVariable(actSymbol);
 
       NEXT_CHECK_TOKEN(actToken, kwAs);
       NEXT_CHECK_TOKEN(actToken, dataType);
@@ -576,8 +582,6 @@ void ck_NT_STAT(SToken *actToken)
       rightOperand.type = ident;
       rightOperand.symbol = syntx_processExpression(actToken, NULL);
 
-      symbt_printSymb(leftOperand.symbol);
-      symbt_printSymb(rightOperand.symbol);
       syntx_generateCode(&leftOperand, &tokAsgn, &rightOperand, NULL);
       break;
     // 21. NT_STAT -> kwContinue
@@ -625,18 +629,11 @@ void ck_NT_STAT(SToken *actToken)
       NEXT_TOKEN(actToken);
 
       char *forlabel = symbt_getNewLocalLabel();
+      symbt_pushFrame(forlabel, true, false);
       // [as datatype]
       if (actToken->type == kwAs)
       {
-        // check if symbol needs to be redefined
-        if (actSymbol->type != symtUnknown)
-          actSymbol = symbt_insertSymbOnTop(actSymbol->key);
-
-        addPrefixToSymbolIdent("$", actSymbol);
-        addPrefixToSymbolIdent(forlabel, actSymbol);
-        addPrefixToSymbolIdent("LF@", actSymbol);
-        printf("DEFVAR %s\n", actSymbol->ident);
-        actSymbol->type = symtVariable;
+        defOrRedefVariable(actSymbol);
         NEXT_CHECK_TOKEN(actToken, dataType);
         actSymbol->dataType = actToken->dataType;
         NEXT_TOKEN(actToken);
@@ -660,7 +657,6 @@ void ck_NT_STAT(SToken *actToken)
 
       // set STEP Value
       TSymbol stepSymb = ck_NT_FORSTEP(actToken);
-      //symbt_printSymb(stepSymb);
       if (stepSymb->dataType != dtInt && stepSymb->dataType != dtFloat)
         scan_raiseCodeError(semanticErr, "Step value has no valid data type. Only double or integer is allowed.");
       // balance comparing data types
@@ -692,6 +688,7 @@ void ck_NT_STAT(SToken *actToken)
       printf("LABEL %s$loopend\n", forlabel);
       CHECK_TOKEN(actToken, kwNext);
       NEXT_TOKEN(actToken);
+      symbt_popFrame();
       symbt_popFrame();
       mmng_safeFree(forlabel);
       break;

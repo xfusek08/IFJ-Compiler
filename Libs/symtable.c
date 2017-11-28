@@ -220,7 +220,7 @@ TSTNode TSTNode_create(char *key)
   TSTNode newNode = (TSTNode)mmng_safeMalloc(sizeof(struct STNode));
   newNode->balance = 0;
   newNode->key = util_StrHardCopy(key); // new hard copy of string
-  newNode->symbol = TSymbol_create(key);
+  newNode->symbol = TSymbol_create(newNode->key);
   newNode->parent = NULL;
   newNode->left = NULL;
   newNode->right = NULL;
@@ -649,7 +649,7 @@ void symbt_popFrame()
     for (int i = 0; i < table->redefVarStack->count; i++)
     {
       TRedefSymb redefSymb = table->redefVarStack->ptArray[i];
-      printf("POPS %s", redefSymb->symbol->ident);
+      printf("POPS %s\n", redefSymb->symbol->ident);
       redefSymb->symbol->dataType = redefSymb->origDataType;
     }
     while (table->redefVarStack->count > 0)
@@ -834,6 +834,7 @@ void symbt_printSymb(TSymbol symbol)
   }
   printf("Symbol: %p\n", symbol);
   printf("  identifier:   %s\n", symbol->ident);
+  printf("  key:          %s\n", symbol->key);
   printf("  type:         %s\n", stype);
   printf("  data type:    %s\n", util_dataTypeToString(symbol->dataType));
   printf("  data: ");
