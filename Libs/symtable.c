@@ -34,6 +34,13 @@ struct STNode {
   TSTNode right;    // root of right sub-tree
 };
 
+// structure holding
+typedef struct RedefSymb *TRedefSymb;
+struct RedefSymb {
+  TSymbol symbol;
+  DataType origDataType;
+};
+
 // node of AVL tree main root with no parent reprezenting one symbol table
 typedef struct SymTable *TSymTable;
 struct SymTable {
@@ -42,13 +49,33 @@ struct SymTable {
   bool isLoop;                // flag if frame is loop
   char *frameLabel;           // label of frame
   unsigned int localLabelCnt; // counter of local labels
+  TPStack redefVarStack;      // stack of redefined symbols to be pops and frame end
 };
 
 // global internal instance of symbol table stack
 TPStack GLBSymbTabStack;
 
 // =============================================================================
-// ====================== TArgument implementation ==============================
+// ====================== TRedefSymb implementation ==============================
+// =============================================================================
+
+// constructor of TRedefSymb
+TRedefSymb TRedefSymb_create(TSymbol symb)
+{
+  TRedefSymb new = mmng_safeMalloc(sizeof(struct RedefSymb));
+  new->symbol = symb;
+  new->origDataType = symb->dataType;
+  return new;
+}
+
+// destructor of TRedefSymb
+void TRedefSymb_destroy(TRedefSymb self)
+{
+  mmng_safeFree(self);
+}
+
+// =============================================================================
+// ====================== TRedefSymb implementation ==============================
 // =============================================================================
 
 // constructor of TArgList
@@ -88,7 +115,7 @@ void TArgList_destroy(TArgList self)
 TArgument TArgList_get(TArgList self, int index)
 {
   TArgument actArg = self->head;
-  for (; index >= 0 && actArg->next != NULL; index--)
+  while (actArg->next != NULL && index-- > 0)
     actArg = actArg->next;
   return actArg;
 }
@@ -193,7 +220,7 @@ TSTNode TSTNode_create(char *key)
   TSTNode newNode = (TSTNode)mmng_safeMalloc(sizeof(struct STNode));
   newNode->balance = 0;
   newNode->key = util_StrHardCopy(key); // new hard copy of string
-  newNode->symbol = TSymbol_create(key);
+  newNode->symbol = TSymbol_create(newNode->key);
   newNode->parent = NULL;
   newNode->left = NULL;
   newNode->right = NULL;
@@ -507,12 +534,14 @@ TSymTable TSymTable_create(char *frameLabel, bool transparent, bool isLoop)
   newST->frameLabel = util_StrHardCopy(frameLabel);
   newST->localLabelCnt = 0;
   newST->isLoop = isLoop;
+  newST->redefVarStack = TPStack_create();
   return newST;
 }
 
 // destructor of TSymTable
 void TSymTable_destroy(TSymTable self)
 {
+  self->redefVarStack->destroy(self->redefVarStack);
   TSTNode_destroy(self->root, true);
   mmng_safeFree(self->frameLabel);
   mmng_safeFree(self);
@@ -606,6 +635,8 @@ void symbt_pushFrame(char *label, bool transparent, bool isLopp)
 {
   symbt_assertIfNotInit();
   GLBSymbTabStack->push(GLBSymbTabStack, TSymTable_create(label, transparent, isLopp));
+  if (GLBSymbTabStack->count > 1)
+    printf("CREATEFRAME\n");
 }
 
 // Frees destroys symbol table on top of the stack.
@@ -614,7 +645,16 @@ void symbt_popFrame()
   symbt_assertIfNotInit();
   if (GLBSymbTabStack->count > 1)
   {
-    TSymTable_destroy(GLBSymbTabStack->top(GLBSymbTabStack));
+    TSymTable table = GLBSymbTabStack->top(GLBSymbTabStack);
+    while (table->redefVarStack->count > 0)
+    {
+      TRedefSymb redefSymb = table->redefVarStack->top(table->redefVarStack);
+      printf("POPS %s\n", redefSymb->symbol->ident);
+      redefSymb->symbol->dataType = redefSymb->origDataType;
+      table->redefVarStack->pop(table->redefVarStack);
+    }
+
+    TSymTable_destroy(table);
     GLBSymbTabStack->pop(GLBSymbTabStack);
   }
 }
@@ -726,6 +766,19 @@ char *symbt_getNewLocalLabel()
   return cntString;
 }
 
+// Push value of variable symbol on datastack and remembers it for frame destroing
+void symbt_pushRedefVar(TSymbol symbol)
+{
+  if (symbol == NULL)
+    apperr_runtimeError("Redefined symbol is NULL.");
+  if (symbol->type != symtVariable)
+    apperr_runtimeError("Redefined symbol is not variable.");
+
+  TSymTable actTable = GLBSymbTabStack->top(GLBSymbTabStack);
+  actTable->redefVarStack->push(actTable->redefVarStack, TRedefSymb_create(symbol));
+  printf("PUSHS %s\n", symbol->ident);
+}
+
 
 // =============================================================================
 // ====================== funkce pro testovaci programy ========================
@@ -780,6 +833,7 @@ void symbt_printSymb(TSymbol symbol)
   }
   printf("Symbol: %p\n", symbol);
   printf("  identifier:   %s\n", symbol->ident);
+  printf("  key:          %s\n", symbol->key);
   printf("  type:         %s\n", stype);
   printf("  data type:    %s\n", util_dataTypeToString(symbol->dataType));
   printf("  data: ");
@@ -810,6 +864,7 @@ void symbt_printSymb(TSymbol symbol)
       TArgument arg = arguments->get(arguments, 0);
       for (int i = 0; i < arguments->count && arg != NULL; i++)
       {
+        arg = arguments->get(arguments, i);
         printf("(%s as %s)", arg->ident, util_dataTypeToString(arg->dataType));
         if (i + 1 < arguments->count)
           printf("; ");

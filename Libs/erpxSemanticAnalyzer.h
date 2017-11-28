@@ -32,7 +32,7 @@ void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand,
 
 void syntx_testFunction();
 
-void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOperand);
+void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *convertedVar);
 
 void syntx_generateCodeForAsgnOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult);
 

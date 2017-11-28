@@ -18,7 +18,7 @@
 #include "symtable.h"
 #include "scanner.h"
 
-SToken syntx_freeVar(SToken *var);
+void syntx_freeVar(SToken *var);
 
 SToken sytx_getFreeVar();
 

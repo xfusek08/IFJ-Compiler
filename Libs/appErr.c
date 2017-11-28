@@ -27,19 +27,19 @@ void apperr_codeError(ErrType type, int row, int col, char *line, char *message)
   switch (type)
   {
     case lexicalErr:
-      fprintf( stderr, "\033[31;1mError %d:\033[0m Lexical error ", type);
+      fprintf(stderr, "\033[31;1mError %d:\033[0m Lexical error ", type);
       break;
     case syntaxErr:
-      fprintf( stderr, "\033[31;1mError %d:\033[0m Syntax error ", type);
+      fprintf(stderr, "\033[31;1mError %d:\033[0m Syntax error ", type);
       break;
     case semanticErr:
-      fprintf( stderr, "\033[31;1mError %d:\033[0m Semantic error ", type);
+      fprintf(stderr, "\033[31;1mError %d:\033[0m Semantic error ", type);
       break;
     case typeCompatibilityErr:
-      fprintf( stderr, "\033[31;1mError %d:\033[0m Error of type compatibility ", type);
+      fprintf(stderr, "\033[31;1mError %d:\033[0m Error of type compatibility ", type);
       break;
     case anotherSemanticErr:
-      fprintf( stderr, "\033[31;1mError %d:\033[0m Another semantic error ", type);
+      fprintf(stderr, "\033[31;1mError %d:\033[0m Another semantic error ", type);
       break;
     default:
       return;
@@ -57,7 +57,7 @@ void apperr_codeError(ErrType type, int row, int col, char *line, char *message)
   {
     int j = 0;
     for (; j < 80 && (i + j) < linewidth; j++)
-      putchar(line[i + j]);
+      fprintf(stderr, "%c", line[i + j]);
 
     i += j;
 
@@ -66,8 +66,8 @@ void apperr_codeError(ErrType type, int row, int col, char *line, char *message)
     if(rowFirstCharPosition < col && col < rowFirstCharPosition + 80)
     {
       for(int j = 1; j <= (col-1)%80; j++)
-        printf(" ");
-      printf("\x1B[31m^\x1B[0m\n");
+        fprintf(stderr, " ");
+      fprintf(stderr, "\x1B[31m^\x1B[0m\n");
     }
 
     consoleRowNum++;

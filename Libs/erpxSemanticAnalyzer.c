@@ -334,14 +334,14 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
 
       // integer division
       if(oper->type == opDiv){
-        syntx_doubleToIntToken(leftOperand); // -> int - int
+        syntx_doubleToIntToken(leftOperand, NULL); // -> int - int
         token.symbol->data.intVal = leftOperand->symbol->data.intVal / rightOperand->symbol->data.intVal; // integer divides two doubles
         token.symbol->dataType = dtInt;
         return token;
       }
 
       //TODO: again! implicit conversion - return some value or not?
-      syntx_intToDoubleToken(rightOperand); // -> double - double
+      syntx_intToDoubleToken(rightOperand, NULL); // -> double - double
 
       if(oper->type == opPlus){
         token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal + rightOperand->symbol->data.doubleVal; // adds two doubles
@@ -361,14 +361,14 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
 
       // integer division
       if(oper->type == opDiv){
-        syntx_doubleToIntToken(rightOperand); // -> int - int
+        syntx_doubleToIntToken(rightOperand, NULL); // -> int - int
         token.symbol->data.intVal = leftOperand->symbol->data.intVal / rightOperand->symbol->data.intVal; // integer divides two doubles
         token.symbol->dataType = dtInt;
         return token;
       }
 
       //TODO: again! implicit conversion - return some value or not?
-      syntx_intToDoubleToken(leftOperand); // -> double - double
+      syntx_intToDoubleToken(leftOperand, NULL); // -> double - double
 
       if(oper->type == opPlus){
         token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal + rightOperand->symbol->data.doubleVal; // adds two doubles
@@ -644,14 +644,14 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
  void syntx_generateCodeForCallFunc(SToken *funcToken, int argIndex, SToken *result){
 
    // checks arguments count
-   if(funcToken->symbol->data.funcData.arguments->count > argIndex + 1){  // too many arguments
-     scan_raiseCodeError(typeCompatibilityErr, "Too many arguments passed to function.");  // prints error
-   }else if(funcToken->symbol->data.funcData.arguments->count < argIndex + 1){  // too few arguments
-     scan_raiseCodeError(typeCompatibilityErr, "Too few arguments passed to function.");  // prints error
+   if(funcToken->symbol->data.funcData.arguments->count < argIndex){  // too many arguments
+     scan_raiseCodeError(typeCompatibilityErr, "Too many arguments passed to function.");
+   }else if(funcToken->symbol->data.funcData.arguments->count > argIndex){  // too few arguments
+     scan_raiseCodeError(typeCompatibilityErr, "Too few arguments passed to function.");
    }
 
    printf("CALL %s\n", funcToken->symbol->data.funcData.label);
-   syntx_generateInstructionSecPosStr("MOVE", result, "TF@%%retval", NULL);
+   syntx_generateInstructionSecPosStr("MOVE", result, "TF@%retval", NULL);
 
    // sets correct token data type corresponding to function return value
    result->symbol->dataType = funcToken->symbol->data.funcData.returnType;
