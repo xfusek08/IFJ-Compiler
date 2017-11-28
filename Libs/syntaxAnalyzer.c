@@ -120,7 +120,6 @@ SToken sytx_getFreeVar()
     symbt_insertSymbOnTop(ident);
     printf("DEFVAR %s\n", ident);
   }
-  symbt_print();
   token.symbol->ident = ident;
   return token;
 }

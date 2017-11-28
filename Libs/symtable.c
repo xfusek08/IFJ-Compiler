@@ -115,7 +115,7 @@ void TArgList_destroy(TArgList self)
 TArgument TArgList_get(TArgList self, int index)
 {
   TArgument actArg = self->head;
-  for (; index >= 0 && actArg->next != NULL; index--)
+  while (actArg->next != NULL && index-- > 0)
     actArg = actArg->next;
   return actArg;
 }
@@ -646,14 +646,13 @@ void symbt_popFrame()
   if (GLBSymbTabStack->count > 1)
   {
     TSymTable table = GLBSymbTabStack->top(GLBSymbTabStack);
-    for (int i = 0; i < table->redefVarStack->count; i++)
+    while (table->redefVarStack->count > 0)
     {
-      TRedefSymb redefSymb = table->redefVarStack->ptArray[i];
+      TRedefSymb redefSymb = table->redefVarStack->top(table->redefVarStack);
       printf("POPS %s\n", redefSymb->symbol->ident);
       redefSymb->symbol->dataType = redefSymb->origDataType;
-    }
-    while (table->redefVarStack->count > 0)
       table->redefVarStack->pop(table->redefVarStack);
+    }
 
     TSymTable_destroy(table);
     GLBSymbTabStack->pop(GLBSymbTabStack);
@@ -865,6 +864,7 @@ void symbt_printSymb(TSymbol symbol)
       TArgument arg = arguments->get(arguments, 0);
       for (int i = 0; i < arguments->count && arg != NULL; i++)
       {
+        arg = arguments->get(arguments, i);
         printf("(%s as %s)", arg->ident, util_dataTypeToString(arg->dataType));
         if (i + 1 < arguments->count)
           printf("; ");

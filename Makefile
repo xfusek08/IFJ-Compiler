@@ -13,7 +13,7 @@ debug: CFLAGS += -g -DDEBUG #-DPRECDEBUG #-DST_DEBUG
 debug: $(EXECUTABLE) clean
 
 test: debug $(EXECUTABLE)
-	cat testcode.ifj | ./$(EXECUTABLE) > out.ifjcode17
+	cat testcode.ifj | ./$(EXECUTABLE)
 	IFJCode17Interp/ic17int.exe out.ifjcode17
 
 %.o : %.c

@@ -1,19 +1,16 @@
 
-
+function add(n as integer , p as integer) as integer
+  return n + p
+end function
 
 Scope 'Hlavni telo programu
-  dim a as integer = 0
-  dim i as double = 5
-
-  print !"\n"; i; !"\n\n";
-
-  for i as integer = 0 to 20 step 1
-    print i; !": ";
-    for i as integer = 0 to 20 step 1
-      print i; !" ";
+  add(1, 2)
+  /'
+  for i as integer = 0 to 10
+    for j as integer = 0 to 10
+      print !"("; i; !","; j; !") ";
     next
     print !"\n";
   next
-
-  print !"\n"; i; !"\n\n";
+  '/
 End Scope

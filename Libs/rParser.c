@@ -720,41 +720,42 @@ void ck_NT_DOIN(SToken *actToken)
       if (cond->dataType != dtBool)
         ERR_COND_TYPE();
 
-      if (isUntil)
-        printf("JUMPIFEQ %s$loopend %s bool@true\n", dolabel, cond->ident);
-      else
-        printf("JUMPIFEQ %s$loopend %s bool@false\n", dolabel, cond->ident);
+      printf("%s %s$loopend ", (isUntil) ? "JUMPIFEQ" : "JUMPIFNEQ" , dolabel);
+      printSymbolToOperand(cond);
+      printf(" bool@true\n");
 
       CHECK_TOKEN(actToken, eol);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
       CHECK_TOKEN(actToken, kwLoop);
       NEXT_TOKEN(actToken);
+      symbt_popFrame();
       printf("JUMP %s$loop\n", dolabel);
       break;
     // 28. NT_DOIN -> eol NT_STAT_LIST NT_DOIN_WU NT_EXPR
     case eol:
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
-
       ck_NT_DOIN_WU(actToken);
-      isUntil = actToken->type == kwUntil;
 
+      isUntil = actToken->type == kwUntil;
+      NEXT_TOKEN(actToken);
       cond = syntx_processExpression(actToken, NULL);
       if (cond->dataType != dtBool)
         ERR_COND_TYPE();
 
-      if (isUntil)
-        printf("JUMPIFEQ %s$loop %s bool@false\n", dolabel, cond->ident);
-      else
-        printf("JUMPIFEQ %s$loop %s bool@true\n", dolabel, cond->ident);
+      symbt_popFrame();
+
+      printf("%s %s$loop ", (isUntil) ? "JUMPIFNEQ" : "JUMPIFEQ" , dolabel);
+      printSymbolToOperand(cond);
+      printf(" bool@true\n");
+
       break;
     default:
       ERR_UNEXP_TOKEN();
       break;
   }
   printf("LABEL %s$loopend\n", dolabel);
-  symbt_popFrame();
   mmng_safeFree(dolabel);
 }
 
