@@ -257,6 +257,8 @@ void ck_NT_PROG(SToken *actToken)
   // 1. NT_PROG -> NT_DD NT_SCOPE eof
   ck_NT_DD(actToken);
   printf("LABEL %s\n", symbt_getActFuncLabel()); // main function
+  printf("CREATEFRAME\n");
+  printf("PUSHFRAME\n");
   ck_NT_SCOPE(actToken);
   if (actToken->type != eof)
   {
@@ -365,8 +367,6 @@ void ck_NT_SCOPE(SToken *actToken)
       NEXT_CHECK_TOKEN(actToken, eol);
       char *label = symbt_getNewLocalLabel();
       symbt_pushFrame(label, true, false);
-      printf("CREATEFRAME\n");
-      printf("PUSHFRAME\n");
       mmng_safeFree(label);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
@@ -374,7 +374,6 @@ void ck_NT_SCOPE(SToken *actToken)
       CHECK_TOKEN(actToken, kwEnd); // statement list must ends on end key word
       NEXT_CHECK_TOKEN(actToken, kwScope);
       NEXT_TOKEN(actToken);
-      printf("POPFRAME\n");
       symbt_popFrame();
       break;
     default:
@@ -508,15 +507,15 @@ void ck_NT_STAT(SToken *actToken)
     // 18. NT_STAT -> kwIf NT_EXPR kwThen eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf
     case kwIf:
       NEXT_TOKEN(actToken);
+      char *iflabel = symbt_getNewLocalLabel();
+      symbt_pushFrame(iflabel, true, false);
       TSymbol symbol = syntx_processExpression(actToken, NULL);
       if (symbol->dataType != dtBool)
         ERR_COND_TYPE();
 
-      char *iflabel = symbt_getNewLocalLabel();
       CHECK_TOKEN(actToken, kwThen);
       NEXT_CHECK_TOKEN(actToken, eol);
       printf("JUMPIFNEQ %s$else %s bool@true\n", iflabel, symbol->ident);
-      symbt_pushFrame(iflabel, true, false);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
       printf("JUMP %s$endif\n", iflabel);
@@ -534,16 +533,22 @@ void ck_NT_STAT(SToken *actToken)
       NEXT_CHECK_TOKEN(actToken, ident);
       actSymbol = actToken->symbol;
       if (actSymbol->type == symtUnknown)
+      {
         actSymbol->type = symtVariable;
+        addPrefixToSymbolIdent("LF@", actSymbol);
+        printf("DEFVAR %s\n", actSymbol->ident);
+      }
       else
-        ERR_SYMB_REDEF();
+      {
+        if (actSymbol->type == symtVariable)
+          symbt_pushRedefVar(actSymbol);
+        else
+          scan_raiseCodeError(syntaxErr, "Cannot redefine non variable identifier.");
+      }
 
       NEXT_CHECK_TOKEN(actToken, kwAs);
       NEXT_CHECK_TOKEN(actToken, dataType);
       actSymbol->dataType = actToken->dataType;
-      // add frame fo identifier
-      addPrefixToSymbolIdent("LF@", actSymbol);
-      printf("DEFVAR %s\n", actSymbol->ident);
       NEXT_TOKEN(actToken);
       ck_NT_ASSINGEXT(actToken, actSymbol);
       break;
@@ -570,6 +575,9 @@ void ck_NT_STAT(SToken *actToken)
       SToken rightOperand;
       rightOperand.type = ident;
       rightOperand.symbol = syntx_processExpression(actToken, NULL);
+
+      symbt_printSymb(leftOperand.symbol);
+      symbt_printSymb(rightOperand.symbol);
       syntx_generateCode(&leftOperand, &tokAsgn, &rightOperand, NULL);
       break;
     // 21. NT_STAT -> kwContinue
@@ -611,13 +619,12 @@ void ck_NT_STAT(SToken *actToken)
       break;
     // 26. NT_STAT -> kwFor ident [as datatype] NT_ASSINGEXT kwTo NT_EXPR NT_STEP eol NT_STAT_LIST kwNext
     case kwFor:
-      (void)0;
-      char *forlabel = symbt_getNewLocalLabel();
-      symbt_pushFrame(forlabel, true, true);
       // iter variable
       NEXT_CHECK_TOKEN(actToken, ident);
       actSymbol = actToken->symbol;
       NEXT_TOKEN(actToken);
+
+      char *forlabel = symbt_getNewLocalLabel();
       // [as datatype]
       if (actToken->type == kwAs)
       {
@@ -664,12 +671,14 @@ void ck_NT_STAT(SToken *actToken)
 
       NEXT_TOKEN(actToken);
       // check condition
-      printf("DEFVAR LF@%%forisless\n");
       printf("LABEL %s$loop\n", forlabel);
-      printf("GT LF@%%forisless %s ", actSymbol->ident);
+      symbt_pushFrame(forlabel, true, true);
+      printf("DEFVAR TF@%%forisless\n");
+
+      printf("GT TF@%%forisless %s ", actSymbol->ident);
       printSymbolToOperand(toSymb);
       printf("\n");
-      printf("JUMPIFEQ %s$loopend LF@%%forisless bool@true\n", forlabel);
+      printf("JUMPIFEQ %s$loopend TF@%%forisless bool@true\n", forlabel);
 
       // inner statements
       ck_NT_STAT_LIST(actToken);
@@ -700,8 +709,8 @@ void ck_NT_DOIN(SToken *actToken)
   char *dolabel = symbt_getNewLocalLabel();
   TSymbol cond = NULL;
   bool isUntil = false;
-  symbt_pushFrame(dolabel, true, true);
   printf("LABEL %s$loop\n", dolabel);
+  symbt_pushFrame(dolabel, true, true);
   switch (actToken->type)
   {
     // 27. NT_DOIN -> NT_DOIN_WU NT_EXPR eol NT_STAT_LIST
@@ -802,20 +811,21 @@ void ck_NT_INIF_EXT(SToken *actToken)
     // 33. NT_INIF_EXT -> kwElseif NT_EXPR kwThen eol NT_STAT_LIST NT_INIF_EXT
     case kwElseif:
       NEXT_TOKEN(actToken);
+      char *iflabel = symbt_getNewLocalLabel();
+      symbt_pushFrame(iflabel, true, false);
+
       TSymbol symbol = syntx_processExpression(actToken, NULL);
       if (symbol->dataType != dtBool)
         ERR_COND_TYPE();
-
-      char *iflabel = symbt_getNewLocalLabel();
       CHECK_TOKEN(actToken, kwThen);
       NEXT_CHECK_TOKEN(actToken, eol);
       printf("JUMPIFNEQ %s$else %s bool@true\n", iflabel, symbol->ident);
       NEXT_TOKEN(actToken);
-      symbt_pushFrame(iflabel, true, false);
       ck_NT_STAT_LIST(actToken);
-      symbt_popFrame();
       printf("JUMP %s$endif\n", symbt_getActLocalLabel());
       printf("LABEL %s$else\n", iflabel);
+
+      symbt_popFrame();
       mmng_safeFree(iflabel);
       ck_NT_INIF_EXT(actToken);
       break;

@@ -2,9 +2,12 @@
 
 
 Scope 'Hlavni telo programu
+  dim a as integer = 0
   dim i as double = 5
   for i = 0 to 20 step 1
-    print i; !"\n";
+    dim a as boolean
+    'a += i
+    print i; !": "; a; !"\n";
     if i > 15 then
       exit
     end if
