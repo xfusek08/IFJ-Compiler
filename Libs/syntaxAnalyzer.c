@@ -13,7 +13,7 @@
 #include <math.h>
 #include "syntaxAnalyzer.h"
 #include "grammar.h"
-#include "Scanner.h"
+#include "scanner.h"
 #include "stacks.h"
 #include "appErr.h"
 #include "MMng.h"
