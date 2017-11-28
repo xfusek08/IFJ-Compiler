@@ -4,7 +4,7 @@
 * \file    erpxSemanticAnalyzer.h
 * \brief   Expression semantic analyze
 *
-* 
+*
 *
 * \author  Radim Blaha (xblaha28)
 * \date    25.11.2017 - Radim Blaha
@@ -15,6 +15,10 @@
 #define __EXPRSEMANTICANALYZER
 
 #include "grammar.h"
+
+int syntx_doubleToInt(double inputNum);
+
+double syntx_intToDouble(int inputNum);
 
 int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn);
 

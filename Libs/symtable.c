@@ -152,6 +152,7 @@ TSymbol TSymbol_create(char *ident)
 
   TSymbol newSymb = (TSymbol)mmng_safeMalloc(sizeof(struct Symbol));
   newSymb->ident = util_StrHardCopy(ident);
+  newSymb->key = ident;
   newSymb->type = symtUnknown;
   newSymb->dataType = dtUnspecified;
   return newSymb;

@@ -381,7 +381,7 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
     }else if(leftOperand->symbol->dataType == dtString && rightOperand->symbol->dataType == dtString){  // string - string
 
       if(oper->type == opPlus){
-        token.symbol->data.stringVal = util_StrConcatenate(leftOperand->symbol->data.stringVal, rightOperand->symbol->data.stringVal);        
+        token.symbol->data.stringVal = util_StrConcatenate(leftOperand->symbol->data.stringVal, rightOperand->symbol->data.stringVal);
         token.symbol->dataType = dtString;
       }
 
@@ -676,7 +676,7 @@ void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand,
   // one of functions bellow prints instructions according to operator type
   syntx_generateCodeForBasicOps(leftOperand, oper, rightOperand, partialResult);  // +, -, *, /, \, string +
   syntx_generateCodeForBoolOps(leftOperand, oper, rightOperand, partialResult); // AND, OR, NOT
-  //syntx_generateCodeForAsgnOps(leftOperand, oper, rightOperand, partialResult);  // +=, -=, *=, /=, \=
+  syntx_generateCodeForAsgnOps(leftOperand, oper, rightOperand, partialResult);  // +=, -=, *=, /=, \=, asgn
   syntx_generateCodeForRelOps(leftOperand, oper, rightOperand, partialResult);  // <, >, <=, >=, =, <>
 
 }

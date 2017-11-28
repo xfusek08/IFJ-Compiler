@@ -108,7 +108,8 @@ char *grammarToString(EGrSymb symb)
 		"kwStatic",
 		"kwTrue",
 		"kwTo",
-		"kwUntil"
+    "kwUntil",
+    "kwStep"
   };
   return tokenTypeStrings[symb];
 }

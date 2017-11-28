@@ -131,7 +131,7 @@ EGrSymb isKeyWord(char *tokenID)
   //Array of keyWords
   char *wArray[] = {"not", "and", "or", "as", "asc", "declare", "dim", "do", "else", "end", "function", "if", "input", "length", "loop",
   "print", "return", "scope", "subStr", "then", "while", "continue", "elseif", "exit", "false", "for",
-  "next", "shared", "static", "true", "to", "until"};  //32 kWordNumber
+  "next", "shared", "static", "true", "to", "until", "step"};  //32 kWordNumber
   int i = 0;
   //Compare keyWords
   while(i < KWORDNUMBER)
