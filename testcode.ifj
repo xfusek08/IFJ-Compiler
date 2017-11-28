@@ -1,5 +1,10 @@
+
+
+
 Scope 'Hlavni telo programu
-  for i as integer = 0 to 20 step 2
-    dim c as boolean
+  dim a as integer = 1
+  dim i as double = 5
+  for i = 0 to 20 step a + 5
+    a += 1
   next
 End Scope
