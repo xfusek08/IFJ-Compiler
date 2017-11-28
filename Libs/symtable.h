@@ -151,6 +151,7 @@ void symbt_pushFrame(char *label, bool transparent, bool isLopp);
 /**
  * Frees destroys symbol table on top of the stack.
  *
+ * Also generates pops for every symbol which was redefined in frame
  * If the is only one table left to be poped,
  * it will be deleted and there is created new empty table insted of it
  */
@@ -224,6 +225,11 @@ char *symbt_getActLocalLabel();
  * Gets new unique label for actual FunctionLabel
  */
 char *symbt_getNewLocalLabel();
+
+/**
+ * Push value of variable symbol on datastack and remembers it for frame destroing
+ */
+void symbt_pushRedefVar(TSymbol symbol);
 
 // funkce pouze pro testovaci programy
 
