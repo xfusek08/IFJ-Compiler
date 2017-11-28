@@ -561,28 +561,33 @@ void ck_NT_STAT(SToken *actToken)
     // 20. NT_STAT -> ident opEq NT_EXPR // plus detection of function calling
     case ident:
       actSymbol = actToken->symbol;
-      SToken leftOperand;
-      leftOperand.type = ident;
-      leftOperand.symbol = actSymbol;
-      NEXT_TOKEN(actToken);
-      SToken tokAsgn;
-      if (actToken->type == opEq ||
-          actToken->type == opPlusEq ||
-          actToken->type == opMnsEq ||
-          actToken->type == opMulEq ||
-          actToken->type == opDivEq ||
-          actToken->type == opDivFltEq
-      )
-        tokAsgn.type = (actToken->type == opEq) ? asgn : actToken->type;
+      if (actSymbol->type == symtFuction) // function call
+        syntx_processExpression(actToken, NULL);
       else
-        scan_raiseCodeError(syntaxErr, "Assignment token expected.");
+      {
+        SToken leftOperand;
+        leftOperand.type = ident;
+        leftOperand.symbol = actSymbol;
+        NEXT_TOKEN(actToken);
+        SToken tokAsgn;
+        if (actToken->type == opEq ||
+            actToken->type == opPlusEq ||
+            actToken->type == opMnsEq ||
+            actToken->type == opMulEq ||
+            actToken->type == opDivEq ||
+            actToken->type == opDivFltEq
+        )
+          tokAsgn.type = (actToken->type == opEq) ? asgn : actToken->type;
+        else
+          scan_raiseCodeError(syntaxErr, "Assignment token expected.");
 
-      NEXT_TOKEN(actToken);
-      SToken rightOperand;
-      rightOperand.type = ident;
-      rightOperand.symbol = syntx_processExpression(actToken, NULL);
+        NEXT_TOKEN(actToken);
+        SToken rightOperand;
+        rightOperand.type = ident;
+        rightOperand.symbol = syntx_processExpression(actToken, NULL);
 
-      syntx_generateCode(&leftOperand, &tokAsgn, &rightOperand, NULL);
+        syntx_generateCode(&leftOperand, &tokAsgn, &rightOperand, NULL);
+      }
       break;
     // 21. NT_STAT -> kwContinue
     case kwContinue:
