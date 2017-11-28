@@ -106,13 +106,13 @@ SToken sytx_getFreeVar()
     identStack->pop(identStack);
     return token;
   }
-  if (nextTokenIdent == 1000)
+  if (nextTokenIdent == 1000) //TODO:
   {
     apperr_runtimeError("syntx_getFreeVar(): Limit of auxiliary variables reached! Too complicated expression.");
   }
   //generate next ident
   char *ident = mmng_safeMalloc(sizeof(char) * 9); // LF@%T[1-9][0-9]{0,2}EOL = 9
-  sprintf(ident, "LF@%%T%d", nextTokenIdent);
+  sprintf(ident, "TF@%%T%d", nextTokenIdent);
   nextTokenIdent++;
   //if not defined, define ident
   if (symbt_findSymb(ident) == NULL)
@@ -120,6 +120,7 @@ SToken sytx_getFreeVar()
     symbt_insertSymbOnTop(ident);
     printf("DEFVAR %s\n", ident);
   }
+  symbt_print();
   token.symbol->ident = ident;
   return token;
 }
@@ -287,17 +288,20 @@ void syntx_parseFunction(TTkList list, SToken *actToken)
     SToken argToken;
     argToken.type = NT_EXPR;
     argToken.symbol = syntx_processExpression(actToken, NULL);
-    if (actToken->type != opComma)
-      scan_raiseCodeError(syntaxErr, "Incorect parameter of function call.");
-    if (actToken->type != opRightBrc)
-      scan_raiseCodeError(syntaxErr, "Function call isn't end with ')'.");
+    if (actToken->type != opComma && actToken->type != opRightBrc)
+    {
+      if (actToken->type != opComma)
+        scan_raiseCodeError(syntaxErr, "Incorect parameter of function call.");
+      if (actToken->type != opRightBrc)
+        scan_raiseCodeError(syntaxErr, "Function call isn't end with ')'.");
+    }
     syntx_generateCodeForVarDef(&funcToken, argNum, &argToken);
     argNum++;
   }
   SToken returnVal;
   returnVal = sytx_getFreeVar();
   syntx_generateCodeForCallFunc(&funcToken, argNum, &returnVal);
-  list->postInsert(list, &returnVal); //insert expr to list?
+  list->insertLast(list, &returnVal); //insert expr to list?
 }
 
 
@@ -385,19 +389,17 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
 
     if (actToken->symbol != NULL)
     {
-      switch (actToken->symbol->type)
+      if(actToken->symbol->type == symtFuction)
       {
-      case symtFuction:
         syntx_parseFunction(tlist, actToken);
-        break;
-      case symtVariable:
-      case symtConstant:
-        //ok
-        break;
-      case symtUnknown:
-        scan_raiseCodeError(semanticErr, "Undefined symbol.");
-        break;
+        *actToken = nextToken(); //parseFunction ends on ')'
+        terminal = syntx_getFirstTerminal(tlist);
+        if (isExprEnded(tlist, actToken, terminal)) //check for end of expr
+          break;
       }
+      //symtVariable symtConstant //ok
+      if(actToken->symbol->type == symtUnknown)
+        scan_raiseCodeError(semanticErr, "Undefined symbol.");
     }
 
     syntx_tableLogic(tlist, terminal, actToken);
@@ -407,13 +409,11 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     LISTPRINT(tlist);
     DPRINT("-------konec-iterace------------\n");
     if (isExprEnded(tlist, actToken, terminal))
-    {
       break;
-    }
     //getchar(); //debug
   }
 
-  while (syntx_useRule(tlist));
+  while (syntx_useRule(tlist)); //parse everything on stack
 
   DPRINT("End of expression.");
 
