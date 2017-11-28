@@ -23,7 +23,7 @@ typedef enum
   /* operators and other*/
   /* DON'T CHANGE IT PART - used to index the array */
   opPlus = 0, opMns, opMul, opDivFlt, opDiv, opLeftBrc, opRightBrc, ident, opComma,
-  opEq, opNotEq, opLes, opLessEq, opGrt, opGrtEq, opPlusEq, opMnsEq, opMulEq, opDivEq, opDivFltEq,
+  opEq, opNotEq, opLes, opLessEq, opGrt, opGrtEq, asgn, opPlusEq, opMnsEq, opMulEq, opDivEq, opDivFltEq,
   /*boolean operators*/
   opBoolNot, opBoolAnd, opBoolOr,
 
@@ -34,7 +34,7 @@ typedef enum
   /* key words */
   kwAs, kwAsc, kwDeclare, kwDim, kwDo, kwElse, kwEnd, kwFunction, kwIf, kwInput, kwLength, kwLoop,
   kwPrint, kwReturn, kwScope, kwSubStr, kwThen, kwWhile, kwContinue, kwElseif, kwExit, kwFalse, kwFor,
-  kwNext, kwShared, kwStatic, kwTrue, kwTo, kwUntil,
+  kwNext, kwShared, kwStatic, kwTrue, kwTo, kwUntil, kwStep,
 
   /* NON-TERMINALS */
   NT_PROG = 1000,          // Program - staritng non-terminal
@@ -113,7 +113,7 @@ first(NT_STAT) = {
 23. NT_STAT -> NT_SCOPE
 24. NT_STAT -> kwReturn NT_EXPR
 25. NT_STAT -> kwDo NT_DOIN kwLoop
-26. NT_STAT -> kwFor ident NT_ASSINGEXT kwTo NT_EXPR NT_STEP eol NT_STAT_LIST kwNext
+26. NT_STAT -> kwFor ident [as datatype] NT_ASSINGEXT kwTo NT_EXPR NT_STEP eol NT_STAT_LIST kwNext
 
 first(NT_DOIN) = { first(NT_DOIN_WU) -> (27); eol -> (28) else -> (error)}
 27. NT_DOIN -> NT_DOIN_WU NT_EXPR eol NT_STAT_LIST

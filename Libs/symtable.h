@@ -115,6 +115,7 @@ typedef union {
 typedef struct Symbol *TSymbol;
 struct Symbol {
   char *ident;          /*!< identifier of symbol (is also used as key to symbol table) */
+  char *key;            /*!< pointer to key in symb table. Just identifier vithout prefixes */
   SymbolType type;      /*!< Type of symbol */
   DataType dataType;    /*!< Data type of symbol, in case of constant type desides wich attribute from Data union will be used to store information. */
   Data data;            /*!< Union of attributes containg right data for concrete type of symbol. */

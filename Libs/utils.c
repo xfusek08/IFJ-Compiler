@@ -67,6 +67,7 @@ char *grammarToString(EGrSymb symb)
 		"opLessEq",
 		"opGrt",
 		"opGrtEq",
+    "asgn",
 		"opPlusEq",
 		"opMnsEq",
 		"opMulEq",
@@ -107,7 +108,8 @@ char *grammarToString(EGrSymb symb)
 		"kwStatic",
 		"kwTrue",
 		"kwTo",
-		"kwUntil"
+    "kwUntil",
+    "kwStep"
   };
   return tokenTypeStrings[symb];
 }
