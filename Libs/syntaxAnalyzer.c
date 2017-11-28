@@ -10,7 +10,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include "syntaxAnalyzer.h"
 #include "grammar.h"
 #include "scanner.h"
@@ -118,7 +117,7 @@ SToken sytx_getFreeVar()
   if (symbt_findSymb(ident) == NULL)
   {
     symbt_insertSymbOnTop(ident);
-    printf("DEFVAR %s\n", ident);
+    printInstruction("DEFVAR %s\n", ident);
   }
   token.symbol->ident = ident;
   return token;
@@ -276,7 +275,6 @@ int isExprEnded(TTkList list, SToken *actToken, EGrSymb terminal)
 
 void syntx_parseFunction(TTkList list, SToken *actToken)
 {
-  DPRINT("printing");
   SToken funcToken = *actToken;
   *actToken = nextToken();
   if (actToken->type != opLeftBrc)

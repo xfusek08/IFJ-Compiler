@@ -97,17 +97,17 @@ void printSymbolToOperand(TSymbol symbol)
   {
     switch (symbol->dataType)
     {
-      case dtInt: printf("int@%d", symbol->data.intVal); break;
-      case dtFloat: printf("float@%g", symbol->data.doubleVal); break;
-      case dtString: printf("string@%s", symbol->data.stringVal); break;
-      case dtBool: printf("bool@%s", (symbol->data.boolVal) ? "true" : "false"); break;
+      case dtInt: printInstruction("int@%d", symbol->data.intVal); break;
+      case dtFloat: printInstruction("float@%g", symbol->data.doubleVal); break;
+      case dtString: printInstruction("string@%s", symbol->data.stringVal); break;
+      case dtBool: printInstruction("bool@%s", (symbol->data.boolVal) ? "true" : "false"); break;
       default:
         apperr_runtimeError("Invalid symbol data type. (internal structure error)");
       break;
     }
   }
   else if (symbol->type == symtVariable)
-    printf("%s", symbol->ident);
+    printInstruction("%s", symbol->ident);
 }
 
 // balance numeric symbol types
@@ -119,7 +119,7 @@ void balanceNumTypes(TSymbol symb1, TSymbol symb2)
     if (symb1->type == symtConstant) // is constant
       symb1->data.doubleVal = syntx_intToDouble(symb1->data.intVal);
     else // is variable
-      printf("INT2FLOAT %s %s", symb1->ident, symb1->ident);
+      printInstruction("INT2FLOAT %s %s", symb1->ident, symb1->ident);
   }
   else if (symb1->dataType == dtFloat && symb2->dataType == dtInt)
   {
@@ -127,7 +127,7 @@ void balanceNumTypes(TSymbol symb1, TSymbol symb2)
     if (symb2->type == symtConstant) // is constant
       symb2->data.doubleVal = syntx_intToDouble(symb2->data.intVal);
     else // is variable
-      printf("INT2FLOAT %s %s\n", symb2->ident, symb2->ident);
+      printInstruction("INT2FLOAT %s %s\n", symb2->ident, symb2->ident);
   }
 }
 
@@ -215,9 +215,9 @@ void processFunction(SToken *actToken)
   CHECK_TOKEN(actToken, kwEnd); // statement list must ends on end key word
   NEXT_CHECK_TOKEN(actToken, kwFunction);
   NEXT_CHECK_TOKEN(actToken, eol);
-  printf("LABEL %s$epilog\n", actSymbol->data.funcData.label);
-  printf("POPFRAME\n");
-  printf("RETURN\n");
+  printInstruction("LABEL %s$epilog\n", actSymbol->data.funcData.label);
+  printInstruction("POPFRAME\n");
+  printInstruction("RETURN\n");
   symbt_popFrame();
 }
 
@@ -227,9 +227,9 @@ void writeExpression(SToken *actToken)
   {
     // evaluate expression
     TSymbol actSymbol = syntx_processExpression(actToken, NULL);
-    printf("WRITE ");
+    printInstruction("WRITE ");
     printSymbolToOperand(actSymbol);
-    printf("\n");
+    printInstruction("\n");
   }
   else
     scan_raiseCodeError(semanticErr, "Expression expected.");
@@ -340,7 +340,7 @@ void ck_NT_DD(SToken *actToken)
       actSymbol->dataType = actToken->dataType;
       // add frame fo identifier
       addPrefixToSymbolIdent("GF@", actSymbol);
-      printf("DEFVAR %s\n", actSymbol->ident);
+      printInstruction("DEFVAR %s\n", actSymbol->ident);
       NEXT_TOKEN(actToken);
       ck_NT_ASSINGEXT(actToken, actSymbol);
       CHECK_TOKEN(actToken, eol);
@@ -513,7 +513,7 @@ void ck_NT_STAT(SToken *actToken)
       actSymbol = actToken->symbol;
       if (actSymbol->type != symtVariable)
         scan_raiseCodeError(semanticErr, "Symbol is not defined variable.");
-      printf("READ %s %s\n", actSymbol->ident, util_dataTypeToString(actSymbol->dataType));
+      printInstruction("READ %s %s\n", actSymbol->ident, util_dataTypeToString(actSymbol->dataType));
       NEXT_TOKEN(actToken);
       break;
     // 17. NT_STAT -> kwPrint NT_EXPR opSemcol NT_EXPR_LIST
@@ -532,15 +532,15 @@ void ck_NT_STAT(SToken *actToken)
 
       CHECK_TOKEN(actToken, kwThen);
       NEXT_CHECK_TOKEN(actToken, eol);
-      printf("JUMPIFNEQ %s$else %s bool@true\n", iflabel, symbol->ident);
+      printInstruction("JUMPIFNEQ %s$else %s bool@true\n", iflabel, symbol->ident);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
-      printf("JUMP %s$endif\n", iflabel);
-      printf("LABEL %s$else\n", iflabel);
+      printInstruction("JUMP %s$endif\n", iflabel);
+      printInstruction("LABEL %s$else\n", iflabel);
       ck_NT_INIF_EXT(actToken);
       CHECK_TOKEN(actToken, kwEnd);
       NEXT_CHECK_TOKEN(actToken, kwIf);
-      printf("LABEL %s$endif\n", iflabel);
+      printInstruction("LABEL %s$endif\n", iflabel);
       symbt_popFrame();
       mmng_safeFree(iflabel);
       NEXT_TOKEN(actToken);
@@ -592,7 +592,7 @@ void ck_NT_STAT(SToken *actToken)
     // 21. NT_STAT -> kwContinue
     case kwContinue:
       if (symbt_getActLoopLabel() != NULL)
-        printf("JUMP %s$loop\n", symbt_getActLoopLabel());
+        printInstruction("JUMP %s$loop\n", symbt_getActLoopLabel());
       else
         scan_raiseCodeError(semanticErr, "\"Continue\" command can be used only in loop.");
       NEXT_TOKEN(actToken);
@@ -600,7 +600,7 @@ void ck_NT_STAT(SToken *actToken)
     // 22. NT_STAT -> kwExit
     case kwExit:
       if (symbt_getActLoopLabel() != NULL)
-        printf("JUMP %s$loopend\n", symbt_getActLoopLabel());
+        printInstruction("JUMP %s$loopend\n", symbt_getActLoopLabel());
       else
         scan_raiseCodeError(semanticErr, "\"Exit\" command can be used only in loop.");
       NEXT_TOKEN(actToken);
@@ -616,7 +616,7 @@ void ck_NT_STAT(SToken *actToken)
         NEXT_TOKEN(actToken);
         TSymbol symbol = symbt_findOrInsertSymb("%retval");
         syntx_processExpression(actToken, symbol);
-        printf("JUMP %s$epilog\n", symbt_getActFuncLabel());
+        printInstruction("JUMP %s$epilog\n", symbt_getActFuncLabel());
       }
       else
         scan_raiseCodeError(anotherSemanticErr, "Return can not be used outside of function.");
@@ -672,25 +672,25 @@ void ck_NT_STAT(SToken *actToken)
 
       NEXT_TOKEN(actToken);
       // check condition
-      printf("LABEL %s$loop\n", forlabel);
+      printInstruction("LABEL %s$loop\n", forlabel);
       symbt_pushFrame(forlabel, true, true);
-      printf("DEFVAR TF@%%forisless\n");
+      printInstruction("DEFVAR TF@%%forisless\n");
 
-      printf("GT TF@%%forisless %s ", actSymbol->ident);
+      printInstruction("GT TF@%%forisless %s ", actSymbol->ident);
       printSymbolToOperand(toSymb);
-      printf("\n");
-      printf("JUMPIFEQ %s$loopend TF@%%forisless bool@true\n", forlabel);
+      printInstruction("\n");
+      printInstruction("JUMPIFEQ %s$loopend TF@%%forisless bool@true\n", forlabel);
 
       // inner statements
       ck_NT_STAT_LIST(actToken);
 
       // increment iterator
-      printf("ADD %s %s ", actSymbol->ident, actSymbol->ident);
+      printInstruction("ADD %s %s ", actSymbol->ident, actSymbol->ident);
       printSymbolToOperand(stepSymb);
-      printf("\n");
+      printInstruction("\n");
 
-      printf("JUMP %s$loop\n", forlabel);
-      printf("LABEL %s$loopend\n", forlabel);
+      printInstruction("JUMP %s$loop\n", forlabel);
+      printInstruction("LABEL %s$loopend\n", forlabel);
       CHECK_TOKEN(actToken, kwNext);
       NEXT_TOKEN(actToken);
       symbt_popFrame();
@@ -711,7 +711,7 @@ void ck_NT_DOIN(SToken *actToken)
   char *dolabel = symbt_getNewLocalLabel();
   TSymbol cond = NULL;
   bool isUntil = false;
-  printf("LABEL %s$loop\n", dolabel);
+  printInstruction("LABEL %s$loop\n", dolabel);
   symbt_pushFrame(dolabel, true, true);
   switch (actToken->type)
   {
@@ -725,9 +725,9 @@ void ck_NT_DOIN(SToken *actToken)
       if (cond->dataType != dtBool)
         ERR_COND_TYPE();
 
-      printf("%s %s$loopend ", (isUntil) ? "JUMPIFEQ" : "JUMPIFNEQ" , dolabel);
+      printInstruction("%s %s$loopend ", (isUntil) ? "JUMPIFEQ" : "JUMPIFNEQ" , dolabel);
       printSymbolToOperand(cond);
-      printf(" bool@true\n");
+      printInstruction(" bool@true\n");
 
       CHECK_TOKEN(actToken, eol);
       NEXT_TOKEN(actToken);
@@ -735,7 +735,7 @@ void ck_NT_DOIN(SToken *actToken)
       CHECK_TOKEN(actToken, kwLoop);
       NEXT_TOKEN(actToken);
       symbt_popFrame();
-      printf("JUMP %s$loop\n", dolabel);
+      printInstruction("JUMP %s$loop\n", dolabel);
       break;
     // 28. NT_DOIN -> eol NT_STAT_LIST NT_DOIN_WU NT_EXPR
     case eol:
@@ -751,16 +751,16 @@ void ck_NT_DOIN(SToken *actToken)
 
       symbt_popFrame();
 
-      printf("%s %s$loop ", (isUntil) ? "JUMPIFNEQ" : "JUMPIFEQ" , dolabel);
+      printInstruction("%s %s$loop ", (isUntil) ? "JUMPIFNEQ" : "JUMPIFEQ" , dolabel);
       printSymbolToOperand(cond);
-      printf(" bool@true\n");
+      printInstruction(" bool@true\n");
 
       break;
     default:
       ERR_UNEXP_TOKEN();
       break;
   }
-  printf("LABEL %s$loopend\n", dolabel);
+  printInstruction("LABEL %s$loopend\n", dolabel);
   mmng_safeFree(dolabel);
 }
 
@@ -822,11 +822,11 @@ void ck_NT_INIF_EXT(SToken *actToken)
         ERR_COND_TYPE();
       CHECK_TOKEN(actToken, kwThen);
       NEXT_CHECK_TOKEN(actToken, eol);
-      printf("JUMPIFNEQ %s$else %s bool@true\n", iflabel, symbol->ident);
+      printInstruction("JUMPIFNEQ %s$else %s bool@true\n", iflabel, symbol->ident);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
-      printf("JUMP %s$endif\n", symbt_getActLocalLabel());
-      printf("LABEL %s$else\n", iflabel);
+      printInstruction("JUMP %s$endif\n", symbt_getActLocalLabel());
+      printInstruction("LABEL %s$else\n", iflabel);
 
       symbt_popFrame();
       mmng_safeFree(iflabel);
@@ -882,4 +882,5 @@ void rparser_processProgram()
   printf("JUMP %s\n", symbt_getActFuncLabel());
   SToken token = scan_GetNextToken();
   ck_NT_PROG(&token);
+  flushCode();
 }

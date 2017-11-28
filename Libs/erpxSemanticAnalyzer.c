@@ -102,7 +102,7 @@ void syntx_intToDoubleToken(SToken *token){
   if(token->symbol->type == symtConstant){ // converts only constant symbols
     token->symbol->data.doubleVal = syntx_intToDouble(token->symbol->data.intVal);
   }else if(token->symbol->type == symtVariable){ // converts variable
-    printf("INT2FLOAT %s %s\n", token->symbol->ident, token->symbol->ident);
+    printInstruction("INT2FLOAT %s %s\n", token->symbol->ident, token->symbol->ident);
   }
 
   token->symbol->dataType = dtFloat;
@@ -117,7 +117,7 @@ void syntx_doubleToIntToken(SToken *token){
   if(token->symbol->type == symtConstant){ // converts only constant symbols
     token->symbol->data.intVal = syntx_doubleToInt(token->symbol->data.doubleVal);
   }else if(token->symbol->type == symtVariable){ // converts variable
-    printf("FLOAT2R2EINT %s %s\n", token->symbol->ident, token->symbol->ident); // half to even
+    printInstruction("FLOAT2R2EINT %s %s\n", token->symbol->ident, token->symbol->ident); // half to even
   }
 
   token->symbol->dataType = dtInt;
@@ -404,16 +404,16 @@ void syntx_generateIdent(SToken *token){
 
   if(token->symbol->type == symtConstant){  // constant
     if(token->symbol->dataType == dtInt){
-      printf("int@%d", token->symbol->data.intVal);
+      printInstruction("int@%d", token->symbol->data.intVal);
     }else if(token->symbol->dataType == dtFloat){
-      printf("float@%g", token->symbol->data.doubleVal);
+      printInstruction("float@%g", token->symbol->data.doubleVal);
     }else if(token->symbol->dataType == dtString){
-      printf("string@%s", token->symbol->data.stringVal);
+      printInstruction("string@%s", token->symbol->data.stringVal);
     }else if(token->symbol->dataType == dtBool){
-      printf("bool@%s", token->symbol->data.boolVal ? "true" : "false");
+      printInstruction("bool@%s", token->symbol->data.boolVal ? "true" : "false");
     }
   }else if(token->symbol->type == symtVariable){  // variable
-    printf("%s", token->symbol->ident);
+    printInstruction("%s", token->symbol->ident);
   }
 }
 
@@ -422,15 +422,15 @@ void syntx_generateIdent(SToken *token){
  * op3 can be NULL for two-operands instructions
  */
 void syntx_generateInstruction(char *instrName, SToken *op1, SToken *op2, SToken *op3){
-      printf("%s ", instrName);
+      printInstruction("%s ", instrName);
       syntx_generateIdent(op1);
-      printf(" ");
+      printInstruction(" ");
       syntx_generateIdent(op2);
       if(op3 != NULL){ //if instruction has only two operands
-        printf(" ");
+        printInstruction(" ");
         syntx_generateIdent(op3);
       }
-      printf("\n");
+      printInstruction("\n");
 }
 
 /**
@@ -438,15 +438,15 @@ void syntx_generateInstruction(char *instrName, SToken *op1, SToken *op2, SToken
  * op3 can be NULL for two-operands instructions
  */
 void syntx_generateInstructionFstPosStr(char *instrName, char *op1, SToken *op2, SToken *op3){
-      printf("%s ", instrName);
-      printf("%s ", op1);
-      printf(" ");
+      printInstruction("%s ", instrName);
+      printInstruction("%s ", op1);
+      printInstruction(" ");
       syntx_generateIdent(op2);
       if(op3 != NULL){ //if instruction has only two operands
-        printf(" ");
+        printInstruction(" ");
         syntx_generateIdent(op3);
       }
-      printf("\n");
+      printInstruction("\n");
 }
 
 /**
@@ -454,15 +454,15 @@ void syntx_generateInstructionFstPosStr(char *instrName, char *op1, SToken *op2,
  * op3 can be NULL for two-operands instructions
  */
 void syntx_generateInstructionSecPosStr(char *instrName, SToken *op1, char *op2, SToken *op3){
-      printf("%s ", instrName);
+      printInstruction("%s ", instrName);
       syntx_generateIdent(op1);
-      printf(" ");
-      printf("%s ", op2);
+      printInstruction(" ");
+      printInstruction("%s ", op2);
       if(op3 != NULL){ //if instruction has only two operands
-        printf(" ");
+        printInstruction(" ");
         syntx_generateIdent(op3);
       }
-      printf("\n");
+      printInstruction("\n");
 }
 
 /**
@@ -610,7 +610,7 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
 
    // creates temporary frame
    if(argIndex == 0)
-       printf("CREATEFRAME\n");
+       printInstruction("CREATEFRAME\n");
 
    // check argument data type
    if(funcToken->symbol->data.funcData.arguments->get(args, argIndex)->dataType != argValue->symbol->dataType){
@@ -625,7 +625,7 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
    varName = strcat(varName, funcToken->symbol->data.funcData.arguments->get(args, argIndex)->ident);
 
    // defines variable TF@xxxxxn where xxxxxn represents variable name in argument, xxxxxn is same name as in input code
-   printf("DEFVAR %s\n", varName);
+   printInstruction("DEFVAR %s\n", varName);
    syntx_generateInstructionFstPosStr("MOVE", varName, argValue, NULL);
 
    mmng_safeFree(varName);
@@ -647,7 +647,7 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
      scan_raiseCodeError(typeCompatibilityErr, "Too few arguments passed to function.");
    }
 
-   printf("CALL %s\n", funcToken->symbol->data.funcData.label);
+   printInstruction("CALL %s\n", funcToken->symbol->data.funcData.label);
    syntx_generateInstructionSecPosStr("MOVE", result, "TF@%retval", NULL);
 
    // sets correct token data type corresponding to function return value
