@@ -12,6 +12,7 @@
 #include "MMng.h"
 #include "grammar.h"
 #include "appErr.h"
+#include "utils.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -175,6 +176,20 @@ void tknl_preDelete(TTkList list)
   LISTP("TTkList: called preDelete()", list);
 }
 
+void printEgr(EGrSymb symb)
+{
+  if(symb <= eol)
+    fprintf(stderr, "|%s|", grammarToString(symb));
+  else if(symb == NT_EXPR)
+    fprintf(stderr, "|NT_EXPR|");
+  else if(symb == NT_EXPR_TMP)
+    fprintf(stderr, "|NT_EXPR_TMP|");
+  else if(symb == precLes)
+    fprintf(stderr, "|<|");
+  else
+    fprintf(stderr, "%d", symb);
+}
+
 void TTkList_print(TTkList list)
 {
   TTkListItem *item = list->first;
@@ -188,24 +203,27 @@ void TTkList_print(TTkList list)
     {
       fprintf(stderr, ">>");
     }
-    fprintf(stderr, "|%d|", item->token.type);
+    printEgr(item->token.type);
     if (item == list->active)
     {
-      fprintf(stderr, "<<--");
+      fprintf(stderr, "<-");
     }
     else {
-      fprintf(stderr, "----");
+      fprintf(stderr, "--");
     }
     item = item->next;
   }
   if (list->last == item)
   {
     if (item != list->active) {
-      fprintf(stderr, "|%d|--last-\n", item->token.type);
+      printEgr(item->token.type);
+      fprintf(stderr, "--last-\n");
     }
     else
     {
-      fprintf(stderr, ">>|%d|<<-last-\n", item->token.type);
+      fprintf(stderr, ">");
+      printEgr(item->token.type);
+      fprintf(stderr, "<-last-\n");
     }
   }
   else {

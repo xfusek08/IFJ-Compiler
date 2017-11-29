@@ -93,8 +93,15 @@ struct pointerStack{
 */
 TTkList TTkList_create();
 
+/**
+ * Debug function for printing TTkList.
+ */
 void TTkList_print(TTkList);
 
+/**
+ * Debug function for printing EGrSymb enum.
+ */
+void printEgr(EGrSymb symb);
 /**
 * Initialize empty pointer stack and returns its pointer.
 */

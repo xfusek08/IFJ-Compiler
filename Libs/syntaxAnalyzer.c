@@ -23,10 +23,12 @@
 #ifdef PRECDEBUG
 #define DPRINT(x) fprintf(stderr, x); fprintf(stderr, "\n")
 #define DDPRINT(x, y) fprintf(stderr, x, y); fprintf(stderr, "\n")
+#define DSPRINT(x, y) fprintf(stderr, x); printEgr(y); fprintf(stderr, "\n")
 #define LISTPRINT(x) TTkList_print(x)
 #else
 #define DPRINT(x) ((void)0)
 #define DDPRINT(x,y) ((void)0)
+#define DSPRINT(x, y) ((void)0)
 #define LISTPRINT(x) ((void)0)
 #endif
 //======================================================================================
@@ -165,8 +167,6 @@ int syntx_useRule(TTkList list)
       {
         SToken t = syntx_doArithmeticOp(arg1, arg2, arg3);
         list->postInsert(list, &t);
-        DDPRINT("%d", t.type);
-        DDPRINT("%d", t.symbol->dataType);
       }
       list->next(list);
       list->preDelete(list);
@@ -372,6 +372,7 @@ void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
 */
 TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
 {
+  DPRINT("\n\n+++++++++++++");
   DPRINT("entering expr");
   if (tlist == NULL)
     apperr_runtimeError("syntx_processExpression(): Modul not initialized. Call syntx_init() first!");
@@ -382,8 +383,8 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
   while (1)
   {
     //debug print
-    DDPRINT("Analyzing token: %d", actToken->type);
-    DDPRINT("First terminal on stack: %d", terminal);
+    DSPRINT("Analyzing token: ", actToken->type);
+    DSPRINT("First terminal on stack: ", terminal);
 
     if (actToken->symbol != NULL)
     {
@@ -451,8 +452,6 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     retT.symbol = symbol;
     SToken asgnT;
     asgnT.type = asgn;
-    DDPRINT("retT je %d", retT.symbol->dataType);
-    DDPRINT("result je %d", resultToken.symbol->dataType);
     syntx_checkDataTypes(&retT, &asgnT, &resultToken);
     syntx_generateCodeForAsgnOps(&retT, &asgnT, &resultToken, NULL);
     //syntx_generateCode(&retT, &asgnT, &resultToken, NULL);
