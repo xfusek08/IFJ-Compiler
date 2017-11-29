@@ -210,6 +210,14 @@ void processFunction(SToken *actToken)
   printf("LABEL %s\n", actSymbol->data.funcData.label);
   printf("PUSHFRAME\n");
   printf("DEFVAR LF@%%retval\n");
+  switch(actSymbol->data.funcData.returnType)
+  {
+    case dtInt: printf("MOVE LF@%%retval int@0\n"); break;
+    case dtFloat: printf("MOVE LF@%%retval float@0\n"); break;
+    case dtString: printf("MOVE LF@%%retval string@\n"); break;
+    case dtBool: printf("MOVE LF@%%retval bool@false\n"); break;
+    default: break;
+  }
   NEXT_TOKEN(actToken);
   ck_NT_STAT_LIST(actToken);
   CHECK_TOKEN(actToken, kwEnd); // statement list must ends on end key word
