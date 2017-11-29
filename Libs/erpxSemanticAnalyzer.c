@@ -136,7 +136,7 @@ void syntx_doubleToIntToken(SToken *token){
  * Checks data types of two operands
  * Returns 1 if everything is OK, otherwise 0
  */
-int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *rightOperand){
+int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *operator, SToken *rightOperand){
   //TODO: optimalization
   // enabled data types pairs
   if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){  // int - int
@@ -146,7 +146,10 @@ int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *rightOperand){
   }else if(leftOperand->symbol->dataType == dtString && rightOperand->symbol->dataType == dtString){  // string - string
     return 1;
   }else if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){  // bool - bool
-    return 1;
+    if(operator->type == opEq || operator->type == opNotEq){  //operator must be =, <>
+      return 1;
+    }
+    return 0;
   }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> double - double
 
     syntx_intToDoubleToken(rightOperand);
@@ -252,7 +255,7 @@ void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOp
      operator->type == opNotEq
      ){
       //checks compalibility of data types
-      if(syntx_checkDataTypesOfBasicOp(leftOperand, rightOperand) == 0){
+      if(syntx_checkDataTypesOfBasicOp(leftOperand, operator, rightOperand) == 0){
         scan_raiseCodeError(typeCompatibilityErr, "Error during arithmetic or relational operation.");  // prints error
       }
   }else if(operator->type == opDiv){  // if operator type is '\'
