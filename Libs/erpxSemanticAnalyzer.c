@@ -20,7 +20,7 @@
 #include "syntaxAnalyzer.h"
 #include "utils.h"
 
-TSymbol convertedSymbol;
+TSymbol convertedSymbol;  // variable for passing the symbol with the converted value between the functions
 
 /**
 * Returns 0 if symbols are out of range or relation between symbols is not defined, otherwise 1
