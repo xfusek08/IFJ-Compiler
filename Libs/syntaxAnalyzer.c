@@ -33,8 +33,8 @@
 #endif
 //======================================================================================
 
-TTkList tlist; //list used as stack in syntx_processExpression
-TPStack identStack; //list of free unused identificators
+TTkList tlist; //list used as stack in precedent analyze
+TPStack identStack; //list of free unused auxiliary variables
 unsigned nextTokenIdent;
 
 /**
@@ -42,7 +42,7 @@ unsigned nextTokenIdent;
 */
 int isTerminal(EGrSymb symb)
 {
-  return symb < 1000 ? 1 : 0;
+  return symb < 1000;
 }
 
 int isBoolResult(SToken *arg2)
@@ -51,7 +51,6 @@ int isBoolResult(SToken *arg2)
     return 1;
   return 0;
 }
-
 
 /**
 * returns closest terminal to top of the stack (its acually list).
@@ -73,7 +72,7 @@ SToken nextToken()
 {
   SToken token = scan_GetNextToken();
   if (token.type == eof)
-    scan_raiseCodeError(syntaxErr, "File unexpectedly ended.");
+    scan_raiseCodeError(syntaxErr, "File unexpectedly ended.", NULL);
   DDPRINT("new token: %d", token.type);
   return token;
 }
@@ -107,12 +106,12 @@ SToken sytx_getFreeVar()
     identStack->pop(identStack);
     return token;
   }
-  if (nextTokenIdent == 1000) //TODO:
+  if (nextTokenIdent == 1000) //is that enough?
   {
     apperr_runtimeError("syntx_getFreeVar(): Limit of auxiliary variables reached! Too complicated expression.");
   }
   //generate next ident
-  char *ident = mmng_safeMalloc(sizeof(char) * 9); // LF@%T[1-9][0-9]{0,2}EOL = 9
+  char *ident = mmng_safeMalloc(sizeof(char) * 9); // TF@%T[1-9][0-9]{0,2}EOL = 9
   sprintf(ident, "TF@%%T%d", nextTokenIdent);
   nextTokenIdent++;
   //if not defined, define ident
@@ -367,6 +366,7 @@ void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
     apperr_runtimeError("SyntaxAnalyzer.c: internal error!");
   }
 }
+
 /**
 * Precedent statement analyze
 */
@@ -377,7 +377,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
   if (tlist == NULL)
     apperr_runtimeError("syntx_processExpression(): Modul not initialized. Call syntx_init() first!");
   if (!isExpressionType(actToken->type))
-    scan_raiseCodeError(syntaxErr, "Symbol is not an expression.");
+    scan_raiseCodeError(syntaxErr, "Symbol is not an expression.", actToken);
   nextTokenIdent = 0; //reset identificator generator
   EGrSymb terminal = syntx_getFirstTerminal(tlist);
   while (1)
@@ -396,7 +396,6 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
         actToken->type = ident;
         terminal = syntx_getFirstTerminal(tlist);
       }
-      //symtVariable symtConstant //ok
       if(actToken->symbol->type == symtUnknown)
         scan_raiseCodeError(semanticErr, "Undefined symbol.", actToken);
     }
@@ -411,7 +410,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
       break;
   }
 
-  while (syntx_useRule(tlist)); //parse everything on stack
+  while (syntx_useRule(tlist)); //parse everything already on stack
 
   DPRINT("End of expression.");
 
@@ -430,16 +429,6 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
   {
     //return temporary variable with result
     TSymbol symb = resultToken.symbol;
-    //In case of constant
-    //SToken TempT;
-    //if (symb->type == symtConstant)
-    //{
-      //SToken asgnT;
-      //asgnT.type = opEq;
-      //TempT = sytx_getFreeVar();
-      //syntx_generateCodeForAsgnOps(&TempT, &asgnT, &resultToken, NULL);
-      //symb = TempT.symbol;
-    //}
     //delete last token and return
     tlist->deleteLast(tlist);
     DDPRINT("Result in %s\n", symb->ident);
@@ -454,7 +443,6 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     asgnT.type = asgn;
     syntx_checkDataTypes(&retT, &asgnT, &resultToken);
     syntx_generateCodeForAsgnOps(&retT, &asgnT, &resultToken, NULL);
-    //syntx_generateCode(&retT, &asgnT, &resultToken, NULL);
     tlist->deleteLast(tlist);
     DDPRINT("Result in %s\n", symbol->ident);
     return symbol;
