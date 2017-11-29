@@ -624,29 +624,21 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
   * argValue represents constant or variable transmitted to the function
   */
  void syntx_generateCodeForVarDef(SToken *funcToken, int argIndex, SToken *argValue){
-   TArgList args = funcToken->symbol->data.funcData.arguments;
-
-   // creates temporary frame
-   if(argIndex == 0)
-       printInstruction("CREATEFRAME\n");
-
+  fprintf(stderr, "entering gencodeforvardef\n");
+  TArgList args = funcToken->symbol->data.funcData.arguments;
+   
+   if(args->count < argIndex){  // too many arguments
+     scan_raiseCodeError(typeCompatibilityErr, "Too many arguments passed to function.");
+   }
    // check argument data type
-   if(funcToken->symbol->data.funcData.arguments->get(args, argIndex)->dataType != argValue->symbol->dataType){
+   if(args->get(args, argIndex)->dataType != argValue->symbol->dataType){
      scan_raiseCodeError(typeCompatibilityErr, "Argument passed to function has wrong data type.");  // prints error
    }
-
-   // alocates memory for name of variable TF@ + name + \n
-   char *varName = mmng_safeMalloc(sizeof(3 + strlen(funcToken->symbol->data.funcData.arguments->get(args, argIndex)->ident)) + 1);
-
-   // set variable name
-   varName = strcpy(varName, "TF@");
-   varName = strcat(varName, funcToken->symbol->data.funcData.arguments->get(args, argIndex)->ident);
-
-   // defines variable TF@xxxxxn where xxxxxn represents variable name in argument, xxxxxn is same name as in input code
-   printInstruction("DEFVAR %s\n", varName);
-   syntx_generateInstructionFstPosStr("MOVE", varName, argValue, NULL);
-
-   mmng_safeFree(varName);
+   
+   printInstruction("PUSHS ");
+   syntx_generateIdent(argValue);
+   printInstruction("\n");
+   fprintf(stderr, "leaving vardef\n");
  }
 
  /**
@@ -657,19 +649,31 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
   * result updates result variable data type
   */
  void syntx_generateCodeForCallFunc(SToken *funcToken, int argIndex, SToken *result){
-
+  fprintf(stderr, "entering codeforcallfunc\n"); 
+  TArgList args = funcToken->symbol->data.funcData.arguments;
    // checks arguments count
-   if(funcToken->symbol->data.funcData.arguments->count < argIndex){  // too many arguments
-     scan_raiseCodeError(typeCompatibilityErr, "Too many arguments passed to function.");
-   }else if(funcToken->symbol->data.funcData.arguments->count > argIndex){  // too few arguments
+  if(args->count > argIndex){  // too few arguments
      scan_raiseCodeError(typeCompatibilityErr, "Too few arguments passed to function.");
-   }
+  }
 
-   printInstruction("CALL %s\n", funcToken->symbol->data.funcData.label);
-   syntx_generateInstructionSecPosStr("MOVE", result, "TF@%retval", NULL);
+  printInstruction("PUSHFRAME\n");
+  printInstruction("CREATEFRAME\n");
 
-   // sets correct token data type corresponding to function return value
-   result->symbol->dataType = funcToken->symbol->data.funcData.returnType;
+  for(int i = argIndex-1; i >= 0; i--)
+  {
+    char *argIdent = util_StrConcatenate("TF@", args->get(args, i)->ident);
+    printInstruction("DEFVAR %s\n", argIdent);
+    printInstruction("POPS %s\n", argIdent);
+    mmng_safeFree(argIdent);
+  }
+
+  printInstruction("CALL %s\n", funcToken->symbol->data.funcData.label);
+  printInstruction("PUSHS TF@%retval\n");
+  printInstruction("POPFRAME\n");
+  printInstruction("POPS %s\n", result->symbol->ident);
+  // sets correct token data type corresponding to function return value
+  result->symbol->dataType = funcToken->symbol->data.funcData.returnType;
+  fprintf(stderr, "leaving callfunc\n");
  }
 
 

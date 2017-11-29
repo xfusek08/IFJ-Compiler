@@ -252,7 +252,7 @@ int syntx_useRule(TTkList list)
 
 int isExpressionType(EGrSymb type)
 {
-  return type <= eol ? 1 : 0;
+  return type <= eol && type != opComma;
 }
 
 int isExprEnded(TTkList list, SToken *actToken, EGrSymb terminal)
@@ -273,7 +273,7 @@ int isExprEnded(TTkList list, SToken *actToken, EGrSymb terminal)
   return 0;
 }
 
-void syntx_parseFunction(TTkList list, SToken *actToken)
+SToken syntx_parseFunction(SToken *actToken)
 {
   SToken funcToken = *actToken;
   *actToken = nextToken();
@@ -299,7 +299,7 @@ void syntx_parseFunction(TTkList list, SToken *actToken)
   SToken returnVal;
   returnVal = sytx_getFreeVar();
   syntx_generateCodeForCallFunc(&funcToken, argNum, &returnVal);
-  list->insertLast(list, &returnVal); //insert expr to list?
+  return returnVal;
 }
 
 
@@ -341,7 +341,6 @@ void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
     scan_raiseCodeError(syntaxErr, "Incorrect expression. Undefined precedence.");
   }
   DDPRINT("Table: %d", tablesymb);
-
 
   switch (tablesymb)
   {
@@ -390,11 +389,11 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     {
       if(actToken->symbol->type == symtFuction)
       {
-        syntx_parseFunction(tlist, actToken);
-        *actToken = nextToken(); //parseFunction ends on ')'
+        //Function call is replaced with aux variable with result.
+        //ParseFunction ends on ')', no token will be skiped.
+        *actToken = syntx_parseFunction(actToken);
+        actToken->type = ident;
         terminal = syntx_getFirstTerminal(tlist);
-        if (isExprEnded(tlist, actToken, terminal)) //check for end of expr
-          break;
       }
       //symtVariable symtConstant //ok
       if(actToken->symbol->type == symtUnknown)
@@ -409,7 +408,6 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
     DPRINT("-------konec-iterace------------\n");
     if (isExprEnded(tlist, actToken, terminal))
       break;
-    //getchar(); //debug
   }
 
   while (syntx_useRule(tlist)); //parse everything on stack
