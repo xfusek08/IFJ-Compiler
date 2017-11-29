@@ -13,9 +13,7 @@
  */
 /******************************************************************************/
 
-#include "utils.h"
 #include "grammar.h"
-#include "appErr.h"
 #include "symtable.h"
 
 #ifndef _scanner
@@ -49,14 +47,6 @@ void scan_init();
  * //TODO
  */
 SToken scan_GetNextToken();
-
-/**
- * Write error on output
- *
- * Write number of column and row, where the error has occurred.
- * Use appErr to printf errors on stderr.
- */
-void scan_raiseCodeError(ErrType typchyby, char *message);
 
 /**
  * Free LAnalyzer

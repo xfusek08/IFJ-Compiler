@@ -21,31 +21,32 @@ void apperr_runtimeError(char *errMsg)
   exit(internalErr);
 }
 
-void apperr_codeError(ErrType type, int row, int col, char *line, char *message)
+void apperr_codeError(ErrType type, int row, int col, char *line, char *message, SToken *token)
 {
 
   switch (type)
   {
     case lexicalErr:
-      fprintf(stderr, "\033[31;1mError %d:\033[0m Lexical error ", type);
+      fprintf( stderr, "\033[31;1mError %d:\033[0m Error in lexical analyzer on position: ", type);
       break;
     case syntaxErr:
-      fprintf(stderr, "\033[31;1mError %d:\033[0m Syntax error ", type);
+      fprintf( stderr, "\033[31;1mError %d:\033[0m Syntax error: ", type);
       break;
     case semanticErr:
-      fprintf(stderr, "\033[31;1mError %d:\033[0m Semantic error ", type);
+      fprintf( stderr, "\033[31;1mError %d:\033[0m Sematic error caused by wrong identifing: ", type);
       break;
     case typeCompatibilityErr:
-      fprintf(stderr, "\033[31;1mError %d:\033[0m Error of type compatibility ", type);
+      fprintf( stderr, "\033[31;1mError %d:\033[0m Sematic error caused by type compatibility: ", type);
       break;
     case anotherSemanticErr:
-      fprintf(stderr, "\033[31;1mError %d:\033[0m Another semantic error ", type);
+      fprintf( stderr, "\033[31;1mError %d:\033[0m Error in semantic analyzer: ", type);
       break;
     default:
       return;
   }
-
-  fprintf( stderr, "\033[33m[%d:%d]\033[0m:\n", row, col);
+  if(token != NULL)
+    printf("Caused by token: %s ", grammarToString(token->type));
+  fprintf( stderr, "On position: \033[33m[%d:%d]\033[0m:\n", row, col);
   if (message != NULL)
     fprintf(stderr, "%s\n", message);
 

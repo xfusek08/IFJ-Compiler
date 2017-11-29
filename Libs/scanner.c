@@ -17,6 +17,7 @@
 #include "scanner.h"
 #include "symtable.h"
 #include "MMng.h"
+#include "appErr.h"
 
 #define KWORDNUMBER 33
 #define DTYPENUMBER 4
@@ -27,6 +28,7 @@ struct LAnalyzer {
   SToken lastToken;
   int alocStr;
   int curentLine;
+  int prevPosition;
   int position;
   int lineSize; //in CHUNKS
   char *line;
@@ -42,6 +44,7 @@ TLAnalyzer TLAnalyzer_create()
 
   newScanner->alocStr = 1;
   newScanner->curentLine = 0;
+  newScanner->prevPosition = 0;
   newScanner->position = 0;
   newScanner->lineSize = 1;
   newScanner->line = mmng_safeMalloc(sizeof(char) * CHUNK * newScanner->lineSize);
@@ -60,14 +63,15 @@ void scan_init()
 }
 
 //Error function
-void scan_raiseCodeError(ErrType typchyby, char *message)
+void scan_raiseCodeError(ErrType typchyby, char *message, SToken *token)
 {
   apperr_codeError(
     typchyby,
     GLBScanner->curentLine,
-    GLBScanner->position,
+    GLBScanner->prevPosition,
     GLBScanner->line,
-    message);
+    message,
+    token);
 }
 
 
@@ -175,7 +179,8 @@ bool isEndChar(char endChar)
   || endChar == '/' || endChar == '\\'
   || endChar == '=' || endChar == EOF
   || endChar == 33 || endChar == '('
-  || endChar == ')' || endChar == ';';
+  || endChar == ')' || endChar == ','
+  || endChar == ';';
 }
 
 
@@ -201,6 +206,7 @@ SToken scan_GetNextToken()
   while(!allowed)
   {
     //Finding type of token
+    GLBScanner->prevPosition = GLBScanner->position;
     switch(tokenID[position++] = tolower(GLBScanner->line[GLBScanner->position++]))
     {
       case '=':
@@ -355,7 +361,7 @@ SToken scan_GetNextToken()
                   }
                 }
                 else
-                  scan_raiseCodeError(lexicalErr, "Wrong character inside string constant.");
+                  scan_raiseCodeError(lexicalErr, "Wrong character inside string constant.", NULL);
                 break;
               case 2:
                 if(isdigit(tokenID[position - 1]))
@@ -397,19 +403,19 @@ SToken scan_GetNextToken()
                   state = 1;
                 }
                 else
-                  scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\n.");
+                  scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\n.", NULL);
                 break;
               case 3:
                 if(isdigit(tokenID[position - 1]))
                   state = 4;
                 else
-                  scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\xxx, where x is number.");
+                  scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\xxx, where x is number.", NULL);
                 break;
               case 4:
                 if(isdigit(tokenID[position - 1]))
                   state = 1;
                 else
-                  scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\xxx, where x is number.");
+                  scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\xxx, where x is number.", NULL);
                 break;
             }
           }
@@ -423,7 +429,7 @@ SToken scan_GetNextToken()
           stringVal = util_StrHardCopy(tokenID);
         }
         else
-          scan_raiseCodeError(lexicalErr, "Wrong character after !, maybe you want to write !\"\".");
+          scan_raiseCodeError(lexicalErr, "Wrong character after !, maybe you want to write !\"\".", NULL);
         break;
       //End of line
       case '\n':
@@ -482,7 +488,7 @@ SToken scan_GetNextToken()
                 tokenType = dataType;
             }
             else
-              scan_raiseCodeError(lexicalErr, "Wrong character inside identifier.");
+              scan_raiseCodeError(lexicalErr, "Wrong character inside identifier.", NULL);
             allowed = true;
           }
         }
@@ -513,7 +519,7 @@ SToken scan_GetNextToken()
                   dType = dtInt;
                 }
                 else
-                  scan_raiseCodeError(lexicalErr, "Wrong character inside int constant.");
+                  scan_raiseCodeError(lexicalErr, "Wrong character inside int constant.", NULL);
                 break;
               case 1:
                 if(GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58)
@@ -527,14 +533,14 @@ SToken scan_GetNextToken()
                   dType = dtFloat;
                 }
                 else
-                  scan_raiseCodeError(lexicalErr, "Wrong character inside double constant.");
+                  scan_raiseCodeError(lexicalErr, "Wrong character inside double constant.", NULL);
                 break;
               case 2:
                 if((GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58)
                 || GLBScanner->line[GLBScanner->position - 1] == '+' || GLBScanner->line[GLBScanner->position - 1] == '-')
                   state = 1;
                 else
-                  scan_raiseCodeError(lexicalErr, "Wrong character after e, alowed are +,-,[0-9].");
+                  scan_raiseCodeError(lexicalErr, "Wrong character after e, alowed are +,-,[0-9].", NULL);
                 break;
             }
             allowed = true;
@@ -548,7 +554,7 @@ SToken scan_GetNextToken()
         }
         //Error
         else
-          scan_raiseCodeError(lexicalErr, "Unknown character in this context.");
+          scan_raiseCodeError(lexicalErr, "Unknown character in this context.", NULL);
     }
   }
   //Filing returning token with values

@@ -11,6 +11,8 @@
  */
 /******************************************************************************/
 
+#include "scanner.h"
+
 #ifndef appErr
 #define appErr
 
@@ -44,7 +46,17 @@ void apperr_runtimeError(char *errMsg);
  * \param row row where the error occurred
  * \param col column where the error occurred
  * \param line wrong section of code
+ * \param message print given message to output
+ * \param token define token that caused error
  */
-void apperr_codeError(ErrType type, int row, int col, char *line, char *message);
+void apperr_codeError(ErrType type, int row, int col, char *line, char *message, SToken *token);
+
+/**
+ * Write error on output
+ *
+ * Write number of column and row, where the error has occurred.
+ * Use appErr to printf errors on stderr.
+ */
+void scan_raiseCodeError(ErrType typchyby, char *message, SToken *token);
 
 #endif // _appErr
