@@ -28,7 +28,7 @@ void printInstruction(const char *arg, ...)
     Iarr = mmng_safeMalloc(sizeof(char) * UTILS_ARR_CHUNK);
     arrSize = UTILS_ARR_CHUNK;
   }
-  
+
   int counter = 0;
   for (unsigned i = 0; i < strlen(arg); i++)
   {

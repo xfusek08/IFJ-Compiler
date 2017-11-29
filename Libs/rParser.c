@@ -119,7 +119,7 @@ void balanceNumTypes(TSymbol symb1, TSymbol symb2)
     if (symb1->type == symtConstant) // is constant
       symb1->data.doubleVal = syntx_intToDouble(symb1->data.intVal);
     else // is variable
-      printInstruction("INT2FLOAT %s %s", symb1->ident, symb1->ident);
+      printInstruction("INT2FLOAT %s %s\n", symb1->ident, symb1->ident);
   }
   else if (symb1->dataType == dtFloat && symb2->dataType == dtInt)
   {
@@ -513,6 +513,7 @@ void ck_NT_STAT(SToken *actToken)
       actSymbol = actToken->symbol;
       if (actSymbol->type != symtVariable)
         scan_raiseCodeError(semanticErr, "Symbol is not defined variable.");
+      printInstruction("WRITE string@?\\032\n");
       printInstruction("READ %s %s\n", actSymbol->ident, util_dataTypeToString(actSymbol->dataType));
       NEXT_TOKEN(actToken);
       break;

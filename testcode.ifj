@@ -4,16 +4,25 @@ function add(n as integer , p as integer) as integer
 end function
 
 Scope 'Hlavni telo programu
-  'add(1 , 2)
-  Dim a as integer
-  input a
-  print a;
-  for i as integer = 0 to 10
-	dim j as boolean = false
-	for j as integer = 0 to 10
-      print !"("; i; !","; j; !") ";
-    next
-    print !"\n";
-	print j; !"\n";
+  dim i as integer = 0
+  dim a as double = 0
+  for i = 0 to 20
+    a += i
   next
+  print a; !"\n";
+
+  /'
+  print !"Piste string: \n";
+  dim text as string = !""
+  do while true
+    dim a as string = !""
+    input a
+    if a = !":q" then
+      exit
+    end if
+    text = text + a
+    text = text + !"\n"
+  loop
+  print !"Napsal jste: \n"; text; !"\n";
+  '/
 End Scope

@@ -106,7 +106,7 @@ void syntx_intToDoubleToken(SToken *token){
   }else if(token->symbol->type == symtVariable){ // converts variable
     SToken temp = sytx_getFreeVar();
     convertedSymbol = temp.symbol;
-    printf("INT2FLOAT %s %s\n", convertedSymbol->ident, token->symbol->ident);
+    printInstruction("INT2FLOAT %s %s\n", convertedSymbol->ident, token->symbol->ident);
     token->symbol = convertedSymbol; // symbol of passed operand (right or left) will overwritten by converter value - pointer to symbol in list (stack) will by changed
   }
 
@@ -124,7 +124,7 @@ void syntx_doubleToIntToken(SToken *token){
   }else if(token->symbol->type == symtVariable){ // converts variable
     SToken temp = sytx_getFreeVar();
     convertedSymbol = temp.symbol;
-    printf("FLOAT2R2EINT %s %s\n", convertedSymbol->ident, token->symbol->ident); // half to even
+    printInstruction("FLOAT2R2EINT %s %s\n", convertedSymbol->ident, token->symbol->ident); // half to even
     token->symbol = convertedSymbol; // symbol of passed operand (right or left) will overwritten by converter value - pointer to symbol in list (stack) will by changed
   }
 
@@ -409,7 +409,6 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
  * Generates int@constant, float@constant, bool@constant, string@constant or variable
  */
 void syntx_generateIdent(SToken *token){
-
   if(token->symbol->type == symtConstant){  // constant
     if(token->symbol->dataType == dtInt){
       printInstruction("int@%d", token->symbol->data.intVal);
@@ -431,7 +430,11 @@ void syntx_generateIdent(SToken *token){
  */
 void syntx_generateInstruction(char *instrName, SToken *op1, SToken *op2, SToken *op3){
       printInstruction("%s ", instrName);
-      syntx_generateIdent(op1);
+      if (op1 != NULL)
+        syntx_generateIdent(op1);
+      else
+        syntx_generateIdent(op2);
+
       printInstruction(" ");
       syntx_generateIdent(op2);
       if(op3 != NULL){ //if instruction has only two operands
@@ -480,7 +483,7 @@ void syntx_generateCodeForBasicOps(SToken *leftOperand, SToken *operator, SToken
 
   switch(operator->type){
     case opPlus:
-      if(leftOperand->symbol->dataType != dtString && leftOperand->symbol->dataType != dtString){ // if doesn't concatenates two strings
+      if(leftOperand->symbol->dataType != dtString && rightOperand->symbol->dataType != dtString){ // if doesn't concatenates two strings
         syntx_generateInstruction("ADD", partialResult, leftOperand, rightOperand);
       }else{
         syntx_generateInstruction("CONCAT", partialResult, leftOperand, rightOperand);  // string + string
@@ -542,7 +545,7 @@ void syntx_generateCodeForAsgnOps(SToken *leftOperand, SToken *operator, SToken 
       syntx_generateInstruction("MOVE", leftOperand, rightOperand, NULL);
       break;
     case opPlusEq:
-      if(leftOperand->symbol->dataType != dtString && leftOperand->symbol->dataType != dtString){ // if doesn't concatenates two strings
+      if(leftOperand->symbol->dataType != dtString && rightOperand->symbol->dataType != dtString){ // if doesn't concatenates two strings
         syntx_generateInstruction("ADD", partialResult, leftOperand, rightOperand);
       }else{
         syntx_generateInstruction("CONCAT", partialResult, leftOperand, rightOperand);  // string + string

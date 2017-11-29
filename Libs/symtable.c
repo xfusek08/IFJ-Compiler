@@ -635,7 +635,7 @@ void symbt_pushFrame(char *label, bool transparent, bool isLopp)
 {
   symbt_assertIfNotInit();
   GLBSymbTabStack->push(GLBSymbTabStack, TSymTable_create(label, transparent, isLopp));
-  if (GLBSymbTabStack->count > 1)
+  if (GLBSymbTabStack->count > 1 && (isLopp || !transparent))
     printInstruction("CREATEFRAME\n");
 }
 
@@ -655,6 +655,7 @@ void symbt_popFrame()
     }
     if (!table->isTransparent)
       flushCode();
+    printInstruction("CREATEFRAME\n");
     TSymTable_destroy(table);
     GLBSymbTabStack->pop(GLBSymbTabStack);
   }
