@@ -304,6 +304,47 @@ int syntx_checkDataTypeOfBool(SToken *boolOperand){
 }
 
 /**
+ * Optimalization function - do operation with constant booleans (=, <>, AND, OR, NOT)
+ * Always returns filled token, token.type = NT_EXPR, token.symbol->type
+ * if everythng is OK, is setted token.symbol->dataType, token.symbol->data
+ * else token.symbol->dataType = dtUnspecified and wrong token.symbol->data
+ * 
+ * rightOperand can be NULL in case NOT operator - do NOT leftOperand
+ */
+SToken syntx_doBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand){
+  SToken token;
+  token.type = NT_EXPR;
+  token.symbol = mmng_safeMalloc(sizeof(struct Symbol));
+  token.symbol->type = symtConstant;
+  token.symbol->dataType = dtUnspecified;
+
+  if(leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant){  // if operation is possible to do
+    if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
+      if(oper->type == opEq){
+        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal == rightOperand->symbol->data.boolVal; // bool = bool
+        token.symbol->dataType = dtBool;
+      }else if(oper->type == opNotEq){
+        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal != rightOperand->symbol->data.boolVal; // bool <> bool
+        token.symbol->dataType = dtBool;
+      }else if(oper->type == opBoolAnd){
+        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal && rightOperand->symbol->data.boolVal; // bool AND bool
+        token.symbol->dataType = dtBool;
+      }else if(oper->type == opBoolOr){
+        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal || rightOperand->symbol->data.boolVal; // bool OR bool
+        token.symbol->dataType = dtBool;
+      }
+    }
+  }else if(leftOperand->symbol->type == symtConstant && rightOperand == NULL){  // NOT bool
+      if(oper->type == opBoolNot){
+        token.symbol->data.boolVal = !leftOperand->symbol->data.boolVal;
+        token.symbol->dataType = dtBool;
+      }
+  }
+
+  return token;
+}
+
+/**
  * Optimalization function - do operation with constants (+, -, *, /, \, + for concat strings)
  * Always returns filled token, token.type = NT_EXPR, token.symbol->type
  * if everythng is OK, is setted token.symbol->dataType, token.symbol->data
@@ -318,7 +359,7 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
   token.symbol->dataType = dtUnspecified;
 
 
-  if(leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant){  // if is possible do operation
+  if(leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant){  // if operation is possible to do
 
     // by dataType choose right type from union, do implicit conversion and do operation
     if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){
@@ -448,7 +489,7 @@ void syntx_generateInstruction(char *instrName, SToken *op1, SToken *op2, SToken
 }
 
 /**
- * Generates instructions where fisrt argument in instruction is not Token but pointer to char
+ * Generates instructions where first argument in instruction is not Token but pointer to char
  * op3 can be NULL for two-operands instructions
  */
 void syntx_generateInstructionFstPosStr(char *instrName, char *op1, SToken *op2, SToken *op3){

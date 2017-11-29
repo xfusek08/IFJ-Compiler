@@ -22,6 +22,8 @@ double syntx_intToDouble(int inputNum);
 
 int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn);
 
+SToken syntx_doBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand);
+
 SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOperand);
 
 void syntx_generateCodeForVarDef(SToken *funcToken, int argIndex, SToken *argValue);
