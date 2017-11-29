@@ -672,7 +672,11 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
      scan_raiseCodeError(typeCompatibilityErr, "Too many arguments passed to function.");
    }
    // check argument data type
-   if(args->get(args, argIndex)->dataType != argValue->symbol->dataType){
+   if(args->get(args, argIndex)->dataType == dtFloat && argValue->symbol->dataType == dtInt){ // double - int -> double - double
+     syntx_intToDoubleToken(argValue);
+   }else if(args->get(args, argIndex)->dataType == dtInt && argValue->symbol->dataType == dtFloat){ // int - double -> int - int
+     syntx_doubleToIntToken(argValue);
+   }else if(args->get(args, argIndex)->dataType != argValue->symbol->dataType){
      scan_raiseCodeError(typeCompatibilityErr, "Argument passed to function has wrong data type.");  // prints error
    }
 
