@@ -278,7 +278,7 @@ SToken syntx_parseFunction(SToken *actToken)
   SToken funcToken = *actToken;
   *actToken = nextToken();
   if (actToken->type != opLeftBrc)
-    scan_raiseCodeError(syntaxErr, "Missing '(' after function identifier.");
+    scan_raiseCodeError(syntaxErr, "Missing '(' after function identifier.", actToken);
   int argNum = 0;
   while (actToken->type != opRightBrc)
   {
@@ -289,9 +289,9 @@ SToken syntx_parseFunction(SToken *actToken)
     if (actToken->type != opComma && actToken->type != opRightBrc)
     {
       if (actToken->type != opComma)
-        scan_raiseCodeError(syntaxErr, "Incorect parameter of function call.");
+        scan_raiseCodeError(syntaxErr, "Incorect parameter of function call.", actToken);
       if (actToken->type != opRightBrc)
-        scan_raiseCodeError(syntaxErr, "Function call isn't end with ')'.");
+        scan_raiseCodeError(syntaxErr, "Function call isn't end with ')'.", actToken);
     }
     syntx_generateCodeForVarDef(&funcToken, argNum, &argToken);
     argNum++;
@@ -338,7 +338,7 @@ void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
   if (!syntx_getPrecedence(terminal, actToken->type, &tablesymb))
   {
     DPRINT("Table: undefined precedence!");
-    scan_raiseCodeError(syntaxErr, "Incorrect expression. Undefined precedence.");
+    scan_raiseCodeError(syntaxErr, "Incorrect expression. Undefined precedence.", actToken);
   }
   DDPRINT("Table: %d", tablesymb);
 
@@ -360,7 +360,7 @@ void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
   case precGrt:
     if (!syntx_useRule(tlist))
     {
-      scan_raiseCodeError(syntaxErr, "Incorrect expression.");
+      scan_raiseCodeError(syntaxErr, "Incorrect expression.", NULL);
     }
     break;
   default:
@@ -398,7 +398,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
       }
       //symtVariable symtConstant //ok
       if(actToken->symbol->type == symtUnknown)
-        scan_raiseCodeError(semanticErr, "Undefined symbol.");
+        scan_raiseCodeError(semanticErr, "Undefined symbol.", actToken);
     }
 
     syntx_tableLogic(tlist, terminal, actToken);
@@ -418,7 +418,7 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
   //test correct ending
   if(!(tlist->first != NULL && tlist->first->next != NULL && tlist->first->next->next == NULL))
   {
-    scan_raiseCodeError(syntaxErr, "Incomplete expression.");
+    scan_raiseCodeError(syntaxErr, "Incomplete expression.", NULL);
   }
 
   //free ident stack
