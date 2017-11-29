@@ -302,7 +302,8 @@ void ck_NT_DD(SToken *actToken)
       else // attempt of redeclaration
         scan_raiseCodeError(semanticErr, "Redeclaration of function is not allowed.");
 
-      actSymbol->data.funcData.label = util_StrHardCopy(actSymbol->ident); // TODO: prefix ?
+      actSymbol->type = symtFuction;
+      actSymbol->data.funcData.label = util_StrConcatenate("$", actSymbol->ident);
       actSymbol->data.funcData.isDefined = false;
 
       NEXT_CHECK_TOKEN(actToken, opLeftBrc);
@@ -842,7 +843,6 @@ void ck_NT_INIF_EXT(SToken *actToken)
       mmng_safeFree(frameLabel);
       ck_NT_STAT_LIST(actToken);
       symbt_popFrame();
-      mmng_safeFree(frameLabel);
       break;
     // 35. NT_INIF_EXT -> (epsilon)
     default:

@@ -308,7 +308,7 @@ int syntx_checkDataTypeOfBool(SToken *boolOperand){
  * Always returns filled token, token.type = NT_EXPR, token.symbol->type
  * if everythng is OK, is setted token.symbol->dataType, token.symbol->data
  * else token.symbol->dataType = dtUnspecified and wrong token.symbol->data
- * 
+ *
  * rightOperand can be NULL in case NOT operator - do NOT leftOperand
  */
 SToken syntx_doBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand){
@@ -665,9 +665,9 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
   * argValue represents constant or variable transmitted to the function
   */
  void syntx_generateCodeForVarDef(SToken *funcToken, int argIndex, SToken *argValue){
-  fprintf(stderr, "entering gencodeforvardef\n");
+  //fprintf(stderr, "entering gencodeforvardef\n");
   TArgList args = funcToken->symbol->data.funcData.arguments;
-   
+
    if(args->count < argIndex){  // too many arguments
      scan_raiseCodeError(typeCompatibilityErr, "Too many arguments passed to function.");
    }
@@ -675,11 +675,11 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
    if(args->get(args, argIndex)->dataType != argValue->symbol->dataType){
      scan_raiseCodeError(typeCompatibilityErr, "Argument passed to function has wrong data type.");  // prints error
    }
-   
+
    printInstruction("PUSHS ");
    syntx_generateIdent(argValue);
    printInstruction("\n");
-   fprintf(stderr, "leaving vardef\n");
+   //fprintf(stderr, "leaving vardef\n");
  }
 
  /**
@@ -690,7 +690,7 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
   * result updates result variable data type
   */
  void syntx_generateCodeForCallFunc(SToken *funcToken, int argIndex, SToken *result){
-  fprintf(stderr, "entering codeforcallfunc\n"); 
+  //fprintf(stderr, "entering codeforcallfunc\n");
   TArgList args = funcToken->symbol->data.funcData.arguments;
    // checks arguments count
   if(args->count > argIndex){  // too few arguments
@@ -709,12 +709,12 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
   }
 
   printInstruction("CALL %s\n", funcToken->symbol->data.funcData.label);
-  printInstruction("PUSHS TF@%retval\n");
+  printInstruction("PUSHS TF@%%retval\n");
   printInstruction("POPFRAME\n");
   printInstruction("POPS %s\n", result->symbol->ident);
   // sets correct token data type corresponding to function return value
   result->symbol->dataType = funcToken->symbol->data.funcData.returnType;
-  fprintf(stderr, "leaving callfunc\n");
+  //fprintf(stderr, "leaving callfunc\n");
  }
 
 
