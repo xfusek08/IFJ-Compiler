@@ -162,6 +162,10 @@ void processFunction(SToken *actToken)
 
   // load ident to symbtable
   actSymbol = actToken->symbol;
+
+  if (util_isBuildInFunc(actSymbol->key))
+    scan_raiseCodeError(syntaxErr, "Redefinition of build-in function is not allowed.", actToken);
+
   if (actSymbol->type == symtUnknown)
   {
     actSymbol->type = symtFuction;
@@ -253,6 +257,7 @@ void writeExpression(SToken *actToken)
     scan_raiseCodeError(semanticErr, "Expression expected.", actToken);
 }
 
+// definition or redefinition as variable
 void defOrRedefVariable(TSymbol symbolVar)
 {
   if (symbolVar->type == symtUnknown || symbolVar->type == symtFuction)
@@ -273,6 +278,56 @@ void raiseUnexpToken(SToken *actToken, EGrSymb expected)
   char *message = mmng_safeMalloc(sizeof (char) * 100);
   sprintf(message, "\"%s\" token expected, \"%s\" got.", grammarToString(expected), grammarToString((*actToken).type));
   scan_raiseCodeError(syntaxErr, message, actToken);
+}
+
+// definitions of symbols of build in functions
+void defineBuildInFuncSymbols()
+{
+  TSymbol func = NULL;
+  TArgList params = NULL;
+
+  // Length
+  func = symbt_findOrInsertSymb("length");
+  func->type = symtFuction;
+  func->data.funcData.label = util_StrHardCopy("$$Length");
+  func->data.funcData.returnType = dtInt;
+  func->data.funcData.isDefined = true;
+  params = TArgList_create();
+  params->insert(params, "p1", dtString);
+  func->data.funcData.arguments = params;
+
+  // Substr
+  func = symbt_findOrInsertSymb("substr");
+  func->type = symtFuction;
+  func->data.funcData.label = util_StrHardCopy("$$SubStr");
+  func->data.funcData.returnType = dtString;
+  func->data.funcData.isDefined = true;
+  params = TArgList_create();
+  params->insert(params, "p1", dtString);
+  params->insert(params, "p2", dtInt);
+  params->insert(params, "p3", dtInt);
+  func->data.funcData.arguments = params;
+
+  // Asc
+  func = symbt_findOrInsertSymb("asc");
+  func->type = symtFuction;
+  func->data.funcData.label = util_StrHardCopy("$$Asc");
+  func->data.funcData.returnType = dtInt;
+  func->data.funcData.isDefined = true;
+  params = TArgList_create();
+  params->insert(params, "p1", dtString);
+  params->insert(params, "p2", dtInt);
+  func->data.funcData.arguments = params;
+
+  // Chr
+  func = symbt_findOrInsertSymb("chr");
+  func->type = symtFuction;
+  func->data.funcData.label = util_StrHardCopy("$$Chr");
+  func->data.funcData.returnType = dtString;
+  func->data.funcData.isDefined = true;
+  params = TArgList_create();
+  params->insert(params, "p1", dtInt);
+  func->data.funcData.arguments = params;
 }
 
 // =============================================================================
@@ -314,6 +369,10 @@ void ck_NT_DD(SToken *actToken)
       NEXT_CHECK_TOKEN(actToken, ident);
       // load ident to symbtable
       actSymbol = actToken->symbol;
+
+      if (util_isBuildInFunc(actSymbol->key))
+        scan_raiseCodeError(syntaxErr, "Redeclaration of build-in function is not allowed.", actToken);
+
       if (actSymbol->type == symtUnknown)
         actSymbol->type = symtFuction;
       else // attempt of redeclaration
@@ -571,6 +630,9 @@ void ck_NT_STAT(SToken *actToken)
     case kwDim:
       NEXT_CHECK_TOKEN(actToken, ident);
       actSymbol = actToken->symbol;
+
+      if (util_isBuildInFunc(actSymbol->key))
+        scan_raiseCodeError(syntaxErr, "Redefinition of build-in function is not allowed.", actToken);
 
       defOrRedefVariable(actSymbol);
 
@@ -903,6 +965,8 @@ void rparser_processProgram()
   // start compile to code
   printf(".IFJcode17\n");
   printf("JUMP %s\n", symbt_getActFuncLabel());
+  util_printBuildFunc();
+  defineBuildInFuncSymbols();
   SToken token = scan_GetNextToken();
   ck_NT_PROG(&token);
   flushCode();

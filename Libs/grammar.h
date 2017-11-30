@@ -32,8 +32,8 @@ typedef enum
   opSemcol, dataType, eof,
 
   /* key words */
-  kwAs, kwAsc, kwDeclare, kwDim, kwDo, kwElse, kwEnd, kwFunction, kwIf, kwInput, kwLength, kwLoop,
-  kwPrint, kwReturn, kwScope, kwSubStr, kwThen, kwWhile, kwContinue, kwElseif, kwExit, kwFalse, kwFor,
+  kwAs, kwDeclare, kwDim, kwDo, kwElse, kwEnd, kwFunction, kwIf, kwInput, kwLoop,
+  kwPrint, kwReturn, kwScope, kwThen, kwWhile, kwContinue, kwElseif, kwExit, kwFalse, kwFor,
   kwNext, kwShared, kwStatic, kwTrue, kwTo, kwUntil, kwStep,
 
   /* NON-TERMINALS */

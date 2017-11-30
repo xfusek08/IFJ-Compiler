@@ -12,7 +12,9 @@
 #ifndef _utils
 #define _utils
 
+#include <stdbool.h>
 #include "grammar.h"
+
 
 /**
  * Global data type enum
@@ -51,5 +53,17 @@ const char *util_dataTypeToString(const DataType dataType);
  * Return grammar symbol as tring
  */
 char *grammarToString(EGrSymb symb);
+
+/**
+ * Fuction prints build-in functions
+ * \note These funcions are: Length, SubStr, Asc, Chr
+ */
+void util_printBuildFunc();
+
+/**
+ * True if string is buid-in function
+ */
+bool util_isBuildInFunc(char *str);
+
 
 #endif // _utils
