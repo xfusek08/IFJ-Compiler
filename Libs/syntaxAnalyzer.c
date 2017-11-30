@@ -241,7 +241,7 @@ int syntx_useRule(TTkList list)
       return 0;
     if(list->active->next->token.type != NT_EXPR && list->active->next->token.type != NT_EXPR_TMP)
       return 0;
-    if(list->active->next->next->type != opRightBrc)
+    if(list->active->next->next->token.type != opRightBrc)
       return 0;
     list->next(list);
     list->preDelete(list);
