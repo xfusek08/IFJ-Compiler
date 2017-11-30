@@ -236,6 +236,19 @@ int syntx_useRule(TTkList list)
     list->next(list);
     list->preDelete(list);
     break;
+  case opLeftBrc:
+    if (list->active->next == NULL)
+      return 0;
+    if (list->active->next->next == NULL)
+      return 0;
+    if(list->active->next->token.type != NT_EXPR && list->active->next->token.type != NT_EXPR_TMP)
+      return 0;
+    if(list->active->next->next->type != opRightBrc)
+      return 0;
+    list->next(list);
+    list->preDelete(list);
+    list->postDelete(list);
+    break;
   default:
     return 0;
   }
@@ -392,12 +405,14 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
       {
         //Function call is replaced with aux variable with result.
         //ParseFunction ends on ')', no token will be skiped.
+        //note: auxiliary variable will not be freed and reused in expression
         *actToken = syntx_parseFunction(actToken);
         actToken->type = ident;
         terminal = syntx_getFirstTerminal(tlist);
-      }
-      if(actToken->symbol->type == symtUnknown)
+      }else if(actToken->symbol->type == symtUnknown)
+      {
         scan_raiseCodeError(semanticErr, "Undefined symbol.", actToken);
+      }
     }
 
     syntx_tableLogic(tlist, terminal, actToken);
