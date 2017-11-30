@@ -449,7 +449,6 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
   }
 }
 
-
 void syntx_init()
 {
   tlist = TTkList_create();
@@ -458,4 +457,11 @@ void syntx_init()
   auxToken.type = eol;
   tlist->insertLast(tlist, &auxToken);
   DPRINT("precedent syntax init");
+}
+
+void syntx_destroy()
+{
+  tlist->deleteLast(tlist);
+  tlist->destroy(tlist);
+  identStack->destroy(identStack);
 }

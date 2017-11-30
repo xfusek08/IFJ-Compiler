@@ -26,4 +26,6 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol);
 
 void syntx_init();
 
+void syntx_destroy()
+
 #endif // _SYNTAXANALYZER
