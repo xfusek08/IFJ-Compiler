@@ -81,46 +81,44 @@ void syntx_emptyVarStack()
 {
   while (identStack->count > 0)
   {
-    mmng_safeFree(identStack->top(identStack));
     identStack->pop(identStack);
   }
 }
 
 void syntx_freeVar(SToken *var)
 {
-  identStack->push(identStack, var->symbol->ident);
+  identStack->push(identStack, var->symbol);
 }
 
 SToken sytx_getFreeVar()
 {
   SToken token;
-  token.type = NT_EXPR_TMP;
-  token.symbol = mmng_safeMalloc(sizeof(struct Symbol));
-  token.symbol->type = symtVariable;
-  token.symbol->dataType = dtUnspecified;
-
+  token.type = NT_EXPR_TMP
   //if stack not empty, return ident from stack
-  if (identStack->count != 0)
+  if(identStack->count != 0)
   {
-    token.symbol->ident = (char *)identStack->top(identStack);
+    token.symbol = (TSymbol)identStack->top(identStack);
     identStack->pop(identStack);
     return token;
   }
-  if (nextTokenIdent == 1000) //is that enough?
+  if (nextTokenIdent == 1000000) //is that enough?
   {
     apperr_runtimeError("syntx_getFreeVar(): Limit of auxiliary variables reached! Too complicated expression.");
   }
   //generate next ident
-  char *ident = mmng_safeMalloc(sizeof(char) * 9); // TF@%T[1-9][0-9]{0,2}EOL = 9
+  char *ident = mmng_safeMalloc(sizeof(char) * 12); // TF@%T[1-9][0-9]{0,5}EOL = 12
   sprintf(ident, "TF@%%T%d", nextTokenIdent);
   nextTokenIdent++;
   //if not defined, define ident
-  if (symbt_findSymb(ident) == NULL)
+  token.symbol = symbt_findSymb(ident);
+  if (token.symbol == NULL)
   {
-    symbt_insertSymbOnTop(ident);
+    token.symbol = symbt_insertSymbOnTop(ident);
+    token.symbol->type = symtVariable;
     printInstruction("DEFVAR %s\n", ident);
   }
-  token.symbol->ident = ident;
+  token.symbol->dataType = dtUnspecified;
+  mmng_safeFree(ident);
   return token;
 }
 
