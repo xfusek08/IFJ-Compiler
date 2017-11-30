@@ -130,6 +130,24 @@ void balanceNumTypes(TSymbol symb1, TSymbol symb2)
   }
 }
 
+void setDefautValue(char *varIdent, DataType dt, bool directPrint)
+{
+  char *typeconst;
+  switch (dt)
+  {
+    case dtInt: typeconst = "int@0"; break;
+    case dtFloat: typeconst = "float@0"; break;
+    case dtString: typeconst = "string@"; break;
+    case dtBool: typeconst = "bool@false"; break;
+    default: return;
+  }
+
+  if (directPrint)
+    printf("MOVE %s %s\n", varIdent, typeconst);
+  else
+    printInstruction("MOVE %s %s\n", varIdent, typeconst);
+}
+
 // function for defining function
 // 3. NT_DD -> kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_STAT_LIST kwEnd kwFunction eol NT_DD
 void processFunction(SToken *actToken)
@@ -209,14 +227,7 @@ void processFunction(SToken *actToken)
   printf("LABEL %s\n", actSymbol->data.funcData.label);
   printf("PUSHFRAME\n");
   printf("DEFVAR LF@%%retval\n");
-  switch(actSymbol->data.funcData.returnType)
-  {
-    case dtInt: printf("MOVE LF@%%retval int@0\n"); break;
-    case dtFloat: printf("MOVE LF@%%retval float@0\n"); break;
-    case dtString: printf("MOVE LF@%%retval string@\n"); break;
-    case dtBool: printf("MOVE LF@%%retval bool@false\n"); break;
-    default: break;
-  }
+  setDefautValue("LF@%%retval", actSymbol->data.funcData.returnType, true);
   NEXT_TOKEN(actToken);
   ck_NT_STAT_LIST(actToken);
   CHECK_TOKEN(actToken, kwEnd); // statement list must ends on end key word
@@ -334,6 +345,7 @@ void ck_NT_DD(SToken *actToken)
       ck_NT_DD(actToken);
       break;
     // 4. NT_DD -> kwStatic kwShared ident kwAs dataType NT_ASSINGEXT eol NT_DD
+      /*
     case kwStatic:
       NEXT_CHECK_TOKEN(actToken, kwShared);
       NEXT_CHECK_TOKEN(actToken, ident);
@@ -355,6 +367,7 @@ void ck_NT_DD(SToken *actToken)
       NEXT_TOKEN(actToken);
       ck_NT_DD(actToken);
       break;
+      */
     // 5. NT_DD -> (epsilon)
     default:
       // let it be
@@ -376,6 +389,7 @@ void ck_NT_ASSINGEXT(SToken *actToken, TSymbol symbol)
       break;
     // 7. NT_ASSINGEXT -> (epsilon)
     default:
+      setDefautValue(symbol->ident, symbol->dataType, true);
       // let it be
       break;
   }
@@ -698,11 +712,11 @@ void ck_NT_STAT(SToken *actToken)
       printSymbolToOperand(stepSymb);
       printInstruction("\n");
 
+      symbt_popFrame();
       printInstruction("JUMP %s$loop\n", forlabel);
       printInstruction("LABEL %s$loopend\n", forlabel);
       CHECK_TOKEN(actToken, kwNext);
       NEXT_TOKEN(actToken);
-      symbt_popFrame();
       symbt_popFrame();
       mmng_safeFree(forlabel);
       break;
