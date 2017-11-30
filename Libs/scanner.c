@@ -499,7 +499,7 @@ SToken scan_GetNextToken()
           state = 0;
           tokenType = ident;
           type = symtConstant;
-          while(state != 3)
+          while(state != 4)
           {
             tokenID[position++] = GLBScanner->line[GLBScanner->position++];
             switch(state)
@@ -513,7 +513,7 @@ SToken scan_GetNextToken()
                   state = 2;
                 else if(isEndChar(GLBScanner->line[GLBScanner->position - 1]))
                 {
-                  state = 3;
+                  state = 4;
                   GLBScanner->position--;
                   tokenID[--position] = '\0';
                   intVal = strtol(tokenID, NULL, 10);
@@ -525,9 +525,11 @@ SToken scan_GetNextToken()
               case 1:
                 if(GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58)
                   state = 1;
+                else if(GLBScanner->line[GLBScanner->position - 1] == 'e' || GLBScanner->line[GLBScanner->position - 1] == 'E')
+                  state = 2;
                 else if(isEndChar(GLBScanner->line[GLBScanner->position - 1]))
                 {
-                  state = 3;
+                  state = 4;
                   GLBScanner->position--;
                   tokenID[--position] = '\0';
                   doubleVal = strtod(tokenID, NULL);
@@ -539,9 +541,23 @@ SToken scan_GetNextToken()
               case 2:
                 if((GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58)
                 || GLBScanner->line[GLBScanner->position - 1] == '+' || GLBScanner->line[GLBScanner->position - 1] == '-')
-                  state = 1;
+                  state = 3;
                 else
                   scan_raiseCodeError(lexicalErr, "Wrong character after e, alowed are +,-,[0-9].", NULL);
+                break;
+              case 3:
+                if(GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58)
+                  state = 3;
+                else if(isEndChar(GLBScanner->line[GLBScanner->position - 1]))
+                {
+                  state = 4;
+                  GLBScanner->position--;
+                  tokenID[--position] = '\0';
+                  doubleVal = strtod(tokenID, NULL);
+                  dType = dtFloat;
+                }
+                else
+                  scan_raiseCodeError(lexicalErr, "Wrong character inside double constant.", NULL);
                 break;
             }
             allowed = true;
