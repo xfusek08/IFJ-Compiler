@@ -45,8 +45,8 @@ void apperr_codeError(ErrType type, int row, int col, char *line, char *message,
       return;
   }
   if(token != NULL)
-    printf("Caused by token: %s ", grammarToString(token->type));
-  fprintf( stderr, "On position: \033[33m[%d:%d]\033[0m:\n", row, col);
+    fprintf(stderr, "Caused by token: %s ", grammarToString(token->type));
+  fprintf(stderr, "On position: \033[33m[%d:%d]\033[0m:\n", row, col);
   if (message != NULL)
     fprintf(stderr, "%s\n", message);
 

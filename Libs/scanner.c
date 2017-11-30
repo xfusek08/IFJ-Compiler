@@ -205,8 +205,8 @@ SToken scan_GetNextToken()
   //Getting next token (retezec)
   while(!allowed)
   {
+    GLBScanner->prevPosition = GLBScanner->position + 1;
     //Finding type of token
-    GLBScanner->prevPosition = GLBScanner->position;
     switch(tokenID[position++] = tolower(GLBScanner->line[GLBScanner->position++]))
     {
       case '=':

@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "appErr.h"
 #include "scanner.h"
 #include "MMng.h"
 #include "syntaxAnalyzer.h"
@@ -35,14 +36,12 @@ void raiseUnexpToken(SToken *actToken, EGrSymb expected);
 #define NEXT_CHECK_TOKEN(T, S) NEXT_TOKEN(T); CHECK_TOKEN(T, S)
 
 // semantic errors
-// on second definition of function
-#define ERR_FUNC_REDEF() scan_raiseCodeError(semanticErr, "Redefinition of function is not allowed.")
 // when defining symbol and it is already defined
-#define ERR_SYMB_REDEF() scan_raiseCodeError(semanticErr, "Redefinition of defined symbol is not allowed.")
+#define ERR_SYMB_REDEF() scan_raiseCodeError(semanticErr, "Redefinition of defined symbol is not allowed.", actToken)
 // unexpected token
-#define ERR_UNEXP_TOKEN() scan_raiseCodeError(syntaxErr, "Uexpected token.")
+#define ERR_UNEXP_TOKEN() scan_raiseCodeError(syntaxErr, "Uexpected token.", actToken)
 // result of condition is not bool
-#define ERR_COND_TYPE() scan_raiseCodeError(semanticErr, "Condition expression does not return boolean value.");
+#define ERR_COND_TYPE() scan_raiseCodeError(semanticErr, "Condition expression does not return boolean value.", actToken);
 
 // =============================================================================
 // ========================== Global variables =================================
@@ -154,7 +153,7 @@ void processFunction(SToken *actToken)
   {
     isDeclared = true;
     if (actSymbol->data.funcData.isDefined) // redefinition is not allowed
-      ERR_FUNC_REDEF();
+      scan_raiseCodeError(semanticErr, "Redefinition of function is not allowed.", actToken);
   }
   else // attempt of redeclaration
     ERR_SYMB_REDEF();
@@ -174,7 +173,7 @@ void processFunction(SToken *actToken)
     // check if definition responds to declaration
     if (!(parList->equals(parList, actSymbol->data.funcData.arguments)) ||
         retType != actSymbol->data.funcData.returnType)
-      scan_raiseCodeError(semanticErr, "Function definition does not match with declaration.");
+      scan_raiseCodeError(semanticErr, "Function definition does not match with declaration.", actToken);
 
     // TODO: specify error ... ?
 
@@ -240,7 +239,7 @@ void writeExpression(SToken *actToken)
     printInstruction("\n");
   }
   else
-    scan_raiseCodeError(semanticErr, "Expression expected.");
+    scan_raiseCodeError(semanticErr, "Expression expected.", actToken);
 }
 
 void defOrRedefVariable(TSymbol symbolVar)
@@ -256,7 +255,7 @@ void defOrRedefVariable(TSymbol symbolVar)
     if (symbolVar->type == symtVariable)
       symbt_pushRedefVar(symbolVar);
     else
-      scan_raiseCodeError(syntaxErr, "Cannot redefine non variable identifier.");
+      scan_raiseCodeError(syntaxErr, "Cannot redefine non variable identifier.", NULL);
   }
 }
 
@@ -264,7 +263,7 @@ void raiseUnexpToken(SToken *actToken, EGrSymb expected)
 {
   char *message = mmng_safeMalloc(sizeof (char) * 100);
   sprintf(message, "\"%s\" token expected, \"%s\" got.", grammarToString(expected), grammarToString((*actToken).type));
-  scan_raiseCodeError(syntaxErr, message);
+  scan_raiseCodeError(syntaxErr, message, actToken);
 }
 
 // =============================================================================
@@ -308,7 +307,7 @@ void ck_NT_DD(SToken *actToken)
       if (actSymbol->type == symtUnknown)
         actSymbol->type = symtFuction;
       else // attempt of redeclaration
-        scan_raiseCodeError(semanticErr, "Redeclaration of function is not allowed.");
+        scan_raiseCodeError(semanticErr, "Redeclaration of function is not allowed.", actToken);
 
       actSymbol->type = symtFuction;
       actSymbol->data.funcData.label = util_StrConcatenate("$", actSymbol->ident);
@@ -403,7 +402,7 @@ void ck_NT_SCOPE(SToken *actToken)
       symbt_popFrame();
       break;
     default:
-      scan_raiseCodeError(syntaxErr, "\"scope\" token expected.");
+      scan_raiseCodeError(syntaxErr, "\"scope\" token expected.", actToken);
       break;
   }
 }
@@ -444,7 +443,7 @@ void ck_NT_PARAM(SToken *actToken, TArgList parList)
       ck_NT_PARAM_EXT(actToken, parList);
       break;
     default:
-      scan_raiseCodeError(syntaxErr, "Identifier token expected.");
+      scan_raiseCodeError(syntaxErr, "Identifier token expected.", actToken);
       break;
   }
 }
@@ -521,7 +520,7 @@ void ck_NT_STAT(SToken *actToken)
       NEXT_CHECK_TOKEN(actToken, ident);
       actSymbol = actToken->symbol;
       if (actSymbol->type != symtVariable)
-        scan_raiseCodeError(semanticErr, "Symbol is not defined variable.");
+        scan_raiseCodeError(semanticErr, "Symbol is not defined variable.", actToken);
       printInstruction("WRITE string@?\\032\n");
       printInstruction("READ %s %s\n", actSymbol->ident, util_dataTypeToString(actSymbol->dataType));
       NEXT_TOKEN(actToken);
@@ -589,7 +588,7 @@ void ck_NT_STAT(SToken *actToken)
         )
           tokAsgn.type = (actToken->type == opEq) ? asgn : actToken->type;
         else
-          scan_raiseCodeError(syntaxErr, "Assignment token expected.");
+          scan_raiseCodeError(syntaxErr, "Assignment token expected.", actToken);
 
         NEXT_TOKEN(actToken);
         SToken rightOperand;
@@ -604,7 +603,7 @@ void ck_NT_STAT(SToken *actToken)
       if (symbt_getActLoopLabel() != NULL)
         printInstruction("JUMP %s$loop\n", symbt_getActLoopLabel());
       else
-        scan_raiseCodeError(semanticErr, "\"Continue\" command can be used only in loop.");
+        scan_raiseCodeError(semanticErr, "\"Continue\" command can be used only in loop.", actToken);
       NEXT_TOKEN(actToken);
       break;
     // 22. NT_STAT -> kwExit
@@ -612,7 +611,7 @@ void ck_NT_STAT(SToken *actToken)
       if (symbt_getActLoopLabel() != NULL)
         printInstruction("JUMP %s$loopend\n", symbt_getActLoopLabel());
       else
-        scan_raiseCodeError(semanticErr, "\"Exit\" command can be used only in loop.");
+        scan_raiseCodeError(semanticErr, "\"Exit\" command can be used only in loop.", actToken);
       NEXT_TOKEN(actToken);
       break;
     // 23. NT_STAT -> NT_SCOPE
@@ -629,7 +628,7 @@ void ck_NT_STAT(SToken *actToken)
         printInstruction("JUMP %s$epilog\n", symbt_getActFuncLabel());
       }
       else
-        scan_raiseCodeError(anotherSemanticErr, "Return can not be used outside of function.");
+        scan_raiseCodeError(anotherSemanticErr, "Return can not be used outside of function.", actToken);
       break;
     // 25. NT_STAT -> kwDo NT_DOIN kwLoop
     case kwDo:
@@ -654,7 +653,7 @@ void ck_NT_STAT(SToken *actToken)
         NEXT_TOKEN(actToken);
       }
       if (actSymbol->dataType != dtInt && actSymbol->dataType != dtFloat)
-        scan_raiseCodeError(semanticErr, "Iterator value has no valid data type. Only double or integer is allowed.");
+        scan_raiseCodeError(semanticErr, "Iterator value has no valid data type. Only double or integer is allowed.", actToken);
 
       // if its =
       CHECK_TOKEN(actToken, opEq);
@@ -666,14 +665,14 @@ void ck_NT_STAT(SToken *actToken)
       // set TO value
       TSymbol toSymb = syntx_processExpression(actToken, NULL);
       if (toSymb->dataType != dtInt && toSymb->dataType != dtFloat)
-        scan_raiseCodeError(semanticErr, "To value has no valid data type. Only double or integer is allowed.");
+        scan_raiseCodeError(semanticErr, "To value has no valid data type. Only double or integer is allowed.", actToken);
       // balance comparing data types
       balanceNumTypes(actSymbol, toSymb);
 
       // set STEP Value
       TSymbol stepSymb = ck_NT_FORSTEP(actToken);
       if (stepSymb->dataType != dtInt && stepSymb->dataType != dtFloat)
-        scan_raiseCodeError(semanticErr, "Step value has no valid data type. Only double or integer is allowed.");
+        scan_raiseCodeError(semanticErr, "Step value has no valid data type. Only double or integer is allowed.", actToken);
       // balance comparing data types
       balanceNumTypes(actSymbol, stepSymb);
 

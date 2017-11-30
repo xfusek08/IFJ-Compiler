@@ -18,9 +18,9 @@ End Function
 Scope 'Hlavni telo programu
   Dim a As Integer
   Dim vysl As Integer
-  Print !"Zadejte cislo pro vypocet faktorialu";
+  Print !"Zadejte cislo pro vypocet faktorialu" + true + 1 ;
   Input a
-  If a < 0 Then
+  If a < 0 end
     Print !"\nFaktorial nelze spocitat\n";
   Else
     vysl = factorial(a)
