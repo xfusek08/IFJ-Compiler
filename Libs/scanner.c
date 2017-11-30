@@ -117,13 +117,15 @@ void delete_comment(bool isLine)
   //Looking for ending characters of multi-line comment
   else
   {
-    while(!(GLBScanner->line[charCounter] == '\'' && GLBScanner->line[charCounter + 1] == '/') && GLBScanner->line[charCounter + 1] != EOF)
+    while(!(GLBScanner->line[charCounter] == '\'' && GLBScanner->line[charCounter + 1] == '/'))
     {
       if(GLBScanner->line[charCounter + 1] == '\0')
       {
         get_line(GLBScanner);
         charCounter = -1;
       }
+      else if(GLBScanner->line[charCounter + 1] == EOF)
+        scan_raiseCodeError(lexicalErr, "Multiline comment not closed.", NULL);
       charCounter++;
     }
     GLBScanner->position = charCounter + 2;
