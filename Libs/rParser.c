@@ -196,10 +196,6 @@ void processFunction(SToken *actToken)
     if (!(parList->equals(parList, actSymbol->data.funcData.arguments)) ||
         retType != actSymbol->data.funcData.returnType)
       scan_raiseCodeError(semanticErr, "Function definition does not match with declaration.", actToken);
-
-    // TODO: specify error ... ?
-
-    TArgList_destroy(parList); // parameters aleready exists
   }
   else
   {
@@ -207,7 +203,6 @@ void processFunction(SToken *actToken)
     actSymbol->data.funcData.arguments = parList;
   }
   actSymbol->data.funcData.isDefined = true;
-  parList = actSymbol->data.funcData.arguments;
 
   // body of function
   symbt_pushFrame(actSymbol->data.funcData.label, false, false); // lets create local variable frame for function
@@ -221,12 +216,26 @@ void processFunction(SToken *actToken)
   // fill frame with argument symbols
   for (int i = 0; i < parList->count; i++)
   {
-    TArgument actArg = parList->get(parList, i);
-    tmpSymb = symbt_insertSymbOnTop(actArg->ident);
-    addPrefixToSymbolIdent("LF@", tmpSymb);
+    // make sure that in definition of fucntion is definition argument identifier used as key to symb table
+    TArgument definitionArg = parList->get(parList, i);
+    tmpSymb = symbt_insertSymbOnTop(definitionArg->ident);
+    // if fuctions was already declared ve have to remap definition symbol identifiers to declaration symbol identifiers
+    if (isDeclared)
+    {
+      TArgument declarationArg = actSymbol->data.funcData.arguments->get(actSymbol->data.funcData.arguments, i);
+      char *preident = tmpSymb->ident;
+      tmpSymb->ident = util_StrConcatenate("LF@", declarationArg->ident);
+      mmng_safeFree(preident);
+    }
+    else
+      addPrefixToSymbolIdent("LF@", tmpSymb);
     tmpSymb->type = symtVariable;
-    tmpSymb->dataType = actArg->dataType;
+    tmpSymb->dataType = definitionArg->dataType;
   }
+
+  // we destroy list of definition params because we need to use declaration identifiers in calls
+  if (isDeclared) // if function was declared
+    TArgList_destroy(parList);
 
   printf("LABEL %s\n", actSymbol->data.funcData.label);
   printf("PUSHFRAME\n");
@@ -260,6 +269,7 @@ void writeExpression(SToken *actToken)
 // definition or redefinition as variable
 void defOrRedefVariable(TSymbol symbolVar)
 {
+  /*
   if (symbolVar->type == symtUnknown || symbolVar->type == symtFuction)
   {
     addPrefixToSymbolIdent("LF@", symbolVar);
@@ -271,6 +281,20 @@ void defOrRedefVariable(TSymbol symbolVar)
     }
   }
   symbt_pushRedefinition(symbolVar);
+  */
+ if (symbolVar->type == symtUnknown)
+  {
+    symbolVar->type = symtVariable;
+    addPrefixToSymbolIdent("LF@", symbolVar);
+    printf("DEFVAR %s\n", symbolVar->ident);
+  }
+  else
+  {
+    if (symbolVar->type == symtVariable)
+      symbt_pushRedefinition(symbolVar);
+    else
+      scan_raiseCodeError(semanticErr, "Cannot redefine non variable identifier.", NULL);
+  }
 }
 
 void raiseUnexpToken(SToken *actToken, EGrSymb expected)
@@ -704,7 +728,7 @@ void ck_NT_STAT(SToken *actToken)
         printInstruction("JUMP %s$epilog\n", symbt_getActFuncLabel());
       }
       else
-        scan_raiseCodeError(anotherSemanticErr, "Return can not be used outside of function.", actToken);
+        scan_raiseCodeError(syntaxErr, "Return can not be used outside of function.", actToken);
       break;
     // 25. NT_STAT -> kwDo NT_DOIN kwLoop
     case kwDo:

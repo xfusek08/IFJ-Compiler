@@ -146,8 +146,6 @@ bool TArgList_equals(TArgList list1, TArgList list2)
 
   while(arg1 != NULL || arg2 != NULL)
   {
-    if (strcmp(arg1->ident, arg2->ident) != 0)
-      return false;
     if (arg1->dataType != arg2->dataType)
       return false;
     arg1 = arg1->next;
