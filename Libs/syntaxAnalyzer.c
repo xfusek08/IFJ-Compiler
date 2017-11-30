@@ -293,6 +293,8 @@ SToken syntx_parseFunction(SToken *actToken)
   while (actToken->type != opRightBrc)
   {
     *actToken = nextToken();
+    if (actToken->type == opRightBrc)
+      break;
     SToken argToken;
     argToken.type = NT_EXPR;
     argToken.symbol = syntx_processExpression(actToken, NULL);
