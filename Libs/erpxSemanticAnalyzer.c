@@ -256,11 +256,11 @@ void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOp
      ){
       //checks compalibility of data types
       if(syntx_checkDataTypesOfBasicOp(leftOperand, operator, rightOperand) == 0){
-        scan_raiseCodeError(typeCompatibilityErr, "Error during arithmetic or relational operation.");  // prints error
+        scan_raiseCodeError(typeCompatibilityErr, "Error during arithmetic or relational operation.", NULL);  // prints error
       }
   }else if(operator->type == opDiv){  // if operator type is '\'
     if(syntx_checkDataTypesOfIntegerDiv(leftOperand, rightOperand) == 0){
-      scan_raiseCodeError(typeCompatibilityErr, "Error during integer division.");  // prints error
+      scan_raiseCodeError(typeCompatibilityErr, "Error during integer division.", NULL);  // prints error
     }
   }else if( // if operators are assignment operators
      operator->type == asgn ||
@@ -270,18 +270,18 @@ void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOp
      operator->type == opDivFltEq
   ){
     if(syntx_checkDataTypesOfAsgnOps(leftOperand, rightOperand) == 0){
-      scan_raiseCodeError(typeCompatibilityErr, "Error during assignment operation.");  // prints error
+      scan_raiseCodeError(typeCompatibilityErr, "Error during assignment operation.", NULL);  // prints error
     }
   }else if(operator->type == opDivEq){ // if operator is \=
     if(syntx_checkDataTypesOfIntegerDiv(leftOperand, rightOperand) == 0){
-      scan_raiseCodeError(typeCompatibilityErr, "Error during integer division and assignment.");  // prints error
+      scan_raiseCodeError(typeCompatibilityErr, "Error during integer division and assignment.", NULL);  // prints error
     }
   }else if( // if operator is boolean operator (except opBoolNot)
      operator->type == opBoolAnd ||
      operator->type == opBoolOr
   ){
     if(syntx_checkDataTypesOfBoolOps(leftOperand, rightOperand) == 0){
-      scan_raiseCodeError(typeCompatibilityErr, "One or both operands do not have boolean type.");  // prints error
+      scan_raiseCodeError(typeCompatibilityErr, "One or both operands do not have boolean type.", NULL);  // prints error
     }
   }else{  // unknown operator
     apperr_runtimeError("syntaxAnalyzer.c, syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOperand): unknown operator");
@@ -443,7 +443,7 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
 
   // function was invoked with wrong arguments - typeCompatibilityErr
   if(token.symbol->dataType == dtUnspecified){
-    scan_raiseCodeError(typeCompatibilityErr, "Error during arithmetic operation with two constants.");  // prints error
+    scan_raiseCodeError(typeCompatibilityErr, "Error during arithmetic operation with two constants.", NULL);  // prints error
   }
 
   return token;
@@ -669,7 +669,7 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
   TArgList args = funcToken->symbol->data.funcData.arguments;
 
    if(args->count < argIndex){  // too many arguments
-     scan_raiseCodeError(typeCompatibilityErr, "Too many arguments passed to function.");
+     scan_raiseCodeError(typeCompatibilityErr, "Too many arguments passed to function.", NULL);
    }
    // check argument data type
    if(args->get(args, argIndex)->dataType == dtFloat && argValue->symbol->dataType == dtInt){ // double - int -> double - double
@@ -677,7 +677,7 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
    }else if(args->get(args, argIndex)->dataType == dtInt && argValue->symbol->dataType == dtFloat){ // int - double -> int - int
      syntx_doubleToIntToken(argValue);
    }else if(args->get(args, argIndex)->dataType != argValue->symbol->dataType){
-     scan_raiseCodeError(typeCompatibilityErr, "Argument passed to function has wrong data type.");  // prints error
+     scan_raiseCodeError(typeCompatibilityErr, "Argument passed to function has wrong data type.", argValue);  // prints error
    }
 
    printInstruction("PUSHS ");
@@ -698,7 +698,7 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
   TArgList args = funcToken->symbol->data.funcData.arguments;
    // checks arguments count
   if(args->count > argIndex){  // too few arguments
-     scan_raiseCodeError(typeCompatibilityErr, "Too few arguments passed to function.");
+     scan_raiseCodeError(typeCompatibilityErr, "Too few arguments passed to function.", NULL);
   }
 
   printInstruction("PUSHFRAME\n");
@@ -737,7 +737,7 @@ void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand,
   }else if(rightOperand == NULL && oper->type == opBoolNot){  // operator is bool NOT
     syntx_checkDataTypeOfBool(leftOperand);
   }else{  //for example: NOT string, NOT float, etc.
-    scan_raiseCodeError(typeCompatibilityErr, "An attempt to make a logical negation operation with non-bool data type.");  // prints error
+    scan_raiseCodeError(typeCompatibilityErr, "An attempt to make a logical negation operation with non-bool data type.", NULL);  // prints error
   }
 
   // here are all data in right form
