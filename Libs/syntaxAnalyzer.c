@@ -93,7 +93,7 @@ void syntx_freeVar(SToken *var)
 SToken sytx_getFreeVar()
 {
   SToken token;
-  token.type = NT_EXPR_TMP
+  token.type = NT_EXPR_TMP;
   //if stack not empty, return ident from stack
   if(identStack->count != 0)
   {
