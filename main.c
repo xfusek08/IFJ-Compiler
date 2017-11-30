@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
     i++;
   }
   */
+  syntx_destroy();
   scan_destroy();
   symbt_destroy();
   mmng_freeAll();
