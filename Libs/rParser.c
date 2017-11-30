@@ -227,7 +227,7 @@ void processFunction(SToken *actToken)
   printf("LABEL %s\n", actSymbol->data.funcData.label);
   printf("PUSHFRAME\n");
   printf("DEFVAR LF@%%retval\n");
-  setDefautValue("LF@%%retval", actSymbol->data.funcData.returnType, true);
+  setDefautValue("LF@%retval", actSymbol->data.funcData.returnType, true);
   NEXT_TOKEN(actToken);
   ck_NT_STAT_LIST(actToken);
   CHECK_TOKEN(actToken, kwEnd); // statement list must ends on end key word
@@ -255,19 +255,17 @@ void writeExpression(SToken *actToken)
 
 void defOrRedefVariable(TSymbol symbolVar)
 {
-  if (symbolVar->type == symtUnknown)
+  if (symbolVar->type == symtUnknown || symbolVar->type == symtFuction)
   {
-    symbolVar->type = symtVariable;
     addPrefixToSymbolIdent("LF@", symbolVar);
     printf("DEFVAR %s\n", symbolVar->ident);
+    if (symbolVar->type == symtUnknown)
+    {
+      symbolVar->type = symtVariable;
+      return;
+    }
   }
-  else
-  {
-    if (symbolVar->type == symtVariable)
-      symbt_pushRedefVar(symbolVar);
-    else
-      scan_raiseCodeError(syntaxErr, "Cannot redefine non variable identifier.", NULL);
-  }
+  symbt_pushRedefinition(symbolVar);
 }
 
 void raiseUnexpToken(SToken *actToken, EGrSymb expected)
@@ -294,6 +292,7 @@ void ck_NT_PROG(SToken *actToken)
   printf("LABEL %s\n", symbt_getActFuncLabel()); // main function
   printf("CREATEFRAME\n");
   printf("PUSHFRAME\n");
+  printf("CREATEFRAME\n");
   ck_NT_SCOPE(actToken);
   if (actToken->type != eof)
   {
@@ -577,6 +576,7 @@ void ck_NT_STAT(SToken *actToken)
 
       NEXT_CHECK_TOKEN(actToken, kwAs);
       NEXT_CHECK_TOKEN(actToken, dataType);
+      actSymbol->type = symtVariable;
       actSymbol->dataType = actToken->dataType;
       NEXT_TOKEN(actToken);
       ck_NT_ASSINGEXT(actToken, actSymbol);
@@ -837,6 +837,7 @@ void ck_NT_INIF_EXT(SToken *actToken)
     // 33. NT_INIF_EXT -> kwElseif NT_EXPR kwThen eol NT_STAT_LIST NT_INIF_EXT
     case kwElseif:
       NEXT_TOKEN(actToken);
+      char *endiflabel = symbt_getActLocalLabel();
       char *iflabel = symbt_getNewLocalLabel();
       symbt_pushFrame(iflabel, true, false);
 
@@ -848,7 +849,7 @@ void ck_NT_INIF_EXT(SToken *actToken)
       printInstruction("JUMPIFNEQ %s$else %s bool@true\n", iflabel, symbol->ident);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
-      printInstruction("JUMP %s$endif\n", symbt_getActLocalLabel());
+      printInstruction("JUMP %s$endif\n", endiflabel);
       printInstruction("LABEL %s$else\n", iflabel);
 
       symbt_popFrame();

@@ -1,14 +1,5 @@
-
-/' Oprava chyby: Pops se prování až za návěštím loopend u for cyklu -> Dát před '/
-
-Scope 'Hlavni telo programu
-  dim j as boolean
-  for i as integer = 0 to 20
-    print !"----------------- "; i; !" ------------------\n\n";
-    for j as double = 0 to 20
-      dim i as double = 0.5
-      print i + j; !"\n";
-    next
-    print !"\n";
-  next
-End Scope
+scope
+  dim a as integer
+  a = asc(!"ahoj", 2)
+  print a;
+  end scope

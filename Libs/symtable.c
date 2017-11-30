@@ -38,6 +38,7 @@ struct STNode {
 typedef struct RedefSymb *TRedefSymb;
 struct RedefSymb {
   TSymbol symbol;
+  SymbolType origType;
   DataType origDataType;
 };
 
@@ -49,7 +50,7 @@ struct SymTable {
   bool isLoop;                // flag if frame is loop
   char *frameLabel;           // label of frame
   unsigned int localLabelCnt; // counter of local labels
-  TPStack redefVarStack;      // stack of redefined symbols to be pops and frame end
+  TPStack redefStack;      // stack of redefined symbols to be pops and frame end
 };
 
 // global internal instance of symbol table stack
@@ -64,6 +65,7 @@ TRedefSymb TRedefSymb_create(TSymbol symb)
 {
   TRedefSymb new = mmng_safeMalloc(sizeof(struct RedefSymb));
   new->symbol = symb;
+  new->origType = symb->type;
   new->origDataType = symb->dataType;
   return new;
 }
@@ -534,14 +536,14 @@ TSymTable TSymTable_create(char *frameLabel, bool transparent, bool isLoop)
   newST->frameLabel = util_StrHardCopy(frameLabel);
   newST->localLabelCnt = 0;
   newST->isLoop = isLoop;
-  newST->redefVarStack = TPStack_create();
+  newST->redefStack = TPStack_create();
   return newST;
 }
 
 // destructor of TSymTable
 void TSymTable_destroy(TSymTable self)
 {
-  self->redefVarStack->destroy(self->redefVarStack);
+  self->redefStack->destroy(self->redefStack);
   TSTNode_destroy(self->root, true);
   mmng_safeFree(self->frameLabel);
   mmng_safeFree(self);
@@ -646,12 +648,14 @@ void symbt_popFrame()
   if (GLBSymbTabStack->count > 1)
   {
     TSymTable table = GLBSymbTabStack->top(GLBSymbTabStack);
-    while (table->redefVarStack->count > 0)
+    while (table->redefStack->count > 0)
     {
-      TRedefSymb redefSymb = table->redefVarStack->top(table->redefVarStack);
-      printInstruction("POPS %s\n", redefSymb->symbol->ident);
+      TRedefSymb redefSymb = table->redefStack->top(table->redefStack);
+      table->redefStack->pop(table->redefStack);
+      redefSymb->symbol->type = redefSymb->origType;
       redefSymb->symbol->dataType = redefSymb->origDataType;
-      table->redefVarStack->pop(table->redefVarStack);
+      if (redefSymb->symbol->type == symtVariable)
+        printInstruction("POPS %s\n", redefSymb->symbol->ident);
     }
     if (!table->isTransparent)
       flushCode();
@@ -769,16 +773,17 @@ char *symbt_getNewLocalLabel()
 }
 
 // Push value of variable symbol on datastack and remembers it for frame destroing
-void symbt_pushRedefVar(TSymbol symbol)
+void symbt_pushRedefinition(TSymbol symbol)
 {
   if (symbol == NULL)
     apperr_runtimeError("Redefined symbol is NULL.");
-  if (symbol->type != symtVariable)
-    apperr_runtimeError("Redefined symbol is not variable.");
+  if (symbol->type == symtConstant)
+    apperr_runtimeError("Cannot redefine constant.");
 
   TSymTable actTable = GLBSymbTabStack->top(GLBSymbTabStack);
-  actTable->redefVarStack->push(actTable->redefVarStack, TRedefSymb_create(symbol));
-  printInstruction("PUSHS %s\n", symbol->ident);
+  actTable->redefStack->push(actTable->redefStack, TRedefSymb_create(symbol));
+  if (symbol->type == symtVariable)
+    printInstruction("PUSHS %s\n", symbol->ident);
 }
 
 

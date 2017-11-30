@@ -227,9 +227,9 @@ char *symbt_getActLocalLabel();
 char *symbt_getNewLocalLabel();
 
 /**
- * Push value of variable symbol on datastack and remembers it for frame destroing
+ * Redefines symbol on datastack and remembers it for frame destroying
  */
-void symbt_pushRedefVar(TSymbol symbol);
+void symbt_pushRedefinition(TSymbol symbol);
 
 // funkce pouze pro testovaci programy
 

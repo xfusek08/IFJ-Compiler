@@ -25,8 +25,8 @@ void printInstruction(const char *arg, ...)
 {
   if (arrSize == 0)
   {
-    Iarr = mmng_safeMalloc(sizeof(char) * UTILS_ARR_CHUNK);
     arrSize = UTILS_ARR_CHUNK;
+    Iarr = mmng_safeMalloc(sizeof(char) * arrSize);
   }
 
   int counter = 0;
@@ -36,9 +36,10 @@ void printInstruction(const char *arg, ...)
       counter++;
   }
 
-  if (counter * 10 + strlen(arg) + arrPos > arrSize)
+  if (counter * 128 + strlen(arg) + arrPos > arrSize)
   {
-    Iarr = mmng_safeRealloc(Iarr, sizeof(char) * (arrSize + UTILS_ARR_CHUNK));
+    arrSize += UTILS_ARR_CHUNK;
+    Iarr = mmng_safeRealloc(Iarr, sizeof(char) * arrSize);
   }
 
   va_list ap;

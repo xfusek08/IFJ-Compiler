@@ -98,7 +98,8 @@ void get_line()
 //Function for deleting comments
 void delete_comment(bool isLine)
 {
-  int charCounter = 0;
+
+  int charCounter = GLBScanner->position;
   //Delete line comment
   if(isLine == true)
   {
