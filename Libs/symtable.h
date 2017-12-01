@@ -119,6 +119,7 @@ struct Symbol {
   SymbolType type;      /*!< Type of symbol */
   DataType dataType;    /*!< Data type of symbol, in case of constant type desides wich attribute from Data union will be used to store information. */
   Data data;            /*!< Union of attributes containg right data for concrete type of symbol. */
+  bool isTemp;          /*!< Flag true if symbol is suppose to be deleted when frame is changing */
 };
 
 /**

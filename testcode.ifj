@@ -1,49 +1,54 @@
-' Recursion of three functions
+' Scope in function
+function foo() as integer
+    dim vysledek as integer
+    vysledek = 10
+    dim mezihodnota as integer
+    scope
+        dim vysledek as integer
+        vysledek = 5
+    end scope
+    vysledek = mezihodnota + vysledek
 
-declare function bar(nn as integer) as integer
+    scope
+        dim mezihodnota as integer
+        mezihodnota = 33
+        scope
+            dim mezihodnota as integer
+            mezihodnota = 3
+            vysledek = vysledek + mezihodnota
+        end scope
+        vysledek = vysledek + mezihodnota
+    end scope
 
-function foo(a as integer) as integer
-	dim b as integer
-	if (a = 0) then
-		return 20
-	else
-		b = a - 1
-		b = bar(b)
-		return b
-	end if
-end function
+    vysledek = vysledek + mezihodnota
 
-function bar(a as integer) as integer
-	dim b as integer
-	if (a = 0) then
-		return 20
-	else
-		b = a - 1
-		b = foo(b)
-		return b
-	end if
-end function
+    if mezihodnota > 0 then
+        dim mezihodnota as integer
+        mezihodnota = 45
+        vysledek = vysledek + mezihodnota
+    else
 
-function start(a as integer) as integer
+    end if
 
-	dim b as integer
+    dim i as integer = 8
+    do while i < 10
+        dim mezihodnota as integer
+        mezihodnota = 76
+        vysledek = vysledek + mezihodnota
+            scope
+                mezihodnota = 9
+                vysledek = vysledek + mezihodnota
+            end scope
+        i = i + 1
+    loop
+    vysledek = vysledek + mezihodnota
 
-	if (a > 10) then
-		b = foo(a)
-		return b
-	else
-		b = bar(a)
-		return b
-	end if
-
+    return vysledek
 
 end function
 
 scope
-
-	dim a as integer
-	a = start(20)
-	print a;
-
-
+    dim vysledek as integer
+    vysledek = foo()
+    print vysledek;
 end scope
