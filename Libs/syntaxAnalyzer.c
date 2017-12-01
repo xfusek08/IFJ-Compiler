@@ -130,7 +130,7 @@ int syntx_useRule(TTkList list)
   while (list->getActive(list)->type != precLes)
   {
     list->prev(list);
-    if (list->getActive(list) == NULL)
+    if (list->active == NULL || list->active->token.type == eol)
       return 0;
   }
   list->next(list);
@@ -265,9 +265,22 @@ int isExpressionType(EGrSymb type)
   return type <= eol && type != opComma;
 }
 
+//activate last eol
+TTkListItem *findLastEol(TTkList list)
+{
+  TTkListItem *activeT = list->active;
+  list->activate(list);
+  while (list->active->token.type != eol)
+    list->prev(list);
+  TTkListItem *lasteol = list->active;
+  list->active = activeT;
+  return lasteol;
+}
+
 int isExprEnded(TTkList list, SToken *actToken, EGrSymb terminal)
 {
-  if (list->first->next != NULL && list->first->next->next == NULL)
+  TTkListItem *lastEol = findLastEol(list);
+  if (lastEol->next != NULL && lastEol->next->next == NULL)
   {
     if (actToken->type == opRightBrc)
       return 1;
@@ -295,9 +308,13 @@ SToken syntx_parseFunction(SToken *actToken)
     *actToken = nextToken();
     if (actToken->type == opRightBrc)
       break;
+    SToken el;
+    el.type = eol;
+    tlist->insertLast(tlist, &el);
     SToken argToken;
     argToken.type = NT_EXPR;
     argToken.symbol = syntx_processExpression(actToken, NULL);
+    tlist->deleteLast(tlist);
     if (actToken->type != opComma && actToken->type != opRightBrc)
     {
       if (actToken->type != opComma)
@@ -430,7 +447,8 @@ TSymbol syntx_processExpression(SToken *actToken, TSymbol symbol)
   DPRINT("End of expression.");
 
   //test correct ending
-  if(!(tlist->first != NULL && tlist->first->next != NULL && tlist->first->next->next == NULL))
+  TTkListItem *lastEol = findLastEol(tlist);
+  if(!(lastEol->next != NULL && lastEol->next->next == NULL))
   {
     scan_raiseCodeError(syntaxErr, "Incomplete expression.", NULL);
   }
