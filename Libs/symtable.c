@@ -146,8 +146,6 @@ bool TArgList_equals(TArgList list1, TArgList list2)
 
   while(arg1 != NULL || arg2 != NULL)
   {
-    if (strcmp(arg1->ident, arg2->ident) != 0)
-      return false;
     if (arg1->dataType != arg2->dataType)
       return false;
     arg1 = arg1->next;
@@ -184,6 +182,7 @@ TSymbol TSymbol_create(char *ident)
   newSymb->key = ident;
   newSymb->type = symtUnknown;
   newSymb->dataType = dtUnspecified;
+  newSymb->isTemp = false;
   return newSymb;
 }
 
@@ -439,9 +438,7 @@ TSTNode TSTNode_delete(TSTNode self, char *key, bool *deleted)
     *deleted = false;
 
   if (toDelNode == NULL)
-  {
     return self;
-  }
 
   TSTNode kritNode = NULL;
 
@@ -468,10 +465,13 @@ TSTNode TSTNode_delete(TSTNode self, char *key, bool *deleted)
 
     kritNode->parent = toDelNode->parent;
 
-    if (toDelNode->parent->left == toDelNode)
-      toDelNode->parent->left = kritNode;
-    else
-      toDelNode->parent->right = kritNode;
+    if (toDelNode->parent != NULL)
+    {
+      if (toDelNode->parent->left == toDelNode)
+        toDelNode->parent->left = kritNode;
+      else
+        toDelNode->parent->right = kritNode;
+    }
   }
   // 3) node has both children
   else
@@ -521,6 +521,18 @@ TSTNode TSTNode_delete(TSTNode self, char *key, bool *deleted)
   if (deleted != NULL)
     *deleted = true;
   return TSTNode_getRoot(kritNode);
+}
+
+// fills stack witl in order symbols
+void TSTNode_inOrder(TSTNode self, TPStack nodeStack)
+{
+  if (nodeStack == NULL)
+    return;
+  if (self->left != NULL)
+    TSTNode_inOrder(self->left, nodeStack);
+  nodeStack->push(nodeStack, self);
+  if (self->right != NULL)
+    TSTNode_inOrder(self->right, nodeStack);
 }
 
 // =============================================================================
@@ -601,6 +613,38 @@ TSymTable getFirstNonTransparetFrame()
   return actTable;
 }
 
+void deleteTempSymbols()
+{
+  // printInstruction("deleting tmps...\n");
+  // symbt_print();
+
+  int i = GLBSymbTabStack->count - 1;
+  TPStack nodeStack = TPStack_create();
+  while(i >= 0) // serach firs
+  {
+    TSymTable actTable = GLBSymbTabStack->ptArray[i];
+    TSTNode rootNode = actTable->root;
+    if (rootNode != NULL)
+    {
+      TSTNode_inOrder(rootNode, nodeStack);
+      while (nodeStack->count > 0)
+      {
+        TSTNode actNode = nodeStack->top(nodeStack);
+        nodeStack->pop(nodeStack);
+        if (actNode->symbol != NULL)
+          if (actNode->symbol->isTemp)
+            TSymTable_detete(actTable, actNode->key);
+      }
+    }
+    i--;
+    if (!actTable->isTransparent)
+      break;
+  }
+  nodeStack->destroy(nodeStack);
+  // printInstruction("after ... \n");
+  // symbt_print();
+}
+
 // =============================================================================
 // ====================== Interface implementation =============================
 // =============================================================================
@@ -636,9 +680,12 @@ void symbt_destroy()
 void symbt_pushFrame(char *label, bool transparent, bool isLopp)
 {
   symbt_assertIfNotInit();
-  GLBSymbTabStack->push(GLBSymbTabStack, TSymTable_create(label, transparent, isLopp));
-  if (GLBSymbTabStack->count > 1 && (isLopp || !transparent))
+  if (GLBSymbTabStack->count > 0 && (isLopp || !transparent))
+  {
+    deleteTempSymbols();
     printInstruction("CREATEFRAME\n");
+  }
+  GLBSymbTabStack->push(GLBSymbTabStack, TSymTable_create(label, transparent, isLopp));
 }
 
 // Frees destroys symbol table on top of the stack.
@@ -659,9 +706,10 @@ void symbt_popFrame()
     }
     if (!table->isTransparent)
       flushCode();
-    printInstruction("CREATEFRAME\n");
-    TSymTable_destroy(table);
     GLBSymbTabStack->pop(GLBSymbTabStack);
+    TSymTable_destroy(table);
+    printInstruction("CREATEFRAME\n");
+    deleteTempSymbols();
   }
 }
 
@@ -685,7 +733,6 @@ TSymbol symbt_findSymb(char *ident)
   symbt_assertIfNotInit();
   if (ident == NULL)
     apperr_runtimeError("Symbol table: NULL identifier while calling symbt_findSymb().");
-
 
   // load act table on top
   TSymTable actTable = GLBSymbTabStack->top(GLBSymbTabStack);
@@ -809,7 +856,6 @@ void TSTNode_print(TSTNode node, int depht)
         fprintf(stderr, "    ");
     }
     fprintf(stderr, "[%s]\n", node->key);
-
     if (node->left != NULL)
       TSTNode_print(node->left, depht + 1);
   }

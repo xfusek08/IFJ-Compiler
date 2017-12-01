@@ -114,6 +114,7 @@ SToken sytx_getFreeVar()
   if (token.symbol == NULL)
   {
     token.symbol = symbt_insertSymbOnTop(ident);
+    token.symbol->isTemp = true; // mark symbol as temporaly (deleted on changing frame)
     token.symbol->type = symtVariable;
     printInstruction("DEFVAR %s\n", ident);
   }

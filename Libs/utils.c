@@ -44,7 +44,7 @@ void printInstruction(const char *arg, ...)
 
   va_list ap;
   va_start(ap, arg);
-  //vfprintf(stderr, arg, ap);
+  vfprintf(stderr, arg, ap);
   arrPos += vsprintf(&(Iarr[arrPos]), arg, ap);
   va_end(ap);
 }

@@ -196,10 +196,6 @@ void processFunction(SToken *actToken)
     if (!(parList->equals(parList, actSymbol->data.funcData.arguments)) ||
         retType != actSymbol->data.funcData.returnType)
       scan_raiseCodeError(semanticErr, "Function definition does not match with declaration.", actToken);
-
-    // TODO: specify error ... ?
-
-    TArgList_destroy(parList); // parameters aleready exists
   }
   else
   {
@@ -207,7 +203,6 @@ void processFunction(SToken *actToken)
     actSymbol->data.funcData.arguments = parList;
   }
   actSymbol->data.funcData.isDefined = true;
-  parList = actSymbol->data.funcData.arguments;
 
   // body of function
   symbt_pushFrame(actSymbol->data.funcData.label, false, false); // lets create local variable frame for function
@@ -221,12 +216,26 @@ void processFunction(SToken *actToken)
   // fill frame with argument symbols
   for (int i = 0; i < parList->count; i++)
   {
-    TArgument actArg = parList->get(parList, i);
-    tmpSymb = symbt_insertSymbOnTop(actArg->ident);
-    addPrefixToSymbolIdent("LF@", tmpSymb);
+    // make sure that in definition of fucntion is definition argument identifier used as key to symb table
+    TArgument definitionArg = parList->get(parList, i);
+    tmpSymb = symbt_insertSymbOnTop(definitionArg->ident);
+    // if fuctions was already declared ve have to remap definition symbol identifiers to declaration symbol identifiers
+    if (isDeclared)
+    {
+      TArgument declarationArg = actSymbol->data.funcData.arguments->get(actSymbol->data.funcData.arguments, i);
+      char *preident = tmpSymb->ident;
+      tmpSymb->ident = util_StrConcatenate("LF@", declarationArg->ident);
+      mmng_safeFree(preident);
+    }
+    else
+      addPrefixToSymbolIdent("LF@", tmpSymb);
     tmpSymb->type = symtVariable;
-    tmpSymb->dataType = actArg->dataType;
+    tmpSymb->dataType = definitionArg->dataType;
   }
+
+  // we destroy list of definition params because we need to use declaration identifiers in calls
+  if (isDeclared) // if function was declared
+    TArgList_destroy(parList);
 
   printf("LABEL %s\n", actSymbol->data.funcData.label);
   printf("PUSHFRAME\n");
@@ -260,6 +269,7 @@ void writeExpression(SToken *actToken)
 // definition or redefinition as variable
 void defOrRedefVariable(TSymbol symbolVar)
 {
+  /*
   if (symbolVar->type == symtUnknown || symbolVar->type == symtFuction)
   {
     addPrefixToSymbolIdent("LF@", symbolVar);
@@ -271,6 +281,20 @@ void defOrRedefVariable(TSymbol symbolVar)
     }
   }
   symbt_pushRedefinition(symbolVar);
+  */
+ if (symbolVar->type == symtUnknown)
+  {
+    symbolVar->type = symtVariable;
+    addPrefixToSymbolIdent("LF@", symbolVar);
+    printf("DEFVAR %s\n", symbolVar->ident);
+  }
+  else
+  {
+    if (symbolVar->type == symtVariable)
+      symbt_pushRedefinition(symbolVar);
+    else
+      scan_raiseCodeError(semanticErr, "Cannot redefine non variable identifier.", NULL);
+  }
 }
 
 void raiseUnexpToken(SToken *actToken, EGrSymb expected)
@@ -447,7 +471,7 @@ void ck_NT_ASSINGEXT(SToken *actToken, TSymbol symbol)
       break;
     // 7. NT_ASSINGEXT -> (epsilon)
     default:
-      setDefautValue(symbol->ident, symbol->dataType, true);
+      setDefautValue(symbol->ident, symbol->dataType, false);
       // let it be
       break;
   }
@@ -614,16 +638,20 @@ void ck_NT_STAT(SToken *actToken)
       CHECK_TOKEN(actToken, kwThen);
       NEXT_CHECK_TOKEN(actToken, eol);
       printInstruction("JUMPIFNEQ %s$else %s bool@true\n", iflabel, symbol->ident);
+      symbt_pushFrame(iflabel, true, true);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
+      symbt_popFrame();
       printInstruction("JUMP %s$endif\n", iflabel);
       printInstruction("LABEL %s$else\n", iflabel);
+      symbt_pushFrame(iflabel, true, true);
       ck_NT_INIF_EXT(actToken);
       CHECK_TOKEN(actToken, kwEnd);
       NEXT_CHECK_TOKEN(actToken, kwIf);
-      printInstruction("LABEL %s$endif\n", iflabel);
       symbt_popFrame();
+      printInstruction("LABEL %s$endif\n", iflabel);
       mmng_safeFree(iflabel);
+      symbt_popFrame();
       NEXT_TOKEN(actToken);
       break;
     // 19. NT_STAT -> kwDim ident kwAs dataType NT_ASSINGEXT
@@ -704,7 +732,7 @@ void ck_NT_STAT(SToken *actToken)
         printInstruction("JUMP %s$epilog\n", symbt_getActFuncLabel());
       }
       else
-        scan_raiseCodeError(anotherSemanticErr, "Return can not be used outside of function.", actToken);
+        scan_raiseCodeError(syntaxErr, "Return can not be used outside of function.", actToken);
       break;
     // 25. NT_STAT -> kwDo NT_DOIN kwLoop
     case kwDo:
@@ -813,7 +841,7 @@ void ck_NT_DOIN(SToken *actToken)
       printInstruction("%s %s$loopend ", (isUntil) ? "JUMPIFEQ" : "JUMPIFNEQ" , dolabel);
       printSymbolToOperand(cond);
       printInstruction(" bool@true\n");
-
+      symbt_pushFrame(dolabel, true, false);
       CHECK_TOKEN(actToken, eol);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
@@ -824,6 +852,8 @@ void ck_NT_DOIN(SToken *actToken)
       break;
     // 28. NT_DOIN -> eol NT_STAT_LIST NT_DOIN_WU NT_EXPR
     case eol:
+      symbt_pushFrame(dolabel, true, false);
+
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
       ck_NT_DOIN_WU(actToken);
@@ -846,6 +876,7 @@ void ck_NT_DOIN(SToken *actToken)
       break;
   }
   printInstruction("LABEL %s$loopend\n", dolabel);
+  symbt_popFrame();
   mmng_safeFree(dolabel);
 }
 
@@ -901,7 +932,6 @@ void ck_NT_INIF_EXT(SToken *actToken)
       NEXT_TOKEN(actToken);
       char *endiflabel = symbt_getActLocalLabel();
       char *iflabel = symbt_getNewLocalLabel();
-      symbt_pushFrame(iflabel, true, false);
 
       TSymbol symbol = syntx_processExpression(actToken, NULL);
       if (symbol->dataType != dtBool)
@@ -909,12 +939,12 @@ void ck_NT_INIF_EXT(SToken *actToken)
       CHECK_TOKEN(actToken, kwThen);
       NEXT_CHECK_TOKEN(actToken, eol);
       printInstruction("JUMPIFNEQ %s$else %s bool@true\n", iflabel, symbol->ident);
+      symbt_pushFrame(iflabel, true, true);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
+      symbt_popFrame();
       printInstruction("JUMP %s$endif\n", endiflabel);
       printInstruction("LABEL %s$else\n", iflabel);
-
-      symbt_popFrame();
       mmng_safeFree(iflabel);
       ck_NT_INIF_EXT(actToken);
       break;
@@ -923,7 +953,7 @@ void ck_NT_INIF_EXT(SToken *actToken)
       NEXT_CHECK_TOKEN(actToken, eol);
       NEXT_TOKEN(actToken);
       char *frameLabel = symbt_getNewLocalLabel();
-      symbt_pushFrame(frameLabel, true, false);
+      symbt_pushFrame(frameLabel, true, true);
       mmng_safeFree(frameLabel);
       ck_NT_STAT_LIST(actToken);
       symbt_popFrame();
