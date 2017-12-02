@@ -20,6 +20,7 @@
 unsigned arrPos = 0;
 char *Iarr;
 unsigned arrSize;
+bool lastWasCreateFrame = false;
 
 void printInstruction(const char *arg, ...)
 {
@@ -42,11 +43,16 @@ void printInstruction(const char *arg, ...)
     Iarr = mmng_safeRealloc(Iarr, sizeof(char) * arrSize);
   }
 
-  va_list ap;
-  va_start(ap, arg);
-  vfprintf(stderr, arg, ap);
-  arrPos += vsprintf(&(Iarr[arrPos]), arg, ap);
-  va_end(ap);
+  bool iscreateframe = strcmp(arg, "CREATEFRAME\n") == 0;
+  if (!iscreateframe || !lastWasCreateFrame)
+  {
+    va_list ap;
+    va_start(ap, arg);
+    // vfprintf(stderr, arg, ap);
+    arrPos += vsprintf(&(Iarr[arrPos]), arg, ap);
+    va_end(ap);
+  }
+  lastWasCreateFrame = iscreateframe;
 }
 
 void flushCode()
