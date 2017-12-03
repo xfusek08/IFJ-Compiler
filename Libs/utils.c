@@ -176,7 +176,7 @@ void util_printBuildFunc()
   printf("SUB LF@p3 LF@p3 LF@p2\nLABEL $$SubStrStart\nADD LF@p3 LF@p2 LF@p3\nLABEL $$CycleSubStr\nGETCHAR LF@help LF@p1 LF@p2\n");
   printf("CONCAT LF@%%retval LF@%%retval LF@help\nADD LF@p2 LF@p2 int@1\nJUMPIFNEQ $$CycleSubStr LF@p2 LF@p3\nLABEL $$EndSubStr\nPOPFRAME\nRETURN\n");
 
-  printf("LABEL $$Asc\nPUSHFRAME\nDEFVAR LF@%%retval\nDEFVAR LF@help\nMOVE LF@%%retval int@0\nSTRLEN LF@help LF@p1\nGT LF@help LF@help LF@p2\n");
+  printf("LABEL $$Asc\nPUSHFRAME\nDEFVAR LF@%%retval\nSUB LF@p2 LF@p2 int@1 \nDEFVAR LF@help\nMOVE LF@%%retval int@0\nSTRLEN LF@help LF@p1\nGT LF@help LF@help LF@p2\n");
   printf("JUMPIFEQ $$EndAsc LF@help bool@false\nGETCHAR LF@%%retval LF@p1 LF@p2\nSTRI2INT LF@%%retval LF@%%retval int@0\nLABEL $$EndAsc\nPOPFRAME\n");
   printf("RETURN\n");
 
