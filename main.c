@@ -29,9 +29,9 @@ int main(int argc, char *argv[])
   syntx_init();
 
   ///*
-  rparser_processProgram();
+  //rparser_processProgram();
   //*/
-  /*
+
   int i = 0;
   SToken token;
   token.type = eol;
@@ -43,7 +43,6 @@ int main(int argc, char *argv[])
       symbt_printSymb(token.symbol);
     i++;
   }
-  */
   syntx_destroy();
   scan_destroy();
   symbt_destroy();

@@ -245,6 +245,7 @@ SToken scan_GetNextToken()
         break;
       case '/':
         tokenType = opDiv;
+        allowed = true;
         if(GLBScanner->line[GLBScanner->position] == '\'')
         {
           position--;
