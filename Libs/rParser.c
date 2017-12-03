@@ -74,9 +74,7 @@ void ck_NT_DOIN_WU(                         // until or while neterminal
   SToken *actToken,
   char *doLabel,
   bool isOnEnd);
-void ck_NT_FORSTEP(                         // step of for
-  SToken *actToken,
-  TSymbol stepSymbol);
+TSymbol ck_NT_FORSTEP(SToken *actToken);    // step of for
 void ck_NT_INIF_EXT(SToken *actToken); 			// extension of body of if statement
 void ck_NT_PRINT_LIST(SToken *actToken); 		// list of expression for print function
 void ck_NT_EXPR(SToken *actToken); 					// one expresion
@@ -140,6 +138,27 @@ void setDefautValue(char *varIdent, DataType dt, bool directPrint)
     printf("MOVE %s %s\n", varIdent, typeconst);
   else
     printInstruction("MOVE %s %s\n", varIdent, typeconst);
+}
+
+// balance numeric symbol types
+void balanceNumTypes(TSymbol symb1, TSymbol symb2)
+{
+  if (symb1->dataType == dtInt && symb2->dataType == dtFloat)
+  {
+    symb2->dataType = dtInt;
+    if (symb2->type == symtConstant) // is constant
+      symb2->data.intVal = syntx_doubleToInt(symb1->data.doubleVal);
+    else // is variable
+      printInstruction("FLOAT2R2EINT %s %s\n", symb2->ident, symb2->ident);
+  }
+  else if (symb1->dataType == dtFloat && symb2->dataType == dtInt)
+  {
+    symb2->dataType = dtFloat;
+    if (symb2->type == symtConstant) // is constant
+      symb2->data.doubleVal = syntx_intToDouble(symb2->data.intVal);
+    else // is variable
+      printInstruction("INT2FLOAT %s %s\n", symb2->ident, symb2->ident);
+  }
 }
 
 // function for defining function
@@ -262,7 +281,7 @@ void defOrRedefVariable(TSymbol symbolVar)
   }
   symbt_pushRedefinition(symbolVar);
   */
- if (symbolVar->type == symtUnknown)
+  if (symbolVar->type == symtUnknown)
   {
     symbolVar->type = symtVariable;
     addPrefixToSymbolIdent("LF@", symbolVar);
@@ -753,18 +772,44 @@ void ck_NT_STAT(SToken *actToken)
       CHECK_TOKEN(actToken, kwTo);
       NEXT_TOKEN(actToken);
 
-      TSymbol toSymb = symbt_findOrInsertSymb("%to");
-      TSymbol stepSymb = symbt_findOrInsertSymb("%step");
-      defOrRedefVariable(toSymb);
-      defOrRedefVariable(stepSymb);
-      toSymb->dataType = actSymbol->dataType;
-      stepSymb->dataType = actSymbol->dataType;
+      TSymbol toSymb = NULL;
+      TSymbol stepSymb = NULL;
 
       // set TO value
-      syntx_processExpression(actToken, toSymb);
+      TSymbol tmpToSymb = syntx_processExpression(actToken, NULL);
+      if (tmpToSymb->dataType != dtInt && tmpToSymb->dataType != dtFloat)
+        scan_raiseCodeError(semanticErr, "To value has no valid data type. Only double or integer is allowed.", actToken);
+      if (tmpToSymb->type == symtConstant)
+      {
+        toSymb = tmpToSymb;
+        balanceNumTypes(actSymbol, toSymb);
+      }
+      else // variable
+      {
+        toSymb = symbt_findOrInsertSymb("%to");
+        defOrRedefVariable(toSymb);
+        toSymb->dataType = tmpToSymb->dataType;
+        balanceNumTypes(actSymbol, toSymb);
+        printInstruction("MOVE %s %s\n", toSymb->ident, tmpToSymb->ident);
+      }
 
       // set STEP Value
-      ck_NT_FORSTEP(actToken, stepSymb);
+      TSymbol tmpStepSymb = ck_NT_FORSTEP(actToken);
+      if (tmpStepSymb->dataType != dtInt && tmpStepSymb->dataType != dtFloat)
+        scan_raiseCodeError(semanticErr, "Step value has no valid data type. Only double or integer is allowed.", actToken);
+      if (tmpStepSymb->type == symtConstant)
+      {
+        stepSymb = tmpStepSymb;
+        balanceNumTypes(actSymbol, stepSymb);
+      }
+      else // variable
+      {
+        stepSymb = symbt_findOrInsertSymb("%step");
+        defOrRedefVariable(toSymb);
+        stepSymb->dataType = tmpStepSymb->dataType;
+        balanceNumTypes(actSymbol, stepSymb);
+        printInstruction("MOVE %s %s\n", stepSymb->ident, tmpStepSymb->ident);
+      }
 
       CHECK_TOKEN(actToken, eol);
       // end of for initialization
@@ -892,25 +937,28 @@ void ck_NT_DOIN_WU(SToken *actToken, char *doLabel, bool isOnEnd)
 
 // step of for
 // first(NT_FORSTEP) = { kwStep -> (31); else -> (32 [epsilon]) }
-void ck_NT_FORSTEP(SToken *actToken, TSymbol stepSymbol)
+TSymbol ck_NT_FORSTEP(SToken *actToken)
 {
+  TSymbol result = NULL;
   switch (actToken->type)
   {
     // 31. NT_FORSTEP -> kwStep NT_EXPR
     case kwStep:
       NEXT_TOKEN(actToken);
-      defOrRedefVariable(stepSymbol);
-      syntx_processExpression(actToken, stepSymbol);
+      result = syntx_processExpression(actToken, NULL);
       break;
     // 32. NT_FORSTEP -> (epsilon)
     default:
-      stepSymbol->type = symtConstant;
-      if (stepSymbol->dataType == dtInt)
-        stepSymbol->data.intVal = 1;
-      else
-        stepSymbol->data.doubleVal = 1.0;
+      result = symbt_findOrInsertSymb("1");
+      if (result->type != symtConstant)
+      {
+        result->type = symtConstant;
+        result->dataType = dtInt;
+        result->data.intVal = 1;
+      }
       break;
   }
+  return result;
 }
 
 // extension of body of if statement
@@ -999,7 +1047,7 @@ char *ck_NT_CYCLE_NESTS(SToken *actToken, bool isExit)
     // 39. NT_CYCLE_NESTS -> kwFor NT_CYCLES_FOR
     case kwFor:
       NEXT_TOKEN(actToken);
-      ck_NT_CYCLES_DO(actToken, &cnt);
+      ck_NT_CYCLES_FOR(actToken, &cnt);
       isfor = true;
       break;
     // 40. NT_CYCLE_NESTS -> (epsilon)

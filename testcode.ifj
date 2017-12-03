@@ -1,13 +1,10 @@
-'Nested do and for loops
+'For next with iterator
 
 scope
-	dim i as integer
+	dim max as integer = 6
+	dim s as integer = 2
 
-	do
-		for j as integer = i to i + 5
-			print j;
-		next
-		print !"\n";
-		i = i + 1
-	loop while i < 5
+	for i as integer = 0 to max step s
+		print i;
+	next i
 end scope
