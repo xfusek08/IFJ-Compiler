@@ -153,6 +153,9 @@ int syntx_useRule(TTkList list)
     SToken *arg1 = &list->active->token;
     SToken *arg2 = &list->active->next->token;
     SToken *arg3 = &list->active->next->next->token;
+    //symbt_printSymb(arg1->symbol);
+    //fprintf(stderr, "op: %d\n", arg2->type);
+    //symbt_printSymb(arg3->symbol);
     if (arg1->symbol->type == symtConstant && arg3->symbol->type == symtConstant)
     {
       if (isBoolResult(arg2))
@@ -302,7 +305,7 @@ SToken syntx_parseFunction(SToken *actToken)
   SToken funcToken = *actToken;
   *actToken = nextToken();
   if (actToken->type != opLeftBrc)
-    scan_raiseCodeError(syntaxErr, "Missing '(' after function identifier.", actToken);
+    scan_raiseCodeError(semanticErr, "Missing '(' after function identifier.", actToken);
   int argNum = 0;
   while (actToken->type != opRightBrc)
   {
@@ -318,10 +321,7 @@ SToken syntx_parseFunction(SToken *actToken)
     tlist->deleteLast(tlist);
     if (actToken->type != opComma && actToken->type != opRightBrc)
     {
-      if (actToken->type != opComma)
-        scan_raiseCodeError(syntaxErr, "Incorect parameter of function call.", actToken);
-      if (actToken->type != opRightBrc)
-        scan_raiseCodeError(syntaxErr, "Function call isn't end with ')'.", actToken);
+      scan_raiseCodeError(syntaxErr, "Function call isn't end with ')'.", actToken);
     }
     syntx_generateCodeForVarDef(&funcToken, argNum, &argToken);
     argNum++;
