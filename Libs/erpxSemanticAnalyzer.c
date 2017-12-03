@@ -140,6 +140,12 @@ int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *operator, SToken 
   //TODO: optimalization
   // enabled data types pairs
   if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){  // int - int
+
+    if(operator->type == opDivFlt){ // DIV can not work with integers: int - int -> double - double
+      syntx_intToDoubleToken(leftOperand);
+      syntx_intToDoubleToken(rightOperand);
+    }
+
     return 1;
   }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtFloat){  // double - double
     return 1;
@@ -173,15 +179,28 @@ int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *operator, SToken 
 int syntx_checkDataTypesOfIntegerDiv(SToken *leftOperand, SToken *rightOperand){
   // CHECKME: really cast here - doubleToInt?
   if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){  // int - int
-    return 1;
-  }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> int - int
 
-    syntx_doubleToIntToken(leftOperand);
+    // DIV can not work with integers: int - int -> double - double
+    syntx_intToDoubleToken(leftOperand);
+    syntx_intToDoubleToken(rightOperand);
+
+    return 1;
+  }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> round(double) - int -> double - double
+
+    syntx_doubleToIntToken(leftOperand);  // round
+
+    // DIV can not work with integers: int - int -> double - double
+    syntx_intToDoubleToken(rightOperand);
+    syntx_intToDoubleToken(leftOperand);
     return 1;
 
-  }else if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtFloat){  // int - double -> int - int
+  }else if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtFloat){  // int - double -> round(double) - int -> double - double
 
     syntx_doubleToIntToken(rightOperand);
+
+    // DIV can not work with integers: int - int -> double - double
+    syntx_intToDoubleToken(rightOperand);
+    syntx_intToDoubleToken(leftOperand);
     return 1;
   }
 
