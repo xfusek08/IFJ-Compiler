@@ -14,7 +14,7 @@ debug: $(EXECUTABLE) clean
 
 test: debug $(EXECUTABLE)
 	cat testcode.ifj | ./$(EXECUTABLE) > out.ifjcode17
-	IFJCode17Interp/ic17int.exe out.ifjcode17
+	IFJCode17Interp/ic17int out.ifjcode17
 
 %.o : %.c
 	gcc $(CFLAGS) -c $< -o $@

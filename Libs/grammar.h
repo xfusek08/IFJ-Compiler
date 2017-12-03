@@ -50,7 +50,7 @@ typedef enum
   NT_DOIN_WU,       // until or while neterminal
   NT_FORSTEP,       // step of for
   NT_INIF_EXT,      // extension of body of if statement
-  NT_EXPR_LIST,     // list of expression for print function
+  NT_PRINT_LIST,     // list of expression for print function
   NT_EXPR,          // one expresion
   NT_ARGUMENT_LIST,  // list of expression separated by comma
   NT_EXPR_TMP,      // one expresion, indicates result in auxiliary variable (for code optimization)
@@ -104,7 +104,7 @@ first(NT_STAT) = {
   kwFor -> (26);
   else -> (error) }
 16. NT_STAT -> kwInput ident
-17. NT_STAT -> kwPrint NT_EXPR_LIST
+17. NT_STAT -> kwPrint NT_PRINT_LIST
 18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf
 19. NT_STAT -> kwDim ident kwAs dataType NT_ASSINGEXT
 20. NT_STAT -> ident opEq NT_EXPR
@@ -132,9 +132,9 @@ first(NT_INIF_EXT) = { kwElseif -> (33); kwElse -> (34); else -> (35 [epsilon]) 
 34. NT_INIF_EXT -> kwElse eol NT_STAT_LIST
 35. NT_INIF_EXT -> (epsilon)
 
-first(NT_EXPR_LIST) = { first(NT_EXPR) -> (36); else -> (37 [epsilon]) }
-36. NT_EXPR_LIST -> NT_EXPR opSemcol NT_EXPR_LIST
-37. NT_EXPR_LIST -> (epsilon)
+first(NT_PRINT_LIST) = { first(NT_EXPR) -> (36); else -> (37 [epsilon]) }
+36. NT_PRINT_LIST -> NT_EXPR opSemcol NT_PRINT_LIST
+37. NT_PRINT_LIST -> (epsilon)
 
 // following rules does not contain epsilon rules and it will be process by another algorithm
 

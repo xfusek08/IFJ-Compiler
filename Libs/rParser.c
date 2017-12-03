@@ -73,7 +73,7 @@ void ck_NT_DOIN(SToken *actToken); 					// body of do..loop statement
 void ck_NT_DOIN_WU(SToken *actToken); 			// until or while neterminal
 TSymbol ck_NT_FORSTEP(SToken *actToken); 	  // step of for
 void ck_NT_INIF_EXT(SToken *actToken); 			// extension of body of if statement
-void ck_NT_EXPR_LIST(SToken *actToken); 		// list of expression for print function
+void ck_NT_PRINT_LIST(SToken *actToken); 		// list of expression for print function
 void ck_NT_EXPR(SToken *actToken); 					// one expresion
 void ck_NT_ARGUMENT_LIS(SToken *actToken); 	// list of expression separated by comma
 
@@ -250,20 +250,6 @@ void processFunction(SToken *actToken)
   printInstruction("POPFRAME\n");
   printInstruction("RETURN\n");
   symbt_popFrame();
-}
-
-void writeExpression(SToken *actToken)
-{
-  if (actToken->type == ident || actToken->type == opLeftBrc) // NT_EXPR
-  {
-    // evaluate expression
-    TSymbol actSymbol = syntx_processExpression(actToken, NULL);
-    printInstruction("WRITE ");
-    printSymbolToOperand(actSymbol);
-    printInstruction("\n");
-  }
-  else
-    scan_raiseCodeError(semanticErr, "Expression expected.", actToken);
 }
 
 // definition or redefinition as variable
@@ -621,10 +607,10 @@ void ck_NT_STAT(SToken *actToken)
       printInstruction("READ %s %s\n", actSymbol->ident, util_dataTypeToString(actSymbol->dataType));
       NEXT_TOKEN(actToken);
       break;
-    // 17. NT_STAT -> kwPrint NT_EXPR opSemcol NT_EXPR_LIST
+    // 17. NT_STAT -> kwPrint NT_EXPR opSemcol NT_PRINT_LIST
     case kwPrint:
       NEXT_TOKEN(actToken);
-      ck_NT_EXPR_LIST(actToken);
+      ck_NT_PRINT_LIST(actToken);
       break;
     // 18. NT_STAT -> kwIf NT_EXPR kwThen eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf
     case kwIf:
@@ -966,20 +952,26 @@ void ck_NT_INIF_EXT(SToken *actToken)
 }
 
 // list of expression for print function
-// first(NT_EXPR_LIST) = { first(NT_EXPR) -> (36); else -> (37 [epsilon]) }
-void ck_NT_EXPR_LIST(SToken *actToken)
+// first(NT_PRINT_LIST) = { first(NT_EXPR) -> (36); else -> (37 [epsilon]) }
+void ck_NT_PRINT_LIST(SToken *actToken)
 {
+  TSymbol actSymbol = NULL;
   switch (actToken->type)
   {
-    // 36. NT_EXPR_LIST -> NT_EXPR opSemcol NT_EXPR_LIST
+    // 36. ck_NT_PRINT -> NT_EXPR opSemcol NT_PRINT_LIST
+    case opMns:
     case opLeftBrc:
     case ident:
-      writeExpression(actToken);
+      // evaluate expression
+      actSymbol = syntx_processExpression(actToken, NULL);
+      printInstruction("WRITE ");
+      printSymbolToOperand(actSymbol);
+      printInstruction("\n");
       CHECK_TOKEN(actToken, opSemcol);
       NEXT_TOKEN(actToken);
-      ck_NT_EXPR_LIST(actToken);
+      ck_NT_PRINT_LIST(actToken);
       break;
-    // 37. NT_EXPR_LIST -> (epsilon)
+    // 37. NT_PRINT_LIST -> (epsilon)
     default:
         // let if be
       break;

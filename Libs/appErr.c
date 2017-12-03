@@ -23,7 +23,6 @@ void apperr_runtimeError(char *errMsg)
 
 void apperr_codeError(ErrType type, int row, int col, char *line, char *message, SToken *token)
 {
-
   switch (type)
   {
     case lexicalErr:

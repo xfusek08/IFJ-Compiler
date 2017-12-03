@@ -237,7 +237,8 @@ void pst_push(TPStack stack, void *val)
 {
   if (stack->count == stack->size)
   {
-    stack->ptArray = mmng_safeRealloc(stack->ptArray, stack->size * sizeof(void *) + stack->size * sizeof(void *) * STACK_REALLOC_MULTIPLIER);
+    stack->size *= STACK_REALLOC_MULTIPLIER;
+    stack->ptArray = mmng_safeRealloc(stack->ptArray, sizeof(void *) * stack->size);
   }
   stack->ptArray[stack->count++] = val;
 }
@@ -300,8 +301,8 @@ TTkList TTkList_create()
 TPStack TPStack_create()
 {
   TPStack stack = mmng_safeMalloc(sizeof(struct pointerStack));
-  stack->ptArray = mmng_safeMalloc(sizeof(void *)*STACK_INITIAL_SIZE);
   stack->size = STACK_INITIAL_SIZE;
+  stack->ptArray = mmng_safeMalloc(sizeof(void *) * stack->size);
   stack->count = 0;
   stack->push = pst_push;
   stack->pop = pst_pop;
