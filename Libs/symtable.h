@@ -144,10 +144,11 @@ void symbt_destroy();
  * Creates new instance of symbol table on top of the stack
  * \param char *label sets label of frame
  * \param bool transparent flag true if created frame is suppose to be transparent
- * \param bool isLopp marks label as loop
+ * \param bool isLopp marks label as for ... next loop
+ * \param bool isLopp marks label as do ... loop loop
  * (searching for symbols continues on next table on stack)
  */
-void symbt_pushFrame(char *label, bool transparent, bool isLopp);
+void symbt_pushFrame(char *label, bool transparent, bool isForLoop, bool isDoLoop);
 
 /**
  * Frees destroys symbol table on top of the stack.
@@ -215,7 +216,13 @@ char *symbt_getActFuncLabel();
  * Gets label of first loop frame from top of frame stack (used for exit and continue)
  * NULL if not exists
  */
-char *symbt_getActLoopLabel();
+char *symbt_getNthForLoopLabel(int N);
+
+/**
+ * Gets label of N-th do ... loop frame from top of frame stack (used for exit and continue)
+ * NULL if not exists
+ */
+char *symbt_getNthDoLoopLabel(int N);
 
 /**
  * Gets label of actual frame on top of frame stack
@@ -231,6 +238,16 @@ char *symbt_getNewLocalLabel();
  * Redefines symbol on datastack and remembers it for frame destroying
  */
 void symbt_pushRedefinition(TSymbol symbol);
+
+/**
+ * adds identifier of variable to fucntion frame
+ */
+void symbt_defVarIdent(char *varIdent);
+
+/**
+ * checks if identifier already exists in function frame
+ */
+bool symbt_isVarDefined(char *varIdent);
 
 // funkce pouze pro testovaci programy
 

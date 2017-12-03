@@ -70,12 +70,27 @@ void ck_NT_PARAM_EXT( 		                  // continue of param list
 void ck_NT_STAT_LIST(SToken *actToken); 		// list of statements
 void ck_NT_STAT(SToken *actToken); 					// one statement
 void ck_NT_DOIN(SToken *actToken); 					// body of do..loop statement
-void ck_NT_DOIN_WU(SToken *actToken); 			// until or while neterminal
-TSymbol ck_NT_FORSTEP(SToken *actToken); 	  // step of for
+void ck_NT_DOIN_WU(                         // until or while neterminal
+  SToken *actToken,
+  char *doLabel,
+  bool isOnEnd);
+void ck_NT_FORSTEP(                         // step of for
+  SToken *actToken,
+  TSymbol stepSymbol);
 void ck_NT_INIF_EXT(SToken *actToken); 			// extension of body of if statement
 void ck_NT_PRINT_LIST(SToken *actToken); 		// list of expression for print function
 void ck_NT_EXPR(SToken *actToken); 					// one expresion
 void ck_NT_ARGUMENT_LIS(SToken *actToken); 	// list of expression separated by comma
+char *ck_NT_CYCLE_NESTS(                    // extension of contuinue and exit
+  SToken *actToken,
+  bool isExit);
+void ck_NT_CYCLES_DO(                       // list of do kws
+  SToken *actToken,
+  int *doCnt);
+void ck_NT_CYCLES_FOR(                      // list of for kws
+  SToken *actToken,
+  int *forCnt);
+
 
 
 // =============================================================================
@@ -107,27 +122,6 @@ void printSymbolToOperand(TSymbol symbol)
   }
   else if (symbol->type == symtVariable)
     printInstruction("%s", symbol->ident);
-}
-
-// balance numeric symbol types
-void balanceNumTypes(TSymbol symb1, TSymbol symb2)
-{
-  if (symb1->dataType == dtInt && symb2->dataType == dtFloat)
-  {
-    symb1->dataType = dtFloat;
-    if (symb1->type == symtConstant) // is constant
-      symb1->data.doubleVal = syntx_intToDouble(symb1->data.intVal);
-    else // is variable
-      printInstruction("INT2FLOAT %s %s\n", symb1->ident, symb1->ident);
-  }
-  else if (symb1->dataType == dtFloat && symb2->dataType == dtInt)
-  {
-    symb2->dataType = dtFloat;
-    if (symb2->type == symtConstant) // is constant
-      symb2->data.doubleVal = syntx_intToDouble(symb2->data.intVal);
-    else // is variable
-      printInstruction("INT2FLOAT %s %s\n", symb2->ident, symb2->ident);
-  }
 }
 
 void setDefautValue(char *varIdent, DataType dt, bool directPrint)
@@ -205,7 +199,7 @@ void processFunction(SToken *actToken)
   actSymbol->data.funcData.isDefined = true;
 
   // body of function
-  symbt_pushFrame(actSymbol->data.funcData.label, false, false); // lets create local variable frame for function
+  symbt_pushFrame(actSymbol->data.funcData.label, false, false, false); // lets create local variable frame for function
 
   // define return variable and params in symbol table
   TSymbol tmpSymb = symbt_insertSymbOnTop("%retval");
@@ -272,7 +266,11 @@ void defOrRedefVariable(TSymbol symbolVar)
   {
     symbolVar->type = symtVariable;
     addPrefixToSymbolIdent("LF@", symbolVar);
-    printf("DEFVAR %s\n", symbolVar->ident);
+    if (!symbt_isVarDefined(symbolVar->key))
+    {
+      symbt_defVarIdent(symbolVar->key);
+      printf("DEFVAR %s\n", symbolVar->ident);
+    }
   }
   else
   {
@@ -473,7 +471,7 @@ void ck_NT_SCOPE(SToken *actToken)
     case kwScope:
       NEXT_CHECK_TOKEN(actToken, eol);
       char *label = symbt_getNewLocalLabel();
-      symbt_pushFrame(label, true, false);
+      symbt_pushFrame(label, true, false, false);
       mmng_safeFree(label);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
@@ -595,6 +593,7 @@ void ck_NT_STAT_LIST(SToken *actToken)
 void ck_NT_STAT(SToken *actToken)
 {
   TSymbol actSymbol = NULL;
+  bool isExit = false; // used in continue and exit
   switch (actToken->type)
   {
     // 16. NT_STAT -> kwInput ident
@@ -616,7 +615,7 @@ void ck_NT_STAT(SToken *actToken)
     case kwIf:
       NEXT_TOKEN(actToken);
       char *iflabel = symbt_getNewLocalLabel();
-      symbt_pushFrame(iflabel, true, false);
+      symbt_pushFrame(iflabel, true, false, false);
       TSymbol symbol = syntx_processExpression(actToken, NULL);
       if (symbol->dataType != dtBool)
         ERR_COND_TYPE();
@@ -624,13 +623,13 @@ void ck_NT_STAT(SToken *actToken)
       CHECK_TOKEN(actToken, kwThen);
       NEXT_CHECK_TOKEN(actToken, eol);
       printInstruction("JUMPIFNEQ %s$else %s bool@true\n", iflabel, symbol->ident);
-      symbt_pushFrame(iflabel, true, true);
+      symbt_pushFrame(iflabel, true, false, false);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
       symbt_popFrame();
       printInstruction("JUMP %s$endif\n", iflabel);
       printInstruction("LABEL %s$else\n", iflabel);
-      symbt_pushFrame(iflabel, true, true);
+      symbt_pushFrame(iflabel, true, false, false);
       ck_NT_INIF_EXT(actToken);
       CHECK_TOKEN(actToken, kwEnd);
       NEXT_CHECK_TOKEN(actToken, kwIf);
@@ -689,20 +688,22 @@ void ck_NT_STAT(SToken *actToken)
       }
       break;
     // 21. NT_STAT -> kwContinue
-    case kwContinue:
-      if (symbt_getActLoopLabel() != NULL)
-        printInstruction("JUMP %s$loop\n", symbt_getActLoopLabel());
-      else
-        scan_raiseCodeError(semanticErr, "\"Continue\" command can be used only in loop.", actToken);
-      NEXT_TOKEN(actToken);
-      break;
     // 22. NT_STAT -> kwExit
+    case kwContinue:
     case kwExit:
-      if (symbt_getActLoopLabel() != NULL)
-        printInstruction("JUMP %s$loopend\n", symbt_getActLoopLabel());
-      else
-        scan_raiseCodeError(semanticErr, "\"Exit\" command can be used only in loop.", actToken);
+      isExit = actToken->type == kwExit;
       NEXT_TOKEN(actToken);
+      char *label = ck_NT_CYCLE_NESTS(actToken, isExit);
+      if (label != NULL)
+        printInstruction("JUMP %s\n", label);
+      else
+      {
+        if (symbt_getNthDoLoopLabel(0) == NULL && symbt_getNthForLoopLabel(0) == NULL) // not in cycle at all
+          scan_raiseCodeError(semanticErr, "\"Continue\" and \"Exit\" commands can be used only in loop.", actToken);
+        else
+          scan_raiseCodeError(semanticErr, "Cannot find coressponding loop.", actToken);
+      }
+      mmng_safeFree(label);
       break;
     // 23. NT_STAT -> NT_SCOPE
     case kwScope:
@@ -720,7 +721,7 @@ void ck_NT_STAT(SToken *actToken)
       else
         scan_raiseCodeError(syntaxErr, "Return can not be used outside of function.", actToken);
       break;
-    // 25. NT_STAT -> kwDo NT_DOIN kwLoop
+    // 25. NT_STAT -> kwDo NT_DOIN
     case kwDo:
       NEXT_TOKEN(actToken);
       ck_NT_DOIN(actToken);
@@ -733,7 +734,7 @@ void ck_NT_STAT(SToken *actToken)
       NEXT_TOKEN(actToken);
 
       char *forlabel = symbt_getNewLocalLabel();
-      symbt_pushFrame(forlabel, true, false);
+      symbt_pushFrame(forlabel, true, false, false);
       // [as datatype]
       if (actToken->type == kwAs)
       {
@@ -752,19 +753,18 @@ void ck_NT_STAT(SToken *actToken)
       CHECK_TOKEN(actToken, kwTo);
       NEXT_TOKEN(actToken);
 
+      TSymbol toSymb = symbt_findOrInsertSymb("%to");
+      TSymbol stepSymb = symbt_findOrInsertSymb("%step");
+      defOrRedefVariable(toSymb);
+      defOrRedefVariable(stepSymb);
+      toSymb->dataType = actSymbol->dataType;
+      stepSymb->dataType = actSymbol->dataType;
+
       // set TO value
-      TSymbol toSymb = syntx_processExpression(actToken, NULL);
-      if (toSymb->dataType != dtInt && toSymb->dataType != dtFloat)
-        scan_raiseCodeError(semanticErr, "To value has no valid data type. Only double or integer is allowed.", actToken);
-      // balance comparing data types
-      balanceNumTypes(actSymbol, toSymb);
+      syntx_processExpression(actToken, toSymb);
 
       // set STEP Value
-      TSymbol stepSymb = ck_NT_FORSTEP(actToken);
-      if (stepSymb->dataType != dtInt && stepSymb->dataType != dtFloat)
-        scan_raiseCodeError(semanticErr, "Step value has no valid data type. Only double or integer is allowed.", actToken);
-      // balance comparing data types
-      balanceNumTypes(actSymbol, stepSymb);
+      ck_NT_FORSTEP(actToken, stepSymb);
 
       CHECK_TOKEN(actToken, eol);
       // end of for initialization
@@ -772,16 +772,18 @@ void ck_NT_STAT(SToken *actToken)
       NEXT_TOKEN(actToken);
       // check condition
       printInstruction("LABEL %s$loop\n", forlabel);
-      symbt_pushFrame(forlabel, true, true);
+      symbt_pushFrame(forlabel, true, true, false);
       printInstruction("DEFVAR TF@%%forisless\n");
-
       printInstruction("GT TF@%%forisless %s ", actSymbol->ident);
+      //symbt_printSymb(toSymb);
       printSymbolToOperand(toSymb);
       printInstruction("\n");
       printInstruction("JUMPIFEQ %s$loopend TF@%%forisless bool@true\n", forlabel);
 
       // inner statements
       ck_NT_STAT_LIST(actToken);
+
+      printInstruction("LABEL %s$loopinc\n", forlabel);
 
       // increment iterator
       printInstruction("ADD %s %s ", actSymbol->ident, actSymbol->ident);
@@ -808,26 +810,15 @@ void ck_NT_STAT(SToken *actToken)
 void ck_NT_DOIN(SToken *actToken)
 {
   char *dolabel = symbt_getNewLocalLabel();
-  TSymbol cond = NULL;
-  bool isUntil = false;
   printInstruction("LABEL %s$loop\n", dolabel);
-  symbt_pushFrame(dolabel, true, true);
+  symbt_pushFrame(dolabel, true, false, true);
   switch (actToken->type)
   {
-    // 27. NT_DOIN -> NT_DOIN_WU NT_EXPR eol NT_STAT_LIST
+    // 27. NT_DOIN -> NT_DOIN_WU NT_EXPR eol NT_STAT_LIST kwLoop
     case kwWhile:
     case kwUntil:
-      ck_NT_DOIN_WU(actToken);
-      isUntil = actToken->type == kwUntil;
-      NEXT_TOKEN(actToken);
-      cond = syntx_processExpression(actToken, NULL);
-      if (cond->dataType != dtBool)
-        ERR_COND_TYPE();
-
-      printInstruction("%s %s$loopend ", (isUntil) ? "JUMPIFEQ" : "JUMPIFNEQ" , dolabel);
-      printSymbolToOperand(cond);
-      printInstruction(" bool@true\n");
-      symbt_pushFrame(dolabel, true, false);
+      ck_NT_DOIN_WU(actToken, dolabel, false);
+      symbt_pushFrame(dolabel, true, false, false);
       CHECK_TOKEN(actToken, eol);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
@@ -836,26 +827,16 @@ void ck_NT_DOIN(SToken *actToken)
       symbt_popFrame();
       printInstruction("JUMP %s$loop\n", dolabel);
       break;
-    // 28. NT_DOIN -> eol NT_STAT_LIST NT_DOIN_WU NT_EXPR
+    // 28. NT_DOIN -> eol NT_STAT_LIST kwLoop NT_DOIN_WU NT_EXPR
     case eol:
-      symbt_pushFrame(dolabel, true, false);
+      symbt_pushFrame(dolabel, true, false, false);
 
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
-      ck_NT_DOIN_WU(actToken);
-
-      isUntil = actToken->type == kwUntil;
+      CHECK_TOKEN(actToken, kwLoop);
       NEXT_TOKEN(actToken);
-      cond = syntx_processExpression(actToken, NULL);
-      if (cond->dataType != dtBool)
-        ERR_COND_TYPE();
-
+      ck_NT_DOIN_WU(actToken, dolabel, true);
       symbt_popFrame();
-
-      printInstruction("%s %s$loop ", (isUntil) ? "JUMPIFNEQ" : "JUMPIFEQ" , dolabel);
-      printSymbolToOperand(cond);
-      printInstruction(" bool@true\n");
-
       break;
     default:
       ERR_UNEXP_TOKEN();
@@ -868,43 +849,68 @@ void ck_NT_DOIN(SToken *actToken)
 
 // until or while neterminal
 // first(NT_DOIN_WU) = { kwWhile -> (29); kwUntil -> (30); else -> (error) }
-void ck_NT_DOIN_WU(SToken *actToken)
+void ck_NT_DOIN_WU(SToken *actToken, char *doLabel, bool isOnEnd)
 {
+  TSymbol cond = NULL;
   switch (actToken->type)
   {
-    // 29. NT_DOIN_WU -> kwWhile
-    // 30. NT_DOIN_WU -> kwUntil
+    // 29. NT_DOIN_WU -> kwWhile NT_EXPR
     case kwWhile:
-    case kwUntil:
-      // ok
+      NEXT_TOKEN(actToken);
+      cond = syntx_processExpression(actToken, NULL);
+      if (cond->dataType != dtBool)
+        ERR_COND_TYPE();
+
+      printInstruction("%s %s$%s ",
+        (isOnEnd) ? "JUMPIFEQ" : "JUMPIFNEQ",
+        doLabel,
+        (isOnEnd) ? "loop" : "loopend");
+      printSymbolToOperand(cond);
+      printInstruction(" bool@true\n");
       break;
+    // 30. NT_DOIN_WU -> kwUntil NT_EXPR
+    case kwUntil:
+      NEXT_TOKEN(actToken);
+      cond = syntx_processExpression(actToken, NULL);
+      if (cond->dataType != dtBool)
+        ERR_COND_TYPE();
+
+      printInstruction("%s %s$%s ",
+        (isOnEnd) ? "JUMPIFNEQ" : "JUMPIFEQ",
+        doLabel,
+        (isOnEnd) ? "loop" : "loopend");
+      printSymbolToOperand(cond);
+      printInstruction(" bool@true\n");
+      break;
+    // 31. NT_DOIN_WU -> (epsilon)
     default:
-      ERR_UNEXP_TOKEN();
+      if (isOnEnd)
+        printInstruction("JUMP %s$loop\n", doLabel);
       break;
   }
 }
 
 // step of for
 // first(NT_FORSTEP) = { kwStep -> (31); else -> (32 [epsilon]) }
-TSymbol ck_NT_FORSTEP(SToken *actToken)
+void ck_NT_FORSTEP(SToken *actToken, TSymbol stepSymbol)
 {
-  TSymbol result = NULL;
   switch (actToken->type)
   {
     // 31. NT_FORSTEP -> kwStep NT_EXPR
     case kwStep:
       NEXT_TOKEN(actToken);
-      result = syntx_processExpression(actToken, NULL);
+      defOrRedefVariable(stepSymbol);
+      syntx_processExpression(actToken, stepSymbol);
       break;
     // 32. NT_FORSTEP -> (epsilon)
     default:
-      result = symbt_insertSymbOnTop("%step");
-      result->type = symtConstant;
-      result->dataType = dtInt;
-      result->data.intVal = 1;
+      stepSymbol->type = symtConstant;
+      if (stepSymbol->dataType == dtInt)
+        stepSymbol->data.intVal = 1;
+      else
+        stepSymbol->data.doubleVal = 1.0;
       break;
   }
-  return result;
 }
 
 // extension of body of if statement
@@ -925,7 +931,7 @@ void ck_NT_INIF_EXT(SToken *actToken)
       CHECK_TOKEN(actToken, kwThen);
       NEXT_CHECK_TOKEN(actToken, eol);
       printInstruction("JUMPIFNEQ %s$else %s bool@true\n", iflabel, symbol->ident);
-      symbt_pushFrame(iflabel, true, true);
+      symbt_pushFrame(iflabel, true, false, false);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
       symbt_popFrame();
@@ -939,7 +945,7 @@ void ck_NT_INIF_EXT(SToken *actToken)
       NEXT_CHECK_TOKEN(actToken, eol);
       NEXT_TOKEN(actToken);
       char *frameLabel = symbt_getNewLocalLabel();
-      symbt_pushFrame(frameLabel, true, true);
+      symbt_pushFrame(frameLabel, true, false, false);
       mmng_safeFree(frameLabel);
       ck_NT_STAT_LIST(actToken);
       symbt_popFrame();
@@ -977,6 +983,84 @@ void ck_NT_PRINT_LIST(SToken *actToken)
       break;
   }
 }
+
+// first(NT_CYCLE_NESTS) = {kwDo -> 38; kwFor -> 39; else -> (40 [epsilon])}
+char *ck_NT_CYCLE_NESTS(SToken *actToken, bool isExit)
+{
+  int cnt = 0;
+  bool isfor = false;
+  switch (actToken->type)
+  {
+    // 38. NT_CYCLE_NESTS -> kwDo NT_CYCLES_DO
+    case kwDo:
+      NEXT_TOKEN(actToken);
+      ck_NT_CYCLES_DO(actToken, &cnt);
+      break;
+    // 39. NT_CYCLE_NESTS -> kwFor NT_CYCLES_FOR
+    case kwFor:
+      NEXT_TOKEN(actToken);
+      ck_NT_CYCLES_DO(actToken, &cnt);
+      isfor = true;
+      break;
+    // 40. NT_CYCLE_NESTS -> (epsilon)
+    default:
+    break;
+  }
+  char *loclabel = NULL;
+  char *complabel = NULL;
+  if (!isfor)
+    loclabel = symbt_getNthDoLoopLabel(cnt);
+  else
+    loclabel = symbt_getNthForLoopLabel(cnt);
+
+  if (isExit)
+    complabel = util_StrConcatenate(loclabel, "$loopend");
+  else if (isfor) // continue for
+    complabel = util_StrConcatenate(loclabel, "$loopinc");
+  else // cotinue do
+    complabel = util_StrConcatenate(loclabel, "$loop");
+
+  return complabel;
+}
+
+// first(NT_CYCLES_DO) = {opComma -> 41; else -> (42 [epsilon])}
+void ck_NT_CYCLES_DO(SToken *actToken, int *doCnt)
+{
+  switch (actToken->type)
+  {
+    // 41. NT_CYCLES_DO -> , kwDo NT_CYCLES_DO
+    case opComma:
+      NEXT_CHECK_TOKEN(actToken, kwDo);
+      (*doCnt)++;
+      NEXT_TOKEN(actToken);
+      ck_NT_CYCLES_DO(actToken, doCnt);
+      break;
+    // 42. NT_CYCLES_DO -> (epsilon)
+    default:
+        // let if be
+      break;
+  }
+}
+
+// first(NT_CYCLES_FOR) = {opComma -> 43; else -> (44 [epsilon])}
+void ck_NT_CYCLES_FOR(SToken *actToken, int *forCnt)
+{
+  switch (actToken->type)
+  {
+    // 43. NT_CYCLES_FOR -> opComma kwFor NT_CYCLES_FOR
+    case opComma:
+      NEXT_CHECK_TOKEN(actToken, kwFor);
+      (*forCnt)++;
+      NEXT_TOKEN(actToken);
+      ck_NT_CYCLES_FOR(actToken, forCnt);
+      break;
+    // 44. NT_CYCLES_FOR -> (epsilon)
+    default:
+        // let if be
+      break;
+  }
+}
+
 
 // =============================================================================
 // ====================== Interface implementation =============================

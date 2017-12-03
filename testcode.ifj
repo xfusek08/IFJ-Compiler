@@ -1,7 +1,13 @@
+'Nested do and for loops
 
-' print statement
 scope
- 	print 42; -78;   142.2541;
- 	print -14287877.254121211  ;
- 	print 14.25;
+	dim i as integer
+
+	do
+		for j as integer = i to i + 5
+			print j;
+		next
+		print !"\n";
+		i = i + 1
+	loop while i < 5
 end scope

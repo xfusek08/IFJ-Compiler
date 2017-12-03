@@ -57,7 +57,12 @@ void apperr_codeError(ErrType type, int row, int col, char *line, char *message,
   {
     int j = 0;
     for (; j < 80 && (i + j) < linewidth; j++)
-      fprintf(stderr, "%c", line[i + j]);
+    {
+      if (line[i + j] == '\t')
+        fprintf(stderr, "  ");
+      else
+        fprintf(stderr, "%c", line[i + j]);
+    }
 
     i += j;
 

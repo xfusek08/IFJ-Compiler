@@ -48,7 +48,6 @@ void printInstruction(const char *arg, ...)
   {
     va_list ap;
     va_start(ap, arg);
-    // vfprintf(stderr, arg, ap);
     arrPos += vsprintf(&(Iarr[arrPos]), arg, ap);
     va_end(ap);
   }
@@ -131,7 +130,6 @@ char *grammarToString(EGrSymb symb)
     "dataType",     // 26
     "eof",          // 27
     "kwAs",         // 28
-		"kwAsc",        // 29
 		"kwDeclare",    // 30
 		"kwDim",        // 31
 		"kwDo",         // 32
@@ -140,12 +138,10 @@ char *grammarToString(EGrSymb symb)
 		"kwFunction",   // 35
 		"kwIf",         // 36
 		"kwInput",      // 37
-		"kwLength",     // 38
 		"kwLoop",       // 39
     "kwPrint",      // 40
 		"kwReturn",     // 41
 		"kwScope",      // 42
-		"kwSubStr",     // 43
 		"kwThen",       // 44
 		"kwWhile",      // 45
 		"kwContinue",   // 46

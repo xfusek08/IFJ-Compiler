@@ -47,10 +47,12 @@ typedef struct SymTable *TSymTable;
 struct SymTable {
   TSTNode root;               // root of table
   bool isTransparent;         // true if finding symbol is suppose to continue to lower table on stack (scope)
-  bool isLoop;                // flag if frame is loop
+  bool isForLoop;             // flag if frame is for...next loop
+  bool isDoLoop;              // flag if frame is do...loop loop
   char *frameLabel;           // label of frame
   unsigned int localLabelCnt; // counter of local labels
-  TPStack redefStack;      // stack of redefined symbols to be pops and frame end
+  TPStack redefStack;         // stack of redefined symbols to be pops and frame end
+  TPStack definedIdentVars;   // stact of defined variable identifiers
 };
 
 // global internal instance of symbol table stack
@@ -540,21 +542,32 @@ void TSTNode_inOrder(TSTNode self, TPStack nodeStack)
 // =============================================================================
 
 // constructor of TSymTable
-TSymTable TSymTable_create(char *frameLabel, bool transparent, bool isLoop)
+TSymTable TSymTable_create(char *frameLabel, bool transparent, bool isForLoop, bool isDoLoop)
 {
+  if (isForLoop && isDoLoop)
+    apperr_runtimeError("Frame cannot be both, do and for loop.");
+
   TSymTable newST = (TSymTable)mmng_safeMalloc(sizeof(struct SymTable));
   newST->isTransparent = transparent;
   newST->root = NULL;
   newST->frameLabel = util_StrHardCopy(frameLabel);
   newST->localLabelCnt = 0;
-  newST->isLoop = isLoop;
+  newST->isForLoop = isForLoop;
+  newST->isDoLoop = isDoLoop;
   newST->redefStack = TPStack_create();
+  newST->definedIdentVars = TPStack_create();
   return newST;
 }
 
 // destructor of TSymTable
 void TSymTable_destroy(TSymTable self)
 {
+  while (self->definedIdentVars->count > 0)
+  {
+    mmng_safeFree(self->definedIdentVars->top(self->definedIdentVars));
+    self->definedIdentVars->pop(self->definedIdentVars);
+  }
+  self->definedIdentVars->destroy(self->definedIdentVars);
   self->redefStack->destroy(self->redefStack);
   TSTNode_destroy(self->root, true);
   mmng_safeFree(self->frameLabel);
@@ -615,9 +628,6 @@ TSymTable getFirstNonTransparetFrame()
 
 void deleteTempSymbols()
 {
-  // printInstruction("deleting tmps...\n");
-  // symbt_print();
-
   int i = GLBSymbTabStack->count - 1;
   TPStack nodeStack = TPStack_create();
   while(i >= 0) // serach firs
@@ -641,8 +651,6 @@ void deleteTempSymbols()
       break;
   }
   nodeStack->destroy(nodeStack);
-  // printInstruction("after ... \n");
-  // symbt_print();
 }
 
 // =============================================================================
@@ -656,7 +664,7 @@ void symbt_init(char *mainLabel)
     apperr_runtimeError("symbt_init(): Symbol table is already initialized.");
 
   GLBSymbTabStack = TPStack_create();
-  symbt_pushFrame(mainLabel, false, false); // insert global frame
+  symbt_pushFrame(mainLabel, false, false, false); // insert global frame
 }
 
 //  Free of all symbol table stack
@@ -677,15 +685,12 @@ void symbt_destroy()
 }
 
 // Creates new instance of symbol table on top of the stack
-void symbt_pushFrame(char *label, bool transparent, bool isLopp)
+void symbt_pushFrame(char *label, bool transparent, bool isForLoop, bool isDoLoop)
 {
   symbt_assertIfNotInit();
-  if (GLBSymbTabStack->count > 0 && (isLopp || !transparent))
-  {
-    deleteTempSymbols();
-    printInstruction("CREATEFRAME\n");
-  }
-  GLBSymbTabStack->push(GLBSymbTabStack, TSymTable_create(label, transparent, isLopp));
+  deleteTempSymbols();
+  printInstruction("CREATEFRAME\n");
+  GLBSymbTabStack->push(GLBSymbTabStack, TSymTable_create(label, transparent, isForLoop, isDoLoop));
 }
 
 // Frees destroys symbol table on top of the stack.
@@ -791,14 +796,34 @@ char *symbt_getActFuncLabel()
   return getFirstNonTransparetFrame()->frameLabel;
 }
 
-// Gets label of first loop frame from top of frame stack (used for exit and continue)
-char *symbt_getActLoopLabel()
+// Gets label of N-th for ... nest frame from top of frame stack (used for exit and continue)
+char *symbt_getNthForLoopLabel(int N)
 {
   int i = GLBSymbTabStack->count - 1;
   TSymTable actTable = GLBSymbTabStack->ptArray[i];
-  for(;!(actTable->isLoop) && i >= 0; i--) // serach first non loop frame
+  for(; N >= 0 && i >= 0; i--) // serach first N-th loop frame
+  {
     actTable = GLBSymbTabStack->ptArray[i];
-  if (!actTable->isLoop)
+    if (actTable->isForLoop)
+      N--;
+  }
+  if (!actTable->isForLoop)
+    return NULL;
+  return actTable->frameLabel;
+}
+
+// Gets label of N-th do ... loop frame from top of frame stack (used for exit and continue)
+char *symbt_getNthDoLoopLabel(int N)
+{
+  int i = GLBSymbTabStack->count - 1;
+  TSymTable actTable = GLBSymbTabStack->ptArray[i];
+  for(; N >= 0 && i >= 0; i--) // serach first N-th loop frame
+  {
+    actTable = GLBSymbTabStack->ptArray[i];
+    if (actTable->isDoLoop)
+      N--;
+  }
+  if (!actTable->isDoLoop)
     return NULL;
   return actTable->frameLabel;
 }
@@ -833,6 +858,20 @@ void symbt_pushRedefinition(TSymbol symbol)
     printInstruction("PUSHS %s\n", symbol->ident);
 }
 
+void symbt_defVarIdent(char *varIdent)
+{
+  TSymTable table = getFirstNonTransparetFrame();
+  table->definedIdentVars->push(table->definedIdentVars, util_StrHardCopy(varIdent));
+}
+
+bool symbt_isVarDefined(char *varIdent)
+{
+  TSymTable table = getFirstNonTransparetFrame();
+  for (int i = 0; i < table->definedIdentVars->count; i++)
+    if (strcmp(table->definedIdentVars->ptArray[i], varIdent) == 0)
+      return true;
+  return false;
+}
 
 // =============================================================================
 // ====================== funkce pro testovaci programy ========================

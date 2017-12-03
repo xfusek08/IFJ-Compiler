@@ -497,5 +497,7 @@ void syntx_destroy()
 {
   tlist->deleteLast(tlist);
   tlist->destroy(tlist);
+  while (identStack->count > 0)
+    identStack->pop(identStack);
   identStack->destroy(identStack);
 }
