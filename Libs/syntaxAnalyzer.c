@@ -318,10 +318,7 @@ SToken syntx_parseFunction(SToken *actToken)
     tlist->deleteLast(tlist);
     if (actToken->type != opComma && actToken->type != opRightBrc)
     {
-      if (actToken->type != opComma)
-        scan_raiseCodeError(syntaxErr, "Incorect parameter of function call.", actToken);
-      if (actToken->type != opRightBrc)
-        scan_raiseCodeError(syntaxErr, "Function call isn't end with ')'.", actToken);
+      scan_raiseCodeError(syntaxErr, "Function call isn't end with ')'.", actToken);
     }
     syntx_generateCodeForVarDef(&funcToken, argNum, &argToken);
     argNum++;
