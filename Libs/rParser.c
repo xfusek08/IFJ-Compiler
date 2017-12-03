@@ -193,6 +193,9 @@ void processFunction(SToken *actToken)
   else // attempt of redeclaration
     ERR_SYMB_REDEF();
 
+  // body of function
+  symbt_pushFrame(actSymbol->data.funcData.label, false, false, false); // lets create local variable frame for function
+
   NEXT_CHECK_TOKEN(actToken, opLeftBrc);
   NEXT_TOKEN(actToken);
   // checks params of function
@@ -217,9 +220,6 @@ void processFunction(SToken *actToken)
   }
   actSymbol->data.funcData.isDefined = true;
 
-  // body of function
-  symbt_pushFrame(actSymbol->data.funcData.label, false, false, false); // lets create local variable frame for function
-
   // define return variable and params in symbol table
   TSymbol tmpSymb = symbt_insertSymbOnTop("%retval");
   tmpSymb->type = symtVariable;
@@ -231,7 +231,7 @@ void processFunction(SToken *actToken)
   {
     // make sure that in definition of fucntion is definition argument identifier used as key to symb table
     TArgument definitionArg = parList->get(parList, i);
-    tmpSymb = symbt_insertSymbOnTop(definitionArg->ident);
+    tmpSymb = symbt_findSymb(definitionArg->ident);
     // if fuctions was already declared ve have to remap definition symbol identifiers to declaration symbol identifiers
     if (isDeclared)
     {
@@ -249,6 +249,7 @@ void processFunction(SToken *actToken)
   // we destroy list of definition params because we need to use declaration identifiers in calls
   if (isDeclared) // if function was declared
     TArgList_destroy(parList);
+
 
   printf("LABEL %s\n", actSymbol->data.funcData.label);
   printf("PUSHFRAME\n");
@@ -268,19 +269,6 @@ void processFunction(SToken *actToken)
 // definition or redefinition as variable
 void defOrRedefVariable(TSymbol symbolVar)
 {
-  /*
-  if (symbolVar->type == symtUnknown || symbolVar->type == symtFuction)
-  {
-    addPrefixToSymbolIdent("LF@", symbolVar);
-    printf("DEFVAR %s\n", symbolVar->ident);
-    if (symbolVar->type == symtUnknown)
-    {
-      symbolVar->type = symtVariable;
-      return;
-    }
-  }
-  symbt_pushRedefinition(symbolVar);
-  */
   if (symbolVar->type == symtUnknown)
   {
     symbolVar->type = symtVariable;
@@ -421,6 +409,9 @@ void ck_NT_DD(SToken *actToken)
       actSymbol->data.funcData.returnType = actToken->dataType; // token is return type
       NEXT_CHECK_TOKEN(actToken, eol);
       NEXT_TOKEN(actToken);
+      // clean symbtable from arguments
+      for (int i = 0; i < parList->count; i++)
+        symbt_deleteSymb(parList->get(parList, i)->ident);
       ck_NT_DD(actToken);
       break;
     // 3. NT_DD -> kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_STAT_LIST kwEnd kwFunction eol NT_DD
@@ -805,7 +796,7 @@ void ck_NT_STAT(SToken *actToken)
       else // variable
       {
         stepSymb = symbt_findOrInsertSymb("%step");
-        defOrRedefVariable(toSymb);
+        defOrRedefVariable(stepSymb);
         stepSymb->dataType = tmpStepSymb->dataType;
         balanceNumTypes(actSymbol, stepSymb);
         printInstruction("MOVE %s %s\n", stepSymb->ident, tmpStepSymb->ident);
@@ -840,6 +831,12 @@ void ck_NT_STAT(SToken *actToken)
       printInstruction("LABEL %s$loopend\n", forlabel);
       CHECK_TOKEN(actToken, kwNext);
       NEXT_TOKEN(actToken);
+      if (actToken->type == ident)
+      {
+        if (actToken->symbol != actSymbol)
+          scan_raiseCodeError(syntaxErr, "Invalid iterator.", actToken);
+        NEXT_TOKEN(actToken);
+      }
       symbt_popFrame();
       mmng_safeFree(forlabel);
       break;

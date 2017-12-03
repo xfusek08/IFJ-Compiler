@@ -60,3 +60,4 @@ IFJCode17Interp/
 .vscode/
 *.ifjcode17
 log/
+*.ifj
