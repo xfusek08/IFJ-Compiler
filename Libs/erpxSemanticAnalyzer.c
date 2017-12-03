@@ -380,6 +380,14 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
 
   if(leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant){  // if operation is possible to do
 
+    if(oper->type == opDivFlt || oper->type == opDiv){
+      if(rightOperand->symbol->dataType == dtInt && rightOperand->symbol->data.intVal == 0){
+        scan_raiseCodeError(anotherSemanticErr, "Dividing by zero integer.", NULL);  // prints error
+      }else if(rightOperand->symbol->dataType == dtFloat && rightOperand->symbol->data.doubleVal == 0.0){
+        scan_raiseCodeError(anotherSemanticErr, "Dividing by zero double.", NULL);  // prints error
+      }
+    }
+
     // by dataType choose right type from union, do implicit conversion and do operation
     if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){
 
@@ -398,6 +406,30 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
         token.symbol->data.intVal = leftOperand->symbol->data.intVal / rightOperand->symbol->data.intVal; // integer divides two integers
       }
 
+    }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtFloat){  // double - double
+
+      // integer division
+      if(oper->type == opDiv){
+        // -> int - int
+        syntx_doubleToIntToken(leftOperand);
+        syntx_doubleToIntToken(rightOperand);
+        token.symbol->data.intVal = leftOperand->symbol->data.intVal / rightOperand->symbol->data.intVal; // integer divides two doubles
+        token.symbol->dataType = dtInt;
+        return token;
+      }
+
+      if(oper->type == opPlus){
+        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal + rightOperand->symbol->data.doubleVal; // adds two doubles
+      }else if(oper->type == opMns){
+        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal - rightOperand->symbol->data.doubleVal; // subs two doubles
+      }else if(oper->type == opMul){
+        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal * rightOperand->symbol->data.doubleVal; // muls two doubles
+      }else if(oper->type == opDivFlt){
+        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal / rightOperand->symbol->data.doubleVal; // float divides two doubles
+      }
+
+      token.symbol->dataType = dtFloat;
+      
     }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int
 
       // integer division
