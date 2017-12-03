@@ -169,7 +169,7 @@ void util_printBuildFunc()
 {
   printf("LABEL $$Length\nPUSHFRAME\nDEFVAR LF@%%retval\nMOVE LF@%%retval int@0\nSTRLEN LF@%%retval LF@p1\nPOPFRAME\nRETURN\n");
 
-  printf("LABEL $$SubStr\nPUSHFRAME\nDEFVAR LF@%%retval\nDEFVAR LF@len\nDEFVAR LF@help\nSTRLEN LF@len LF@p1\nMOVE LF@%%retval string@\n");
+  printf("LABEL $$SubStr\nPUSHFRAME\nDEFVAR LF@%%retval\nDEFVAR LF@len\nDEFVAR LF@help\nSTRLEN LF@len LF@p1\nSUB LF@p2 LF@p2 int@1 \nMOVE LF@%%retval string@\n");
   printf("JUMPIFEQ $$EndSubStr LF@%%retval LF@p1\nGT LF@help int@1 LF@p2\nJUMPIFEQ $$EndSubStr LF@help bool@true\nGT LF@help int@0 LF@p3\n");
   printf("JUMPIFEQ $$SubStrExtra1 LF@help bool@true\nSUB LF@help LF@len LF@p2\nGT LF@help LF@p3 LF@help\nJUMPIFEQ $$SubStrExtra2 LF@help bool@true\n");
   printf("JUMP $$SubStrStart\nLABEL $$SubStrExtra1\nMOVE LF@p2 LF@len\nJUMP $$SubStrStart\nLABEL $$SubStrExtra2\nMOVE LF@p3 LF@len\n");
