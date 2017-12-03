@@ -244,7 +244,7 @@ SToken scan_GetNextToken()
         allowed = true;
         break;
       case '/':
-        tokenType = opDiv;
+        tokenType = opDivFlt;
         allowed = true;
         if(GLBScanner->line[GLBScanner->position] == '\'')
         {
@@ -262,7 +262,7 @@ SToken scan_GetNextToken()
         }
         break;
       case '\\':
-        tokenType = opDivFlt;
+        tokenType = opDiv;
         if(GLBScanner->line[GLBScanner->position] == '=')
         {
           tokenType = opDivFltEq;
