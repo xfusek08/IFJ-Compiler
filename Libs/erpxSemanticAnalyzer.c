@@ -459,7 +459,7 @@ void syntx_generateIdent(SToken *token){
     }else if(token->symbol->dataType == dtFloat){
       printInstruction("float@%g", token->symbol->data.doubleVal);
     }else if(token->symbol->dataType == dtString){
-      printInstruction("string@%s", token->symbol->data.stringVal);
+      printLongInstruction(strlen(token->symbol->data.stringVal), "string@%s", token->symbol->data.stringVal);
     }else if(token->symbol->dataType == dtBool){
       printInstruction("bool@%s", token->symbol->data.boolVal ? "true" : "false");
     }

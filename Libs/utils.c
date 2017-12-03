@@ -29,20 +29,25 @@ void printInstruction(const char *arg, ...)
     arrSize = UTILS_ARR_CHUNK;
     Iarr = mmng_safeMalloc(sizeof(char) * arrSize);
   }
+  if (arg == NULL)
+    return;
+
+  unsigned arglen = strlen(arg);
+
+  if (arglen == 0)
+    return;
 
   int counter = 0;
-  for (unsigned i = 0; i < strlen(arg); i++)
+  for (unsigned i = 0; i < arglen; i++)
   {
     if(arg[i] == '%')
       counter++;
   }
-
-  if (counter * 128 + strlen(arg) + arrPos > arrSize)
+  while (counter * 128 + arglen + arrPos + 1 > arrSize)
   {
     arrSize += UTILS_ARR_CHUNK;
     Iarr = mmng_safeRealloc(Iarr, sizeof(char) * arrSize);
   }
-
   bool iscreateframe = strcmp(arg, "CREATEFRAME\n") == 0;
   if (!iscreateframe || !lastWasCreateFrame)
   {
@@ -54,10 +59,40 @@ void printInstruction(const char *arg, ...)
   lastWasCreateFrame = iscreateframe;
 }
 
+void printLongInstruction(unsigned len, const char *arg, ...)
+{
+  if (arrSize == 0)
+  {
+    arrSize = UTILS_ARR_CHUNK;
+    Iarr = mmng_safeMalloc(sizeof(char) * arrSize);
+  }
+  if (arg == NULL)
+    return;
+
+  unsigned arglen = strlen(arg);
+
+  if (arglen == 0)
+    return;
+
+  while (len + arglen + arrPos + 1 > arrSize)
+  {
+    arrSize += UTILS_ARR_CHUNK;
+    Iarr = mmng_safeRealloc(Iarr, sizeof(char) * arrSize);
+  }
+
+  va_list ap;
+  va_start(ap, arg);
+  arrPos += vsprintf(&(Iarr[arrPos]), arg, ap);
+  va_end(ap);
+}
+
 void flushCode()
 {
-  printf("%s", Iarr);
-  arrPos = 0;
+  if (Iarr != NULL)
+  {
+    printf("%s", Iarr);
+    arrPos = 0;
+  }
 }
 
 // hard string copy

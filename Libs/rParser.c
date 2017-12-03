@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "appErr.h"
 #include "scanner.h"
 #include "MMng.h"
@@ -111,7 +112,7 @@ void printSymbolToOperand(TSymbol symbol)
     {
       case dtInt: printInstruction("int@%d", symbol->data.intVal); break;
       case dtFloat: printInstruction("float@%g", symbol->data.doubleVal); break;
-      case dtString: printInstruction("string@%s", symbol->data.stringVal); break;
+      case dtString: printLongInstruction(strlen(symbol->data.stringVal), "string@%s", symbol->data.stringVal); break;
       case dtBool: printInstruction("bool@%s", (symbol->data.boolVal) ? "true" : "false"); break;
       default:
         apperr_runtimeError("Invalid symbol data type. (internal structure error)");

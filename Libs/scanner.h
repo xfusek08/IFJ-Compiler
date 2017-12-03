@@ -20,7 +20,7 @@
 #define _scanner
 
 //Chunk of alocated character for line
-#define CHUNK 20
+#define CHUNK 100
 
 /**
  * Struct representing one token of analysis
