@@ -173,8 +173,8 @@ void util_printBuildFunc()
   printf("CONCAT LF@%%retval LF@%%retval LF@help\nADD LF@p2 LF@p2 int@1\nJUMPIFNEQ $$CycleSubStr LF@p2 LF@p3\nLABEL $$EndSubStr\nPOPFRAME\nRETURN\n");
 
   printf("LABEL $$Asc\nPUSHFRAME\nDEFVAR LF@%%retval\nSUB LF@p2 LF@p2 int@1 \nDEFVAR LF@help\nMOVE LF@%%retval int@0\nSTRLEN LF@help LF@p1\nGT LF@help LF@help LF@p2\n");
-  printf("JUMPIFEQ $$EndAsc LF@help bool@false\nGETCHAR LF@%%retval LF@p1 LF@p2\nSTRI2INT LF@%%retval LF@%%retval int@0\nLABEL $$EndAsc\nPOPFRAME\n");
-  printf("RETURN\n");
+  printf("JUMPIFEQ $$EndAsc LF@help bool@false\nGT LF@help int@0 LF@p2 \nJUMPIFEQ $$EndAsc LF@help bool@true \nGETCHAR LF@%%retval LF@p1 LF@p2\nSTRI2INT LF@%%retval LF@%%retval int@0\n");
+  printf("LABEL $$EndAsc\nPOPFRAME\nRETURN\n");
 
   printf("LABEL $$Chr\nPUSHFRAME\nDEFVAR LF@%%retval\nMOVE LF@%%retval string@\nINT2CHAR LF@%%retval LF@p1\nPOPFRAME\nRETURN\n");
 }
