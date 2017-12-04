@@ -1,16 +1,8 @@
-' valid length call
+' long variable names
+
 scope
-	dim len as integer
+Dim ZMna8xJpV6Knyv95QKCu80MZR1XP4RFCWEp8oYbrQWE9IjMJyhRtY3imNyaUcSlROktcGr1URr0eAKGECoQ69jse7x7tNZzj170TIgLrr53I03zCTOCEulRnqOjKqNAA as Integer = 10
+DIM ZMna8xJpV6Knyv95QKCu80MZR1XP4RFCWEp8oYbrQWE9IjMJyhRtY3imNyaUcSlROktcGr1URr0eAKGECoQ69jse7x7tNZzj170TIgLrr53I03zCTOCEulRnqOjKqNAA as Integer = 25
 
-	len = length(!"")
-	print len;
-
-	len = length(!"foobar")
-	print len;
-
-	dim str as string
-	str = !"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-	len = length(str)
-	print len;
-
+print ZMna8xJpV6Knyv95QKCu80MZR1XP4RFCWEp8oYbrQWE9IjMJyhRtY3imNyaUcSlROktcGr1URr0eAKGECoQ69jse7x7tNZzj170TIgLrr53I03zCTOCEulRnqOjKqNAA; ZMna8xJpV6Knyv95QKCu80MZR1XP4RFCWEp8oYbrQWE9IjMJyhRtY3imNyaUcSlROktcGr1URr0eAKGECoQ69jse7x7tNZzj170TIgLrr53I03zCTOCEulRnqOjKqNAA;
 end scope
