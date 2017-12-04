@@ -48,10 +48,10 @@ int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn)
     /* ,  */ {precLes, precLes, precLes, precLes, precLes, precLes, precEqu, precLes, precEqu, precLes, precLes, /* ,  */ precLes, precLes, precLes, precLes, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precLes, precLes, precLes, precUnd},
     /* =  */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* =  */ precGrt, precGrt, precGrt, precGrt, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precGrt, precGrt, precGrt, precGrt},
     /* <> */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* <> */ precGrt, precGrt, precGrt, precGrt, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precGrt, precGrt, precGrt, precGrt},
-    /* <  */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* <  */ precGrt, precGrt, precGrt, precGrt, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precGrt, precGrt, precGrt, precGrt},
-    /* <= */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* <= */ precGrt, precGrt, precGrt, precGrt, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precGrt, precGrt, precGrt, precGrt},
-    /* >  */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* >  */ precGrt, precGrt, precGrt, precGrt, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precGrt, precGrt, precGrt, precGrt},
-    /* >= */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* >= */ precGrt, precGrt, precGrt, precGrt, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precGrt, precGrt, precGrt, precGrt},
+    /* <  */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* <  */ precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precGrt, precGrt, precGrt, precGrt},
+    /* <= */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* <= */ precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precGrt, precGrt, precGrt, precGrt},
+    /* >  */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* >  */ precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precGrt, precGrt, precGrt, precGrt},
+    /* >= */ {precLes, precLes, precLes, precLes, precLes, precLes, precGrt, precLes, precGrt, precGrt, precGrt, /* >= */ precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precGrt, precGrt, precGrt, precGrt},
     /*asgn*/ {precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, /* := */ precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd},
     /* += */ {precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, /* += */ precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd},
     /* -= */ {precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, /* -= */ precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd, precUnd},
@@ -440,6 +440,12 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
         // -> int - int
         syntx_doubleToIntToken(&leftOperandCopy);
         syntx_doubleToIntToken(&rightOperandCopy);
+
+        // result after rounding can be zero
+        if(rightOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->data.intVal == 0){
+          scan_raiseCodeError(anotherSemanticErr, "Dividing by zero integer.", NULL);  // prints error
+        }
+
         token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
         token.symbol->dataType = dtInt;
         return token;
@@ -462,6 +468,12 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
       // integer division
       if(oper->type == opDiv){
         syntx_doubleToIntToken(&leftOperandCopy); // -> int - int
+
+        // result after rounding can be zero
+        if(rightOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->data.intVal == 0){
+          scan_raiseCodeError(anotherSemanticErr, "Dividing by zero integer.", NULL);  // prints error
+        }
+
         token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
         token.symbol->dataType = dtInt;
         return token;
@@ -489,6 +501,12 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
       // integer division
       if(oper->type == opDiv){
         syntx_doubleToIntToken(&rightOperandCopy); // -> int - int
+
+        // result after rounding can be zero
+        if(rightOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->data.intVal == 0){
+          scan_raiseCodeError(anotherSemanticErr, "Dividing by zero integer.", NULL);  // prints error
+        }
+
         token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
         token.symbol->dataType = dtInt;
         return token;
