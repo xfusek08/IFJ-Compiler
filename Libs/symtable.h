@@ -249,7 +249,17 @@ void symbt_defVarIdent(char *varIdent);
  */
 bool symbt_isVarDefined(char *varIdent);
 
-// funkce pouze pro testovaci programy
+//
+/**
+ * Searchs for all fucntion symbols on the ground (global) with undefined flag
+ *
+ * If there is fuctions witch is not defined, its identifier is returned.
+ * First occurence is returned.
+ * NULL is returned otherwise.
+ */
+ char *symbt_getUndefinedFunc();
+
+// functions olny for testing
 
 #ifdef DEBUG
 

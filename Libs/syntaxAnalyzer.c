@@ -153,9 +153,9 @@ int syntx_useRule(TTkList list)
     SToken *arg1 = &list->active->token;
     SToken *arg2 = &list->active->next->token;
     SToken *arg3 = &list->active->next->next->token;
-    //symbt_printSymb(arg1->symbol);
-    //fprintf(stderr, "op: %d\n", arg2->type);
-    //symbt_printSymb(arg3->symbol);
+    symbt_printSymb(arg1->symbol);
+    fprintf(stderr, "op: %d\n", arg2->type);
+    symbt_printSymb(arg3->symbol);
     if (arg1->symbol->type == symtConstant && arg3->symbol->type == symtConstant)
     {
       if (isBoolResult(arg2))
@@ -200,6 +200,7 @@ int syntx_useRule(TTkList list)
       list->next(list);
       list->preDelete(list);
     }
+    symbt_printSymb(list->active->token.symbol);
     break;
   case opBoolNot:
     DPRINT("Using rule EXPR --> kwNot EXPR");

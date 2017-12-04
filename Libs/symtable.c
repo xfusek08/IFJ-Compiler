@@ -793,12 +793,14 @@ void symbt_deleteSymb(char *ident)
 // Gets label of first non-transparent frame from top of frame stack (used as function label)
 char *symbt_getActFuncLabel()
 {
+  symbt_assertIfNotInit();
   return getFirstNonTransparetFrame()->frameLabel;
 }
 
 // Gets label of N-th for ... nest frame from top of frame stack (used for exit and continue)
 char *symbt_getNthForLoopLabel(int N)
 {
+  symbt_assertIfNotInit();
   int i = GLBSymbTabStack->count - 1;
   TSymTable actTable = GLBSymbTabStack->ptArray[i];
   for(; N >= 0 && i >= 0; i--) // serach first N-th loop frame
@@ -815,6 +817,7 @@ char *symbt_getNthForLoopLabel(int N)
 // Gets label of N-th do ... loop frame from top of frame stack (used for exit and continue)
 char *symbt_getNthDoLoopLabel(int N)
 {
+  symbt_assertIfNotInit();
   int i = GLBSymbTabStack->count - 1;
   TSymTable actTable = GLBSymbTabStack->ptArray[i];
   for(; N >= 0 && i >= 0; i--) // serach first N-th loop frame
@@ -831,12 +834,14 @@ char *symbt_getNthDoLoopLabel(int N)
 // Gets label of actual frame on top of frame stack
 char *symbt_getActLocalLabel()
 {
+  symbt_assertIfNotInit();
   return ((TSymTable)(GLBSymbTabStack->top(GLBSymbTabStack)))->frameLabel;
 }
 
 // Gets new unique label for actual FunctionLabel
 char *symbt_getNewLocalLabel()
 {
+  symbt_assertIfNotInit();
   TSymTable actTable = getFirstNonTransparetFrame();
   char *cntString = mmng_safeMalloc(
     sizeof(char) * (strlen(actTable->frameLabel) + 12));
@@ -847,6 +852,7 @@ char *symbt_getNewLocalLabel()
 // Push value of variable symbol on datastack and remembers it for frame destroing
 void symbt_pushRedefinition(TSymbol symbol)
 {
+  symbt_assertIfNotInit();
   if (symbol == NULL)
     apperr_runtimeError("Redefined symbol is NULL.");
   if (symbol->type == symtConstant)
@@ -858,19 +864,47 @@ void symbt_pushRedefinition(TSymbol symbol)
     printInstruction("PUSHS %s\n", symbol->ident);
 }
 
+// adds identifier of variable to fucntion frame
 void symbt_defVarIdent(char *varIdent)
 {
+  symbt_assertIfNotInit();
   TSymTable table = getFirstNonTransparetFrame();
   table->definedIdentVars->push(table->definedIdentVars, util_StrHardCopy(varIdent));
 }
 
+// checks if identifier already exists in function frame
 bool symbt_isVarDefined(char *varIdent)
 {
+  symbt_assertIfNotInit();
   TSymTable table = getFirstNonTransparetFrame();
   for (int i = 0; i < table->definedIdentVars->count; i++)
     if (strcmp(table->definedIdentVars->ptArray[i], varIdent) == 0)
       return true;
   return false;
+}
+
+// checks if allfucntion symbols on the ground frame are defined.
+char *symbt_getUndefinedFunc()
+{
+  symbt_assertIfNotInit();
+  TSymTable globalTable = GLBSymbTabStack->ptArray[0]; // gets ground (global) frame
+  TPStack nodeStack = TPStack_create();
+  TSTNode_inOrder(globalTable->root, nodeStack);
+  char *result = NULL;
+  while(nodeStack->count > 0)
+  {
+    if (result == NULL) // if we already know that result exists
+    {
+      TSymbol actSymb = ((TSTNode)(nodeStack->top(nodeStack)))->symbol;
+      if (actSymb != NULL)
+        if (actSymb->type == symtFuction)
+          if (!actSymb->data.funcData.isDefined)
+            result = actSymb->key;
+    }
+    nodeStack->pop(nodeStack);
+  }
+  nodeStack->destroy(nodeStack);
+  return result;
 }
 
 // =============================================================================
