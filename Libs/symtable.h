@@ -236,8 +236,9 @@ char *symbt_getNewLocalLabel();
 
 /**
  * Redefines symbol on datastack and remembers it for frame destroying
+ * /returns bool FALSE when symbol is already refined on the same level
  */
-void symbt_pushRedefinition(TSymbol symbol);
+bool symbt_pushRedefinition(TSymbol symbol);
 
 /**
  * adds identifier of variable to fucntion frame
