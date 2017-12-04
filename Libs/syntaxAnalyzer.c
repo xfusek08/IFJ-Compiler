@@ -334,7 +334,7 @@ SToken syntx_parseFunction(SToken *actToken)
 }
 
 
-int syntx_processUnaryOps(TTkList list, SToken *actToken)
+int syntx_OptimalizeUnary(TTkList list, SToken *actToken)
 {
   EGrSymb last = list->last->token.type;
   if (last == opPlus && actToken->type == opPlus)
@@ -358,9 +358,38 @@ int syntx_processUnaryOps(TTkList list, SToken *actToken)
   return 0;
 }
 
+int syntx_processUnaryOps(TTkList list, SToken *actToken)
+{ 
+  //unary +- before expr (-a*b)
+  if(list->last->prev == NULL)
+    return 0;
+  if((list->last->token.type == opMns || list->last->token.type == opPlus) && list->last->prev->token.type == precLes)
+  {
+    if(actToken->type == ident)
+    {
+      list->insertLast(list, actToken);
+      syntx_useRule(list);
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int syntx_isUnaryOp(TTkList list, SToken *actToken)
+{
+  if(list->last->token.type != ident && (actToken->type == opPlus || actToken->type == opMns))
+    return 1;
+  return 0;
+}
+
 void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
 {
-  if (syntx_processUnaryOps(list, actToken)) //check for unary operator optimalization
+  if(syntx_processUnaryOps(list, actToken)) //check for unary operation
+  { 
+    *actToken = nextToken();
+    return;
+  }
+  if (syntx_OptimalizeUnary(list, actToken)) //check for unary operator optimalization
   {
     *actToken = nextToken();
     return;
@@ -372,6 +401,9 @@ void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
     scan_raiseCodeError(syntaxErr, "Incorrect expression. Undefined precedence.", actToken);
   }
   DDPRINT("Table: %d", tablesymb);
+
+  if(syntx_isUnaryOp(list, actToken)) //check if its unary operation (a*-b)
+    tablesymb = precLes; //unstu + - have have bigger priority
 
   switch (tablesymb)
   {
