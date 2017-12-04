@@ -400,7 +400,9 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
       }else if(oper->type == opMul){
         token.symbol->data.intVal = leftOperand->symbol->data.intVal * rightOperand->symbol->data.intVal; // muls two integers
       }else if(oper->type == opDivFlt){
-        token.symbol->data.doubleVal = leftOperand->symbol->data.intVal / rightOperand->symbol->data.intVal; // float divides two integers
+        syntx_intToDoubleToken(leftOperand);
+        syntx_intToDoubleToken(rightOperand);
+        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal / rightOperand->symbol->data.doubleVal; // float divides two doubles
         token.symbol->dataType = dtFloat; // result/dataType after divide is DOUBLE
       }else if(oper->type == opDiv){
         token.symbol->data.intVal = leftOperand->symbol->data.intVal / rightOperand->symbol->data.intVal; // integer divides two integers
