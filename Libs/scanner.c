@@ -183,7 +183,8 @@ bool isEndChar(char endChar)
   || endChar == '=' || endChar == EOF
   || endChar == 33 || endChar == '('
   || endChar == ')' || endChar == ','
-  || endChar == ';';
+  || endChar == ';' || endChar == '\''
+  || endChar == '<' || endChar == '>';
 }
 
 
