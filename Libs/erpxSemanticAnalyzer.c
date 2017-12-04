@@ -377,67 +377,81 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
   token.symbol->type = symtConstant;
   token.symbol->dataType = dtUnspecified;
 
+  SToken leftOperandCopy;
+  leftOperandCopy.type = NT_EXPR;
+  leftOperandCopy.symbol = mmng_safeMalloc(sizeof(struct Symbol));
+  leftOperandCopy.symbol->type = leftOperand->symbol->type;
+  leftOperandCopy.symbol->dataType = leftOperand->symbol->dataType;
+  leftOperandCopy.symbol->data = leftOperand->symbol->data;
 
-  if(leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant){  // if operation is possible to do
+  SToken rightOperandCopy;
+  rightOperandCopy.type = NT_EXPR;
+  rightOperandCopy.symbol = mmng_safeMalloc(sizeof(struct Symbol));
+  rightOperandCopy.symbol->type = rightOperand->symbol->type;
+  rightOperandCopy.symbol->dataType = rightOperand->symbol->dataType;
+  rightOperandCopy.symbol->data = rightOperand->symbol->data;
+
+
+  if(leftOperandCopy.symbol->type == symtConstant && rightOperandCopy.symbol->type == symtConstant){  // if operation is possible to do
 
     if(oper->type == opDivFlt || oper->type == opDiv){
-      if(rightOperand->symbol->dataType == dtInt && rightOperand->symbol->data.intVal == 0){
+      if(rightOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->data.intVal == 0){
         scan_raiseCodeError(anotherSemanticErr, "Dividing by zero integer.", NULL);  // prints error
-      }else if(rightOperand->symbol->dataType == dtFloat && rightOperand->symbol->data.doubleVal == 0.0){
+      }else if(rightOperandCopy.symbol->dataType == dtFloat && rightOperandCopy.symbol->data.doubleVal == 0.0){
         scan_raiseCodeError(anotherSemanticErr, "Dividing by zero double.", NULL);  // prints error
       }
     }
 
     // by dataType choose right type from union, do implicit conversion and do operation
-    if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){
+    if(leftOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->dataType == dtInt){
 
       token.symbol->dataType = dtInt;
 
       if(oper->type == opPlus){
-        token.symbol->data.intVal = leftOperand->symbol->data.intVal + rightOperand->symbol->data.intVal; // adds two integers
+        token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal + rightOperandCopy.symbol->data.intVal; // adds two integers
       }else if(oper->type == opMns){
-        token.symbol->data.intVal = leftOperand->symbol->data.intVal - rightOperand->symbol->data.intVal; // subs two integers
+        token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal - rightOperandCopy.symbol->data.intVal; // subs two integers
       }else if(oper->type == opMul){
-        token.symbol->data.intVal = leftOperand->symbol->data.intVal * rightOperand->symbol->data.intVal; // muls two integers
+        token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal * rightOperandCopy.symbol->data.intVal; // muls two integers
       }else if(oper->type == opDivFlt){
         syntx_intToDoubleToken(leftOperand);
         syntx_intToDoubleToken(rightOperand);
-        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal / rightOperand->symbol->data.doubleVal; // float divides two doubles
+        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal / rightOperandCopy.symbol->data.doubleVal; // float divides two doubles
         token.symbol->dataType = dtFloat; // result/dataType after divide is DOUBLE
       }else if(oper->type == opDiv){
-        token.symbol->data.intVal = leftOperand->symbol->data.intVal / rightOperand->symbol->data.intVal; // integer divides two integers
+        token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two integers
       }
 
-    }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtFloat){  // double - double
+    }else if(leftOperandCopy.symbol->dataType == dtFloat && rightOperandCopy.symbol->dataType == dtFloat){  // double - double
 
       // integer division
       if(oper->type == opDiv){
         // -> int - int
         syntx_doubleToIntToken(leftOperand);
         syntx_doubleToIntToken(rightOperand);
-        token.symbol->data.intVal = leftOperand->symbol->data.intVal / rightOperand->symbol->data.intVal; // integer divides two doubles
+        token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
         token.symbol->dataType = dtInt;
         return token;
       }
 
       if(oper->type == opPlus){
-        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal + rightOperand->symbol->data.doubleVal; // adds two doubles
+        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal + rightOperandCopy.symbol->data.doubleVal; // adds two doubles
       }else if(oper->type == opMns){
-        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal - rightOperand->symbol->data.doubleVal; // subs two doubles
+        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal - rightOperandCopy.symbol->data.doubleVal; // subs two doubles
       }else if(oper->type == opMul){
-        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal * rightOperand->symbol->data.doubleVal; // muls two doubles
+        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal * rightOperandCopy.symbol->data.doubleVal; // muls two doubles
       }else if(oper->type == opDivFlt){
-        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal / rightOperand->symbol->data.doubleVal; // float divides two doubles
+        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal / rightOperandCopy.symbol->data.doubleVal; // float divides two doubles
       }
 
       token.symbol->dataType = dtFloat;
       
-    }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int
+    }else if(leftOperandCopy.symbol->dataType == dtFloat && rightOperandCopy.symbol->dataType == dtInt){  // double - int
 
       // integer division
       if(oper->type == opDiv){
         syntx_doubleToIntToken(leftOperand); // -> int - int
-        token.symbol->data.intVal = leftOperand->symbol->data.intVal / rightOperand->symbol->data.intVal; // integer divides two doubles
+        token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
         token.symbol->dataType = dtInt;
         return token;
       }
@@ -446,25 +460,25 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
       syntx_intToDoubleToken(rightOperand); // -> double - double
 
       if(oper->type == opPlus){
-        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal + rightOperand->symbol->data.doubleVal; // adds two doubles
+        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal + rightOperandCopy.symbol->data.doubleVal; // adds two doubles
       }else if(oper->type == opMns){
-        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal - rightOperand->symbol->data.doubleVal; // subs two doubles
+        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal - rightOperandCopy.symbol->data.doubleVal; // subs two doubles
       }else if(oper->type == opMul){
-        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal * rightOperand->symbol->data.doubleVal; // muls two doubles
+        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal * rightOperandCopy.symbol->data.doubleVal; // muls two doubles
       }else if(oper->type == opDivFlt){
-        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal / rightOperand->symbol->data.doubleVal; // float divides two doubles
+        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal / rightOperandCopy.symbol->data.doubleVal; // float divides two doubles
       }
 
       token.symbol->dataType = dtFloat;
 
-    }else if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtFloat){  // int - double -> double - double
+    }else if(leftOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->dataType == dtFloat){  // int - double -> double - double
 
 
 
       // integer division
       if(oper->type == opDiv){
         syntx_doubleToIntToken(rightOperand); // -> int - int
-        token.symbol->data.intVal = leftOperand->symbol->data.intVal / rightOperand->symbol->data.intVal; // integer divides two doubles
+        token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
         token.symbol->dataType = dtInt;
         return token;
       }
@@ -473,21 +487,21 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
       syntx_intToDoubleToken(leftOperand); // -> double - double
 
       if(oper->type == opPlus){
-        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal + rightOperand->symbol->data.doubleVal; // adds two doubles
+        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal + rightOperandCopy.symbol->data.doubleVal; // adds two doubles
       }else if(oper->type == opMns){
-        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal - rightOperand->symbol->data.doubleVal; // subs two doubles
+        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal - rightOperandCopy.symbol->data.doubleVal; // subs two doubles
       }else if(oper->type == opMul){
-        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal * rightOperand->symbol->data.doubleVal; // muls two doubles
+        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal * rightOperandCopy.symbol->data.doubleVal; // muls two doubles
       }else if(oper->type == opDivFlt){
-        token.symbol->data.doubleVal = leftOperand->symbol->data.doubleVal / rightOperand->symbol->data.doubleVal; // float divides two doubles
+        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal / rightOperandCopy.symbol->data.doubleVal; // float divides two doubles
       }
 
       token.symbol->dataType = dtFloat;
 
-    }else if(leftOperand->symbol->dataType == dtString && rightOperand->symbol->dataType == dtString){  // string - string
+    }else if(leftOperandCopy.symbol->dataType == dtString && rightOperandCopy.symbol->dataType == dtString){  // string - string
 
       if(oper->type == opPlus){
-        token.symbol->data.stringVal = util_StrConcatenate(leftOperand->symbol->data.stringVal, rightOperand->symbol->data.stringVal);
+        token.symbol->data.stringVal = util_StrConcatenate(leftOperandCopy.symbol->data.stringVal, rightOperandCopy.symbol->data.stringVal);
         token.symbol->dataType = dtString;
       }
 
@@ -721,7 +735,7 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
   //fprintf(stderr, "entering gencodeforvardef\n");
   TArgList args = funcToken->symbol->data.funcData.arguments;
 
-   if(args->count < argIndex){  // too many arguments
+   if(args->count <= argIndex){  // too many arguments
      scan_raiseCodeError(typeCompatibilityErr, "Too many arguments passed to function.", NULL);
    }
    // check argument data type
