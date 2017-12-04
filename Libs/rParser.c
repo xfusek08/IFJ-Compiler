@@ -287,8 +287,10 @@ void defOrRedefVariable(TSymbol symbolVar)
       if (!symbt_pushRedefinition(symbolVar))
         scan_raiseCodeError(semanticErr, "Cannot redefine variable in the same scope.", NULL);
     }
-    else
-      scan_raiseCodeError(semanticErr, "Cannot redefine non variable identifier.", NULL);
+    else if (symbolVar->type == symtConstant)
+      scan_raiseCodeError(syntaxErr, "Cannot redefine constant as variable.", NULL);
+    else // function remains
+      scan_raiseCodeError(semanticErr, "Cannot redefine function as variable.", NULL);
   }
 }
 
