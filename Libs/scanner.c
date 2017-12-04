@@ -418,9 +418,15 @@ SToken scan_GetNextToken()
                 break;
               case 4:
                 if(isdigit(tokenID[position - 1]))
+                {
                   state = 1;
+                  if(((tokenID[position - 3] - '0') * 100 + (tokenID[position - 2] - '0') * 10) + (tokenID[position - 1] - '0') > 255) //value after of /xxx
+                    scan_raiseCodeError(lexicalErr, "Wrong character after \\, write number with values 001-255.", NULL);
+                }
                 else
                   scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\xxx, where x is number.", NULL);
+                if(tokenID[position - 1] == '0' && tokenID[position - 2] == '0' && tokenID[position - 3] == '0')
+                  scan_raiseCodeError(lexicalErr, "Wrong character after \\, write number with values 001-255.", NULL);
                 break;
             }
           }
@@ -512,7 +518,11 @@ SToken scan_GetNextToken()
                 if(GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58)
                   state = 0;
                 else if(GLBScanner->line[GLBScanner->position - 1] == '.')
+                {
                   state = 1;
+                  if(!(GLBScanner->line[GLBScanner->position] > 47 && GLBScanner->line[GLBScanner->position] < 58))
+                    scan_raiseCodeError(lexicalErr, "Wrong character after . , you are probably missing number there.", NULL);
+                }
                 else if(GLBScanner->line[GLBScanner->position - 1] == 'e' || GLBScanner->line[GLBScanner->position - 1] == 'E')
                   state = 2;
                 else if(isEndChar(GLBScanner->line[GLBScanner->position - 1]))
@@ -543,9 +553,14 @@ SToken scan_GetNextToken()
                   scan_raiseCodeError(lexicalErr, "Wrong character inside double constant.", NULL);
                 break;
               case 2:
-                if((GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58)
-                || GLBScanner->line[GLBScanner->position - 1] == '+' || GLBScanner->line[GLBScanner->position - 1] == '-')
+                if((GLBScanner->line[GLBScanner->position - 1] > 47 && GLBScanner->line[GLBScanner->position - 1] < 58))
                   state = 3;
+                else if(GLBScanner->line[GLBScanner->position - 1] == '+' || GLBScanner->line[GLBScanner->position - 1] == '-')
+                {
+                  state = 3;
+                  if(!(GLBScanner->line[GLBScanner->position] > 47 && GLBScanner->line[GLBScanner->position] < 58))
+                    scan_raiseCodeError(lexicalErr, "Wrong character after e , you are probably missing number there.", NULL);
+                }
                 else
                   scan_raiseCodeError(lexicalErr, "Wrong character after e, alowed are +,-,[0-9].", NULL);
                 break;
