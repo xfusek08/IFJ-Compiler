@@ -42,7 +42,7 @@ void raiseUnexpToken(SToken *actToken, EGrSymb expected);
 // unexpected token
 #define ERR_UNEXP_TOKEN() scan_raiseCodeError(syntaxErr, "Uexpected token.", actToken)
 // result of condition is not bool
-#define ERR_COND_TYPE() scan_raiseCodeError(semanticErr, "Condition expression does not return boolean value.", actToken);
+#define ERR_COND_TYPE() scan_raiseCodeError(typeCompatibilityErr, "Condition expression does not return boolean value.", actToken);
 
 // =============================================================================
 // ========================== Global variables =================================
@@ -283,9 +283,14 @@ void defOrRedefVariable(TSymbol symbolVar)
   else
   {
     if (symbolVar->type == symtVariable)
-      symbt_pushRedefinition(symbolVar);
-    else
-      scan_raiseCodeError(semanticErr, "Cannot redefine non variable identifier.", NULL);
+    {
+      if (!symbt_pushRedefinition(symbolVar))
+        scan_raiseCodeError(semanticErr, "Cannot redefine variable in the same scope.", NULL);
+    }
+    else if (symbolVar->type == symtConstant)
+      scan_raiseCodeError(syntaxErr, "Cannot redefine constant as variable.", NULL);
+    else // function remains
+      scan_raiseCodeError(semanticErr, "Cannot redefine function as variable.", NULL);
   }
 }
 
