@@ -185,6 +185,16 @@ int syntx_checkDataTypesOfIntegerDiv(SToken *leftOperand, SToken *rightOperand){
     syntx_intToDoubleToken(rightOperand);
 
     return 1;
+  }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtFloat){  // double - double
+    // round
+    syntx_doubleToIntToken(leftOperand);
+    syntx_doubleToIntToken(rightOperand);
+
+    // DIV can not work with integers: int - int -> double - double
+    syntx_intToDoubleToken(rightOperand);
+    syntx_intToDoubleToken(leftOperand);
+
+    return 1;
   }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> round(double) - int -> double - double
 
     syntx_doubleToIntToken(leftOperand);  // round
@@ -609,6 +619,10 @@ void syntx_generateCodeForBasicOps(SToken *leftOperand, SToken *operator, SToken
     case opDivFlt:
       syntx_generateInstruction("DIV", partialResult, leftOperand, rightOperand);
       break;
+    case opDiv:
+      syntx_generateInstruction("DIV", partialResult, leftOperand, rightOperand);
+      syntx_generateInstruction("FLOAT2INT", partialResult, partialResult, NULL);
+      break;
     default:
       return;
       break;
@@ -732,7 +746,7 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
   * argValue represents constant or variable transmitted to the function
   */
  void syntx_generateCodeForVarDef(SToken *funcToken, int argIndex, SToken *argValue){
-  //fprintf(stderr, "entering gencodeforvardef\n");
+
   TArgList args = funcToken->symbol->data.funcData.arguments;
 
    if(args->count <= argIndex){  // too many arguments
@@ -750,7 +764,6 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
    printInstruction("PUSHS ");
    syntx_generateIdent(argValue);
    printInstruction("\n");
-   //fprintf(stderr, "leaving vardef\n");
  }
 
  /**
@@ -761,7 +774,6 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
   * result updates result variable data type
   */
  void syntx_generateCodeForCallFunc(SToken *funcToken, int argIndex, SToken *result){
-  //fprintf(stderr, "entering codeforcallfunc\n");
   TArgList args = funcToken->symbol->data.funcData.arguments;
    // checks arguments count
   if(args->count > argIndex){  // too few arguments
@@ -785,7 +797,6 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
   printInstruction("POPS %s\n", result->symbol->ident);
   // sets correct token data type corresponding to function return value
   result->symbol->dataType = funcToken->symbol->data.funcData.returnType;
-  //fprintf(stderr, "leaving callfunc\n");
  }
 
 
@@ -797,7 +808,7 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
  * partialResult reference variable to return result from part of expression back to the SyntaxAnalyzer - MUST BE VARIABLE!
  */
 void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand, SToken *partialResult){
-
+  
   // checks data types, implicitly converts constants and generates code for implicit convertion of variables
   if(rightOperand != NULL && oper->type != opBoolNot){  // operator is not bool NOT
     syntx_checkDataTypes(leftOperand, oper, rightOperand);
