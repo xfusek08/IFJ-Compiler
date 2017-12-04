@@ -137,6 +137,7 @@ void syntx_doubleToIntToken(SToken *token){
  * Returns 1 if everything is OK, otherwise 0
  */
 int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *operator, SToken *rightOperand){
+
   //TODO: optimalization
   // enabled data types pairs
   if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){  // int - int
@@ -523,6 +524,10 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
     scan_raiseCodeError(typeCompatibilityErr, "Error during arithmetic operation with two constants.", NULL);  // prints error
   }
 
+  // free copied symbols
+  mmng_safeFree(leftOperandCopy.symbol);
+  mmng_safeFree(rightOperandCopy.symbol);
+
   return token;
 }
 
@@ -808,7 +813,7 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
  * partialResult reference variable to return result from part of expression back to the SyntaxAnalyzer - MUST BE VARIABLE!
  */
 void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand, SToken *partialResult){
-  
+
   // checks data types, implicitly converts constants and generates code for implicit convertion of variables
   if(rightOperand != NULL && oper->type != opBoolNot){  // operator is not bool NOT
     syntx_checkDataTypes(leftOperand, oper, rightOperand);
