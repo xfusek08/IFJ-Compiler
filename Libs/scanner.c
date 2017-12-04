@@ -19,7 +19,7 @@
 #include "MMng.h"
 #include "appErr.h"
 
-#define KWORDNUMBER 30
+#define KWORDNUMBER 28
 #define DTYPENUMBER 4
 
 //LAnalyzer
@@ -138,7 +138,7 @@ EGrSymb isKeyWord(char *tokenID)
   //Array of keyWords
   char *wArray[] = {"not", "and", "or", "as", "declare", "dim", "do", "else", "end", "function", "if", "input", "loop",
   "print", "return", "scope", "then", "while", "continue", "elseif", "exit", "false", "for",
-  "next", "shared", "static", "true", "to", "until", "step"};  //30 kWordNumber
+  "next", "true", "to", "until", "step"};  //30 kWordNumber
   int i = 0;
   //Compare keyWords
   while(i < KWORDNUMBER)
@@ -259,14 +259,14 @@ SToken scan_GetNextToken()
           tokenID[position++] = GLBScanner->line[GLBScanner->position++];
           tokenID[position] = '\0';
           allowed = true;
-          tokenType = opDivEq;
+          tokenType = opDivFltEq;;
         }
         break;
       case '\\':
         tokenType = opDiv;
         if(GLBScanner->line[GLBScanner->position] == '=')
         {
-          tokenType = opDivFltEq;
+          tokenType = opDivEq;
           GLBScanner->position++;
         }
         allowed = true;
