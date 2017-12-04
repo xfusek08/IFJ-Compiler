@@ -329,7 +329,7 @@ SToken scan_GetNextToken()
             if(position > ((CHUNK * GLBScanner->lineSize) - 4))
             {
               GLBScanner->lineSize++;
-              tokenID = mmng_safeRealloc(GLBScanner->line, sizeof(char) * GLBScanner->lineSize * CHUNK);
+              tokenID = mmng_safeRealloc(tokenID, sizeof(char) * GLBScanner->lineSize * CHUNK);
             }
             switch(state)
             {

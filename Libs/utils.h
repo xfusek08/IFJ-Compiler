@@ -30,6 +30,8 @@ typedef enum {
 
 void printInstruction(const char *, ...);
 
+void printLongInstruction(unsigned len, const char *arg, ...);
+
 void flushCode();
 
 /**
