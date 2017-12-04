@@ -414,8 +414,8 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
       }else if(oper->type == opMul){
         token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal * rightOperandCopy.symbol->data.intVal; // muls two integers
       }else if(oper->type == opDivFlt){
-        syntx_intToDoubleToken(leftOperand);
-        syntx_intToDoubleToken(rightOperand);
+        syntx_intToDoubleToken(&leftOperandCopy);
+        syntx_intToDoubleToken(&rightOperandCopy);
         token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal / rightOperandCopy.symbol->data.doubleVal; // float divides two doubles
         token.symbol->dataType = dtFloat; // result/dataType after divide is DOUBLE
       }else if(oper->type == opDiv){
@@ -427,8 +427,8 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
       // integer division
       if(oper->type == opDiv){
         // -> int - int
-        syntx_doubleToIntToken(leftOperand);
-        syntx_doubleToIntToken(rightOperand);
+        syntx_doubleToIntToken(&leftOperandCopy);
+        syntx_doubleToIntToken(&rightOperandCopy);
         token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
         token.symbol->dataType = dtInt;
         return token;
@@ -450,14 +450,14 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
 
       // integer division
       if(oper->type == opDiv){
-        syntx_doubleToIntToken(leftOperand); // -> int - int
+        syntx_doubleToIntToken(&leftOperandCopy); // -> int - int
         token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
         token.symbol->dataType = dtInt;
         return token;
       }
 
       //TODO: again! implicit conversion - return some value or not?
-      syntx_intToDoubleToken(rightOperand); // -> double - double
+      syntx_intToDoubleToken(&rightOperandCopy); // -> double - double
 
       if(oper->type == opPlus){
         token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal + rightOperandCopy.symbol->data.doubleVal; // adds two doubles
@@ -477,14 +477,14 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
 
       // integer division
       if(oper->type == opDiv){
-        syntx_doubleToIntToken(rightOperand); // -> int - int
+        syntx_doubleToIntToken(&rightOperandCopy); // -> int - int
         token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
         token.symbol->dataType = dtInt;
         return token;
       }
 
       //TODO: again! implicit conversion - return some value or not?
-      syntx_intToDoubleToken(leftOperand); // -> double - double
+      syntx_intToDoubleToken(&leftOperandCopy); // -> double - double
 
       if(oper->type == opPlus){
         token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal + rightOperandCopy.symbol->data.doubleVal; // adds two doubles
