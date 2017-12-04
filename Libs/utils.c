@@ -132,65 +132,63 @@ const char *util_dataTypeToString(const DataType dataType)
 // Return grammar symbol as tring
 char *grammarToString(EGrSymb symb)
 {
-  if (symb > 57)
+  if (symb > 55)
     return "non-teminal";
 
   char *tokenTypeStrings[] = {
-    "opPlus",       //  0
-		"opMns",        //  1
-		"opMul",        //  2
-		"opDivFlt",     //  3
-		"opDiv",        //  4
-		"opLeftBrc",    //  5
-		"opRightBrc",   //  6
-		"ident",        //  7
-		"opComma",      //  8
-    "opEq",         //  9
-		"opNotEq",      // 10
-		"opLes",        // 11
-		"opLessEq",     // 12
-		"opGrt",        // 13
-		"opGrtEq",      // 14
-    "asgn",         // 15
-		"opPlusEq",     // 16
-		"opMnsEq",      // 17
-		"opMulEq",      // 18
-		"opDivEq",      // 19
-		"opDivFltEq",   // 20
-    "opBoolNot",    // 21
-		"opBoolAnd",    // 22
-		"opBoolOr",     // 23
-		"eol",          // 24
-    "opSemcol",     // 25
-    "dataType",     // 26
-    "eof",          // 27
-    "kwAs",         // 28
-		"kwDeclare",    // 30
-		"kwDim",        // 31
-		"kwDo",         // 32
-		"kwElse",       // 33
-		"kwEnd",        // 34
-		"kwFunction",   // 35
-		"kwIf",         // 36
-		"kwInput",      // 37
-		"kwLoop",       // 39
-    "kwPrint",      // 40
-		"kwReturn",     // 41
-		"kwScope",      // 42
-		"kwThen",       // 44
-		"kwWhile",      // 45
-		"kwContinue",   // 46
-		"kwElseif",     // 47
-		"kwExit",       // 48
-		"kwFalse",      // 49
-		"kwFor",        // 50
-    "kwNext",       // 51
-		"kwShared",     // 52
-		"kwStatic",     // 53
-		"kwTrue",       // 54
-		"kwTo",         // 55
-    "kwUntil",      // 56
-    "kwStep"        // 57
+    "+",            // opPlus      0
+		"-",            // opMns       1
+		"*",            // opMul       2
+		"/",            // opDivFlt    3
+		"\\",           // opDiv       4
+		"(",            // opLeftBrc   5
+		")",            // opRightBrc  6
+		"identifier",   // ident       7
+		",",            // opComma     8
+    "=",            // opEq        9
+		"<>",           // opNotEq    10
+		"<",            // opLes      11
+		"<=",           // opLessEq   12
+		">",            // opGrt      13
+		">=",           // opGrtEq    14
+    "=",            // asgn       15
+		"+=",           // opPlusEq   16
+		"-=",           // opMnsEq    17
+		"*=",           // opMulEq    18
+		"\\=",          // opDivEq    19
+		"/=",           // opDivFltEq 20
+    "not",          // opBoolNot  21
+		"and",          // opBoolAnd  22
+		"or",           // opBoolOr   23
+		"eol",          // eol        24
+    ";",            // opSemcol   25
+    "dataType",     // dataType   26
+    "eof",          // eof        27
+    "as",           // kwAs       28
+		"declare",      // kwDeclare  30
+		"dim",          // kwDim      31
+		"do",           // kwDo       32
+		"else",         // kwElse     33
+		"end",          // kwEnd      34
+		"function",     // kwFunction 35
+		"if",           // kwIf       36
+		"input",        // kwInput    37
+		"loop",         // kwLoop     39
+    "print",        // kwPrint    40
+		"return",       // kwReturn   41
+		"scope",        // kwScope    42
+		"then",         // kwThen     44
+		"while",        // kwWhile    45
+		"continue",     // kwContinue 46
+		"elseif",       // kwElseif   47
+		"exit",         // kwExit     48
+		"false",        // kwFalse    49
+		"for",          // kwFor      50
+    "next",         // kwNext     51
+		"true",         // kwTrue     52
+		"to",           // kwTo       53
+    "until",        // kwUntil    54
+    "step"          // kwStep     55
   };
   return tokenTypeStrings[symb];
 }
