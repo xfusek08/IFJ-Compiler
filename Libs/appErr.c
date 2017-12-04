@@ -16,7 +16,7 @@
 
 void apperr_runtimeError(char *errMsg)
 {
-  fprintf( stderr, "\033[31;1mError:\033[0m %s\n", errMsg);
+  fprintf( stderr, "\033[31;1mInternal runtime error (99):\033[0m %s\n", errMsg);
   mmng_freeAll();
   exit(internalErr);
 }
@@ -26,29 +26,31 @@ void apperr_codeError(ErrType type, int row, int col, char *line, char *message,
   switch (type)
   {
     case lexicalErr:
-      fprintf( stderr, "\033[31;1mError %d:\033[0m Error in lexical analyzer on position: ", type);
+      fprintf( stderr, "\033[31;1mLexical error (%d):\033[0m ", type);
       break;
     case syntaxErr:
-      fprintf( stderr, "\033[31;1mError %d:\033[0m Syntax error: ", type);
+      fprintf( stderr, "\033[31;1mSyntax error (%d):\033[0m ", type);
       break;
     case semanticErr:
-      fprintf( stderr, "\033[31;1mError %d:\033[0m Sematic error caused by wrong identifing: ", type);
+      fprintf( stderr, "\033[31;1mSematic error (%d): \033[0m Undefined symbol or invalid definition or redefinition ", type);
       break;
     case typeCompatibilityErr:
-      fprintf( stderr, "\033[31;1mError %d:\033[0m Sematic error caused by type compatibility: ", type);
+      fprintf( stderr, "\033[31;1mSematic error (%d):\033[0m type incompatibility ", type);
       break;
     case anotherSemanticErr:
-      fprintf( stderr, "\033[31;1mError %d:\033[0m Error in semantic analyzer: ", type);
+      fprintf( stderr, "\033[31;1mSematic error (%d):\033[0m ", type);
       break;
     default:
       return;
   }
+  fprintf(stderr, "\033[33m%d/%d\033[0m\n", row, col);
   if(token != NULL)
-    fprintf(stderr, "Caused by token: %s ", grammarToString(token->type));
-  fprintf(stderr, "On position: \033[33m[%d:%d]\033[0m:\n", row, col);
+    fprintf(stderr, "Caused by token: \"%s\"\n", grammarToString(token->type));
   if (message != NULL)
-    fprintf(stderr, "%s\n", message);
+    fprintf(stderr, "Error message: %s\n", message);
 
+  fprintf(stderr, " \033[2m% 3d |\033[0m ", row);
+  col += 7;
   int consoleRowNum = 0;
 
   unsigned int i = 0;
