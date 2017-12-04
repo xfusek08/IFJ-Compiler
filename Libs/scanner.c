@@ -190,9 +190,7 @@ bool isEndChar(char endChar)
 //Function that return next token
 SToken scan_GetNextToken()
 {
-  int innerPos = 0;
-  int innerChunks = 1;
-  char *tokenID = mmng_safeMalloc(sizeof(char) * CHUNK * innerChunks);
+  char *tokenID = mmng_safeMalloc(sizeof(char) * CHUNK * GLBScanner->lineSize);
   TSymbol symbol = NULL;
   SymbolType type = symtUnknown;
   DataType dType = dtUnspecified;
@@ -205,13 +203,14 @@ SToken scan_GetNextToken()
   //helping variables
   char *hasStr = NULL;
   int state = 0;
+  int position = 0;
   bool allowed = false;
   //Getting next token (retezec)
   while(!allowed)
   {
     GLBScanner->prevPosition = GLBScanner->position + 1;
     //Finding type of token
-    switch(tokenID[innerPos++] = tolower(GLBScanner->line[GLBScanner->position++]))
+    switch(tokenID[position++] = tolower(GLBScanner->line[GLBScanner->position++]))
     {
       case '=':
         allowed = true;
@@ -249,15 +248,15 @@ SToken scan_GetNextToken()
         allowed = true;
         if(GLBScanner->line[GLBScanner->position] == '\'')
         {
-          innerPos--;
+          position--;
           delete_comment(false);
           allowed = false;
           tokenType = eol;
         }
         else if(GLBScanner->line[GLBScanner->position] == '=')
         {
-          tokenID[innerPos++] = GLBScanner->line[GLBScanner->position++];
-          tokenID[innerPos] = '\0';
+          tokenID[position++] = GLBScanner->line[GLBScanner->position++];
+          tokenID[position] = '\0';
           allowed = true;
           tokenType = opDivEq;
         }
@@ -311,134 +310,123 @@ SToken scan_GetNextToken()
         allowed = true;
         break;
       case '\'':
-        innerPos--;
+        position--;
         delete_comment(true);
         allowed = false;
         break;
       //String
       case '!':
         state = 0;
-        innerPos--;
+        position--;
         allowed = true;
         if(GLBScanner->line[GLBScanner->position] == '\"')
         {
           state = 1;
+          tokenID[position] = GLBScanner->line[GLBScanner->position++];
           while(state != 5)
           {
-            GLBScanner->position++;
-            char actchar = GLBScanner->line[GLBScanner->position];
-            tokenID[innerPos++] = actchar;
-            if(innerPos > ((CHUNK * innerChunks) - 4))
+            tokenID[position++] = GLBScanner->line[GLBScanner->position++];
+            if(position > ((CHUNK * GLBScanner->lineSize) - 4))
             {
-              innerChunks++;
-              tokenID = mmng_safeRealloc(tokenID, sizeof(char) * innerChunks * CHUNK);
+              GLBScanner->lineSize++;
+              tokenID = mmng_safeRealloc(tokenID, sizeof(char) * GLBScanner->lineSize * CHUNK);
             }
             switch(state)
             {
               case 1:
-                if(actchar == '\"')
+                if((tokenID[position - 1]) == '\"')
                 {
                   state = 5;
-                  innerPos--;
+                  position--;
                 }
-                else if(actchar == '\\')
+                else if((tokenID[position - 1]) == '\\')
                   state = 2;
-                else if(actchar > 31 && actchar != '#')
+                else if(tokenID[position - 1] > 31 && tokenID[position - 1] != '#')
                 {
                   state = 1;
-                  if(actchar == 32)
+                  if(tokenID[position - 1] == 35 || tokenID[position - 1] == 32)
                   {
-                    tokenID[innerPos - 1] = '\\';
-                    tokenID[innerPos] = '0';
-                    tokenID[innerPos + 1] = '3';
-                    tokenID[innerPos + 2] = '2';
-                    innerPos += 3;
-                  }
-                  else if(actchar == 35)
-                  {
-                    tokenID[innerPos - 1] = '\\';
-                    tokenID[innerPos] = '0';
-                    tokenID[innerPos + 1] = '3';
-                    tokenID[innerPos + 2] = '5';
-                    innerPos += 3;
+                    if(tokenID[position - 1] == 32)
+                    {
+                      tokenID[position - 1] = 92;
+                      tokenID[position] = '0';
+                      tokenID[position + 1] = '3';
+                      tokenID[position + 2] = '2';
+                      position += 3;
+                    }
+                    else if(tokenID[position - 1] == 35)
+                    {
+                      tokenID[position - 1] = 92;
+                      tokenID[position] = '0';
+                      tokenID[position + 1] = '3';
+                      tokenID[position + 2] = '5';
+                      position += 3;
+                    }
                   }
                 }
                 else
-                {
-                  GLBScanner->prevPosition = GLBScanner->position;
                   scan_raiseCodeError(lexicalErr, "Wrong character inside string constant.", NULL);
-                }
                 break;
               case 2:
-                if(isdigit(actchar))
+                if(isdigit(tokenID[position - 1]))
                   state = 3;
-                else if(actchar == 'n')
+                else if(tokenID[position - 1] == 'n')
                 {
-                  tokenID[innerPos - 2] = '\\';
-                  tokenID[innerPos - 1] = '0';
-                  tokenID[innerPos] = '1';
-                  tokenID[innerPos + 1] = '0';
-                  innerPos += 2;
+                  tokenID[position - 2] = 92;
+                  tokenID[position - 1] = '0';
+                  tokenID[position] = '1';
+                  tokenID[position + 1] = '0';
+                  position += 2;
                   state = 1;
                 }
-                else if(actchar == 't')
+                else if(tokenID[position - 1] == 't')
                 {
-                  tokenID[innerPos - 2] = '\\';
-                  tokenID[innerPos - 1] = '1';
-                  tokenID[innerPos] = '1';
-                  tokenID[innerPos + 1] = '6';
-                  innerPos += 2;
+                  tokenID[position - 2] = 92;
+                  tokenID[position - 1] = '1';
+                  tokenID[position] = '1';
+                  tokenID[position + 1] = '6';
+                  position += 2;
                   state = 1;
                 }
-                else if(actchar == '\"')
+                else if(tokenID[position - 1] == '\"')
                 {
-                  tokenID[innerPos - 2] = '\\';
-                  tokenID[innerPos - 1] = '0';
-                  tokenID[innerPos] = '3';
-                  tokenID[innerPos + 1] = '4';
-                  innerPos += 2;
+                  tokenID[position - 2] = 92;
+                  tokenID[position - 1] = '0';
+                  tokenID[position] = '3';
+                  tokenID[position + 1] = '4';
+                  position += 2;
                   state = 1;
                 }
-                else if(actchar == '\\')
+                else if(tokenID[position - 1] == '\\')
                 {
-                  tokenID[innerPos - 2] = '\\';
-                  tokenID[innerPos - 1] = '0';
-                  tokenID[innerPos] = '9';
-                  tokenID[innerPos + 1] = '2';
-                  innerPos += 2;
+                  tokenID[position - 2] = 92;
+                  tokenID[position - 1] = '0';
+                  tokenID[position] = '9';
+                  tokenID[position + 1] = '2';
+                  position += 2;
                   state = 1;
                 }
                 else
-                {
-                  GLBScanner->prevPosition = GLBScanner->position;
                   scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\n.", NULL);
-                }
                 break;
               case 3:
-                if(isdigit(actchar))
+                if(isdigit(tokenID[position - 1]))
                   state = 4;
                 else
-                {
-                  GLBScanner->prevPosition = GLBScanner->position;
                   scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\xxx, where x is number.", NULL);
-                }
                 break;
               case 4:
-                if(isdigit(actchar))
+                if(isdigit(tokenID[position - 1]))
                   state = 1;
                 else
-                {
-                  GLBScanner->prevPosition = GLBScanner->position;
                   scan_raiseCodeError(lexicalErr, "Wrong character after \\, maybe you want to write \\xxx, where x is number.", NULL);
-                }
                 break;
             }
           }
-          GLBScanner->position++;
           tokenType = ident;
           type = symtConstant;
           dType = dtString;
-          tokenID[innerPos] = '\0';
+          tokenID[position] = '\0';
           hasStr = mmng_safeMalloc(sizeof(char) * floor(log10(abs(GLBScanner->alocStr))) + 4); //s@'number'\0
           sprintf(hasStr, "s@%d", GLBScanner->alocStr);
           GLBScanner->alocStr++;
@@ -454,40 +442,40 @@ SToken scan_GetNextToken()
         if(GLBScanner->lastToken.type == eol)
         {
           allowed = false;
-          innerPos--;
+          position--;
         }
         break;
       //End of File
       case EOF:
         tokenType = eof;
-        tokenID[innerPos] = '\0';
+        tokenID[position] = '\0';
         allowed = true;
         break;
       case '\0':
         allowed = false;
-        innerPos--;
+        position--;
         get_line();
         break;
       default:
         //Identifires
-        if((tokenID[innerPos - 1] > 96 && tokenID[innerPos - 1] < 123) //value of a-z
-        || tokenID[innerPos - 1] == '_')
+        if((tokenID[position - 1] > 96 && tokenID[position - 1] < 123) //value of a-z
+        || tokenID[position - 1] == '_')
         {
           state = 0;
           tokenType = ident;
           while(state != 1)
           {
-            tokenID[innerPos++] = tolower(GLBScanner->line[GLBScanner->position++]);
-            if((tokenID[innerPos - 1] > 96 && tokenID[innerPos - 1] < 123) //value of a-z
-            || (tokenID[innerPos - 1] > 47 && tokenID[innerPos - 1] < 58) //value of 0-9
-            || tokenID[innerPos - 1] == '_')
+            tokenID[position++] = tolower(GLBScanner->line[GLBScanner->position++]);
+            if((tokenID[position - 1] > 96 && tokenID[position - 1] < 123) //value of a-z
+            || (tokenID[position - 1] > 47 && tokenID[position - 1] < 58) //value of 0-9
+            || tokenID[position - 1] == '_')
               state = 0;
             else if(isEndChar(GLBScanner->line[GLBScanner->position - 1]))
             {
-              innerPos--;
+              position--;
               GLBScanner->position--;
               state = 1;
-              tokenID[innerPos] = '\0';
+              tokenID[position] = '\0';
               tokenType = isKeyWord(tokenID);
               dType = isDataType(tokenID);
               if(tokenType == kwTrue || tokenType == kwFalse)
@@ -516,7 +504,7 @@ SToken scan_GetNextToken()
           type = symtConstant;
           while(state != 4)
           {
-            tokenID[innerPos++] = GLBScanner->line[GLBScanner->position++];
+            tokenID[position++] = GLBScanner->line[GLBScanner->position++];
             switch(state)
             {
               case 0:
@@ -530,7 +518,7 @@ SToken scan_GetNextToken()
                 {
                   state = 4;
                   GLBScanner->position--;
-                  tokenID[--innerPos] = '\0';
+                  tokenID[--position] = '\0';
                   intVal = strtol(tokenID, NULL, 10);
                   dType = dtInt;
                 }
@@ -546,7 +534,7 @@ SToken scan_GetNextToken()
                 {
                   state = 4;
                   GLBScanner->position--;
-                  tokenID[--innerPos] = '\0';
+                  tokenID[--position] = '\0';
                   doubleVal = strtod(tokenID, NULL);
                   dType = dtFloat;
                 }
@@ -567,7 +555,7 @@ SToken scan_GetNextToken()
                 {
                   state = 4;
                   GLBScanner->position--;
-                  tokenID[--innerPos] = '\0';
+                  tokenID[--position] = '\0';
                   doubleVal = strtod(tokenID, NULL);
                   dType = dtFloat;
                 }
@@ -581,7 +569,7 @@ SToken scan_GetNextToken()
         //Space,...
         else if(isspace(GLBScanner->line[GLBScanner->position - 1]))
         {
-          innerPos--;
+          position--;
           allowed = false;
         }
         //Error
