@@ -1,40 +1,15 @@
-' Leap year
-
-declare function modulo(divident as integer, divider as integer) as integer
-
-function get_year() as integer
-    print !"Enter a year: ";
-    dim year as integer
-    input year
-    return year
-end function
-
-function modulo(divident as integer, divider as integer) as integer
-    dim res as integer
-    res = divident - (divident \ divider) * divider
-    return res
-end function
+' All data types
 
 scope
-    dim modulo as integer
-    year = get_year()
-    dim res as integer asd
-    res = modulo(year, 4)
-    if (res > 0) > true then
-        res = modulo(year, 100)
-        if(res = 0) then
-            ' year is divisible by 400, hence the year is a leap year
-            res = modulo(year, 400)
-            if (res = 0) then
-                print year; !" is a leap year";
-            else
-                print year; !" is not a leap year";
-            end if
-        else
-            print year; !" is a leap year";
-        end if
 
-    else
-         print year; !" is not a leap year";
-    end if
+ 	dim a as integer = 10
+ 	dim b as string = !"ahojy\n\055"
+ 	dim c as double = 30.42
+ 	dim d as double = 30.3e2
+ 	dim e as double = 30.0-2
+ 	dim f as boolean = true
+ 	dim g as string = !"retezec\032s\032lomitkem\032\092\032a\010novym\035radkem"
+
+ 	print a; b; c; d; e; f; g;
+
 end scope

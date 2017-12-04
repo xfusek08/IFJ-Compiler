@@ -43,7 +43,7 @@ void apperr_codeError(ErrType type, int row, int col, char *line, char *message,
     default:
       return;
   }
-  fprintf(stderr, "on \033[33m%d/%d\033[0m\n", row, col);
+  fprintf(stderr, "\033[33m%d/%d\033[0m\n", row, col);
   if(token != NULL)
     fprintf(stderr, "Caused by token: \"%s\"\n", grammarToString(token->type));
   if (message != NULL)

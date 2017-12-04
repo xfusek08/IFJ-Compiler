@@ -388,7 +388,7 @@ void ck_NT_PROG(SToken *actToken)
 }
 
 // definitions and declarations section
-// first(NT_DD) = { kwDeclare -> (2); kwFunction -> (3);  kwStatic -> (4); else -> (5 [epsilon]) }
+// first(NT_DD) = { kwDeclare -> (2); kwFunction -> (3); else -> (5 [epsilon]) }
 void ck_NT_DD(SToken *actToken)
 {
   TSymbol actSymbol = NULL;
@@ -436,30 +436,6 @@ void ck_NT_DD(SToken *actToken)
       NEXT_TOKEN(actToken);
       ck_NT_DD(actToken);
       break;
-    // 4. NT_DD -> kwStatic kwShared ident kwAs dataType NT_ASSINGEXT eol NT_DD
-      /*
-    case kwStatic:
-      NEXT_CHECK_TOKEN(actToken, kwShared);
-      NEXT_CHECK_TOKEN(actToken, ident);
-      actSymbol = actToken->symbol;
-      if (actSymbol->type == symtUnknown)
-        actSymbol->type = symtVariable;
-      else
-        ERR_SYMB_REDEF();
-
-      NEXT_CHECK_TOKEN(actToken, kwAs);
-      NEXT_CHECK_TOKEN(actToken, dataType);
-      actSymbol->dataType = actToken->dataType;
-      // add frame fo identifier
-      addPrefixToSymbolIdent("GF@", actSymbol);
-      printInstruction("DEFVAR %s\n", actSymbol->ident);
-      NEXT_TOKEN(actToken);
-      ck_NT_ASSINGEXT(actToken, actSymbol);
-      CHECK_TOKEN(actToken, eol);
-      NEXT_TOKEN(actToken);
-      ck_NT_DD(actToken);
-      break;
-      */
     // 5. NT_DD -> (epsilon)
     default:
       // let it be

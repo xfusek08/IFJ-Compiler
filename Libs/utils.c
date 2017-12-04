@@ -132,7 +132,7 @@ const char *util_dataTypeToString(const DataType dataType)
 // Return grammar symbol as tring
 char *grammarToString(EGrSymb symb)
 {
-  if (symb > 55)
+  if (symb > 57)
     return "non-teminal";
 
   char *tokenTypeStrings[] = {
@@ -185,10 +185,12 @@ char *grammarToString(EGrSymb symb)
 		"false",        // kwFalse    49
 		"for",          // kwFor      50
     "next",         // kwNext     51
-		"true",         // kwTrue     52
-		"to",           // kwTo       53
-    "until",        // kwUntil    54
-    "step"          // kwStep     55
+    "shared",       // kwShared   52
+    "static",       // kwStatic   53
+		"true",         // kwTrue     54
+		"to",           // kwTo       55
+    "until",        // kwUntil    56
+    "step"          // kwStep     57
   };
   return tokenTypeStrings[symb];
 }
