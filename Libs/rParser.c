@@ -364,6 +364,16 @@ void ck_NT_PROG(SToken *actToken)
   printf("CREATEFRAME\n");
   printf("PUSHFRAME\n");
   printf("CREATEFRAME\n");
+
+  // check if all declared functions are defined
+  char *udenfFuncIdent = symbt_getUndefinedFunc();
+  if (udenfFuncIdent != NULL)
+  {
+    char *message = util_StrConcatenate("Function \"", udenfFuncIdent);
+    message = util_StrConcatenate(message, "\" is declared but never defined.");
+    scan_raiseCodeError(semanticErr, message, actToken); // error clears memmory anyway
+  }
+
   ck_NT_SCOPE(actToken);
   if (actToken->type != eof)
   {
@@ -525,6 +535,9 @@ void ck_NT_PARAM(SToken *actToken, TArgList parList)
   {
     // 11. NT_PARAM -> ident kwAs dataType NT_PARAM_EXT
     case ident:
+      if (actToken->symbol->type != symtUnknown)
+        scan_raiseCodeError(semanticErr, "Symbol with this identifier already exists.", actToken);
+      actToken->symbol->type = symtVariable;
       id = actToken->symbol->ident;
       NEXT_CHECK_TOKEN(actToken, kwAs);
       NEXT_CHECK_TOKEN(actToken, dataType);
