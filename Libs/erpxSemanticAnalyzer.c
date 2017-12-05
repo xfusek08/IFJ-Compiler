@@ -20,7 +20,11 @@
 #include "syntaxAnalyzer.h"
 #include "utils.h"
 
-TSymbol convertedSymbol;  // variable for passing the symbol with the converted value between the functions
+// variable for passing the symbol with the converted value between the functions
+// is used for example for expression: A(int) = A(int) + A(double)
+// int variable A is converted to double and then is 
+TSymbol convertedSymbol;
+int isMyTemp = 0;
 
 /**
 * Returns 0 if symbols are out of range or relation between symbols is not defined, otherwise 1
@@ -104,10 +108,14 @@ void syntx_intToDoubleToken(SToken *token){
   if(token->symbol->type == symtConstant){ // converts only constant symbols
     token->symbol->data.doubleVal = syntx_intToDouble(token->symbol->data.intVal);
   }else if(token->symbol->type == symtVariable){ // converts variable
+
+    // changes copied symbol to converted symbol
+    mmng_safeFree(token->symbol); // ATTENTION: fries symbol from COPPIED token (which is left or right operand)
     SToken temp = sytx_getFreeVar();
-    convertedSymbol = temp.symbol;
-    printInstruction("INT2FLOAT %s %s\n", convertedSymbol->ident, token->symbol->ident);
-    token->symbol = convertedSymbol; // symbol of passed operand (right or left) will overwritten by converter value - pointer to symbol in list (stack) will by changed
+    isMyTemp = 1;
+    token->symbol = temp.symbol; // change symbol of token to converted symbol
+
+    printInstruction("INT2FLOAT %s %s\n", token->symbol->ident, token->symbol->ident);
   }
 
   token->symbol->dataType = dtFloat;
@@ -122,10 +130,14 @@ void syntx_doubleToIntToken(SToken *token){
   if(token->symbol->type == symtConstant){ // converts only constant symbols
     token->symbol->data.intVal = syntx_doubleToInt(token->symbol->data.doubleVal);
   }else if(token->symbol->type == symtVariable){ // converts variable
+    
+    // changes copied symbol to converted symbol
+    mmng_safeFree(token->symbol); // ATTENTION: fries symbol from COPPIED token (which is left or right operand)
     SToken temp = sytx_getFreeVar();
-    convertedSymbol = temp.symbol;
-    printInstruction("FLOAT2R2EINT %s %s\n", convertedSymbol->ident, token->symbol->ident); // half to even
-    token->symbol = convertedSymbol; // symbol of passed operand (right or left) will overwritten by converter value - pointer to symbol in list (stack) will by changed
+    isMyTemp = 1;
+    token->symbol = temp.symbol; // change symbol of token to converted symbol
+
+    printInstruction("FLOAT2R2EINT %s %s\n", token->symbol->ident, token->symbol->ident); // half to even
   }
 
   token->symbol->dataType = dtInt;
@@ -884,6 +896,39 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
   result->symbol->dataType = funcToken->symbol->data.funcData.returnType;
  }
 
+/**
+ * Deeply copies token
+ */
+SToken *syntx_deepCopyToken(SToken *token){
+  SToken *tokenCopy = NULL;
+
+  tokenCopy->dataType = token->dataType;
+  tokenCopy->symbol = token->symbol;
+  tokenCopy->type = token->type;
+
+  tokenCopy->symbol = mmng_safeMalloc(sizeof(struct Symbol));
+  tokenCopy->symbol->data = token->symbol->data;
+  tokenCopy->symbol->dataType = token->symbol->dataType;
+  tokenCopy->symbol->ident = util_StrHardCopy(token->symbol->ident);
+  tokenCopy->symbol->isTemp = token->symbol->isTemp;
+  tokenCopy->symbol->key = util_StrHardCopy(token->symbol->key);
+  tokenCopy->symbol->type = token->symbol->type;
+
+  return tokenCopy;
+}
+
+void syntx_freeSymbol(TSymbol symb){
+  if(symb->isTemp && isMyTemp){ // vymenil sem za mnou alokovanou volnou promennou --> muzu uvolnit
+    SToken token;
+    token.type = NT_EXPR_TMP;
+    token.symbol = symb;
+    syntx_freeVar(&token);  // put token back on stack (to list)
+  }else if(symb->isTemp && !isMyTemp){  // nemenil sem symbol za docasnou promennou a je docasna - neodalokovavam nic
+
+  }else if(symb->isTemp == false){  // symbol neni docasna promenna - muzu v pohode odalokovat
+    mmng_safeFree(symb);
+  }
+}
 
 /**
  * Main function for code generation
@@ -894,11 +939,14 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
  */
 void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand, SToken *partialResult){
 
+  SToken *leftOperandCopy = syntx_deepCopyToken(leftOperand);
+  SToken *rightOperandCopy = syntx_deepCopyToken(rightOperand);
+
   // checks data types, implicitly converts constants and generates code for implicit convertion of variables
-  if(rightOperand != NULL && oper->type != opBoolNot){  // operator is not bool NOT
-    syntx_checkDataTypes(leftOperand, oper, rightOperand);
-  }else if(rightOperand == NULL && oper->type == opBoolNot){  // operator is bool NOT
-    syntx_checkDataTypeOfBool(leftOperand);
+  if(rightOperandCopy != NULL && oper->type != opBoolNot){  // operator is not bool NOT
+    syntx_checkDataTypes(leftOperandCopy, oper, rightOperandCopy);
+  }else if(rightOperandCopy == NULL && oper->type == opBoolNot){  // operator is bool NOT
+    syntx_checkDataTypeOfBool(leftOperandCopy);
   }else{  //for example: NOT string, NOT float, etc.
     scan_raiseCodeError(typeCompatibilityErr, "An attempt to make a logical negation operation with non-bool data type.", NULL);  // prints error
   }
@@ -909,15 +957,12 @@ void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand,
   // NOTICE: data type for partialResult is setted in generateCodexxx functions!
 
   // one of functions bellow prints instructions according to operator type
-  syntx_generateCodeForBasicOps(leftOperand, oper, rightOperand, partialResult);  // +, -, *, /, \, string +
-  syntx_generateCodeForBoolOps(leftOperand, oper, rightOperand, partialResult); // AND, OR, NOT
-  syntx_generateCodeForAsgnOps(leftOperand, oper, rightOperand, partialResult);  // +=, -=, *=, /=, \=, asgn
-  syntx_generateCodeForRelOps(leftOperand, oper, rightOperand, partialResult);  // <, >, <=, >=, =, <>
+  syntx_generateCodeForBasicOps(leftOperandCopy, oper, rightOperandCopy, partialResult);  // +, -, *, /, \, string +
+  syntx_generateCodeForBoolOps(leftOperandCopy, oper, rightOperandCopy, partialResult); // AND, OR, NOT
+  syntx_generateCodeForAsgnOps(leftOperandCopy, oper, rightOperandCopy, partialResult);  // +=, -=, *=, /=, \=, asgn
+  syntx_generateCodeForRelOps(leftOperandCopy, oper, rightOperandCopy, partialResult);  // <, >, <=, >=, =, <>
 
-  if(convertedSymbol != NULL){
-    SToken tmp;
-    tmp.symbol = convertedSymbol;
-    syntx_freeVar(&tmp);  // put token back on stack (to list)
-    convertedSymbol = NULL;
-  }
+  // will make available temporary variable
+  syntx_freeSymbol(leftOperandCopy->symbol);
+  syntx_freeSymbol(rightOperandCopy->symbol);
 }
