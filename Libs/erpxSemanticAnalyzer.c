@@ -79,6 +79,40 @@ int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn)
 }
 
 /**
+ * Deeply copies token
+ */
+SToken syntx_deepCopyToken(SToken *token){
+  SToken tokenCopy;
+
+  tokenCopy.dataType = token->dataType;
+  tokenCopy.symbol = token->symbol;
+  tokenCopy.type = token->type;
+
+  tokenCopy.symbol = mmng_safeMalloc(sizeof(struct Symbol));
+  tokenCopy.symbol->data = token->symbol->data;
+  tokenCopy.symbol->dataType = token->symbol->dataType;
+  tokenCopy.symbol->ident = util_StrHardCopy(token->symbol->ident);
+  tokenCopy.symbol->isTemp = token->symbol->isTemp;
+  tokenCopy.symbol->key = util_StrHardCopy(token->symbol->key);
+  tokenCopy.symbol->type = token->symbol->type;
+
+  return tokenCopy;
+}
+
+void syntx_freeSymbol(TSymbol symb){
+  if(symb->isTemp && isMyTemp){ // vymenil sem za mnou alokovanou volnou promennou --> muzu uvolnit
+    SToken token;
+    token.type = NT_EXPR_TMP;
+    token.symbol = symb;
+    syntx_freeVar(&token);  // put token back on stack (to list)
+  }else if(symb->isTemp && !isMyTemp){  // nemenil sem symbol za docasnou promennou a je docasna - neodalokovavam nic
+
+  }else if(symb->isTemp == false){  // symbol neni docasna promenna - muzu v pohode odalokovat
+    mmng_safeFree(symb);
+  }
+}
+
+/**
  * Converts double to integer - method half to even
  */
 int syntx_doubleToInt(double inputNum){
@@ -110,12 +144,14 @@ void syntx_intToDoubleToken(SToken *token){
   }else if(token->symbol->type == symtVariable){ // converts variable
 
     // changes copied symbol to converted symbol
-    mmng_safeFree(token->symbol); // ATTENTION: fries symbol from COPPIED token (which is left or right operand)
+    //mmng_safeFree(token->symbol); // ATTENTION: fries symbol from COPPIED token (which is left or right operand)
     SToken temp = sytx_getFreeVar();
     isMyTemp = 1;
-    token->symbol = temp.symbol; // change symbol of token to converted symbol
 
-    printInstruction("INT2FLOAT %s %s\n", token->symbol->ident, token->symbol->ident);
+    printInstruction("INT2FLOAT %s %s\n", temp.symbol->ident, token->symbol->ident);
+
+    //syntx_freeSymbol(token->symbol);
+    token->symbol = temp.symbol; // change symbol of token to converted symbol
   }
 
   token->symbol->dataType = dtFloat;
@@ -132,12 +168,14 @@ void syntx_doubleToIntToken(SToken *token){
   }else if(token->symbol->type == symtVariable){ // converts variable
     
     // changes copied symbol to converted symbol
-    mmng_safeFree(token->symbol); // ATTENTION: fries symbol from COPPIED token (which is left or right operand)
+    //mmng_safeFree(token->symbol); // ATTENTION: fries symbol from COPPIED token (which is left or right operand)
     SToken temp = sytx_getFreeVar();
     isMyTemp = 1;
-    token->symbol = temp.symbol; // change symbol of token to converted symbol
 
-    printInstruction("FLOAT2R2EINT %s %s\n", token->symbol->ident, token->symbol->ident); // half to even
+    printInstruction("FLOAT2R2EINT %s %s\n", temp.symbol->ident, token->symbol->ident); // half to even
+    
+    //syntx_freeSymbol(token->symbol);
+    token->symbol = temp.symbol; // change symbol of token to converted symbol
   }
 
   token->symbol->dataType = dtInt;
@@ -897,40 +935,6 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
  }
 
 /**
- * Deeply copies token
- */
-SToken *syntx_deepCopyToken(SToken *token){
-  SToken *tokenCopy = NULL;
-
-  tokenCopy->dataType = token->dataType;
-  tokenCopy->symbol = token->symbol;
-  tokenCopy->type = token->type;
-
-  tokenCopy->symbol = mmng_safeMalloc(sizeof(struct Symbol));
-  tokenCopy->symbol->data = token->symbol->data;
-  tokenCopy->symbol->dataType = token->symbol->dataType;
-  tokenCopy->symbol->ident = util_StrHardCopy(token->symbol->ident);
-  tokenCopy->symbol->isTemp = token->symbol->isTemp;
-  tokenCopy->symbol->key = util_StrHardCopy(token->symbol->key);
-  tokenCopy->symbol->type = token->symbol->type;
-
-  return tokenCopy;
-}
-
-void syntx_freeSymbol(TSymbol symb){
-  if(symb->isTemp && isMyTemp){ // vymenil sem za mnou alokovanou volnou promennou --> muzu uvolnit
-    SToken token;
-    token.type = NT_EXPR_TMP;
-    token.symbol = symb;
-    syntx_freeVar(&token);  // put token back on stack (to list)
-  }else if(symb->isTemp && !isMyTemp){  // nemenil sem symbol za docasnou promennou a je docasna - neodalokovavam nic
-
-  }else if(symb->isTemp == false){  // symbol neni docasna promenna - muzu v pohode odalokovat
-    mmng_safeFree(symb);
-  }
-}
-
-/**
  * Main function for code generation
  * leftOperand expects constant or ident
  * operator expects one of available operators, otherwise throws apperr_runtimeError (in subfunction)
@@ -938,15 +942,25 @@ void syntx_freeSymbol(TSymbol symb){
  * partialResult reference variable to return result from part of expression back to the SyntaxAnalyzer - MUST BE VARIABLE!
  */
 void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand, SToken *partialResult){
+//fprintf(stderr, "INP: %p\n", leftOperand);
+/*symbt_printSymb(leftOperand->symbol);
+symbt_printSymb(rightOperand->symbol);*/
 
-  SToken *leftOperandCopy = syntx_deepCopyToken(leftOperand);
-  SToken *rightOperandCopy = syntx_deepCopyToken(rightOperand);
+  SToken *rightCopiedTokenAddr = NULL;
+  SToken rightOperandCopy;
+
+  if(rightOperand != NULL){
+    rightOperandCopy = syntx_deepCopyToken(rightOperand);
+    rightCopiedTokenAddr = &rightOperandCopy;
+  }
+
+  SToken leftOperandCopy = syntx_deepCopyToken(leftOperand);
 
   // checks data types, implicitly converts constants and generates code for implicit convertion of variables
-  if(rightOperandCopy != NULL && oper->type != opBoolNot){  // operator is not bool NOT
-    syntx_checkDataTypes(leftOperandCopy, oper, rightOperandCopy);
-  }else if(rightOperandCopy == NULL && oper->type == opBoolNot){  // operator is bool NOT
-    syntx_checkDataTypeOfBool(leftOperandCopy);
+  if(rightCopiedTokenAddr != NULL && oper->type != opBoolNot){  // operator is not bool NOT
+    syntx_checkDataTypes(&leftOperandCopy, oper, rightCopiedTokenAddr);
+  }else if(rightCopiedTokenAddr == NULL && oper->type == opBoolNot){  // operator is bool NOT
+    syntx_checkDataTypeOfBool(&leftOperandCopy);
   }else{  //for example: NOT string, NOT float, etc.
     scan_raiseCodeError(typeCompatibilityErr, "An attempt to make a logical negation operation with non-bool data type.", NULL);  // prints error
   }
@@ -957,12 +971,15 @@ void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand,
   // NOTICE: data type for partialResult is setted in generateCodexxx functions!
 
   // one of functions bellow prints instructions according to operator type
-  syntx_generateCodeForBasicOps(leftOperandCopy, oper, rightOperandCopy, partialResult);  // +, -, *, /, \, string +
-  syntx_generateCodeForBoolOps(leftOperandCopy, oper, rightOperandCopy, partialResult); // AND, OR, NOT
-  syntx_generateCodeForAsgnOps(leftOperandCopy, oper, rightOperandCopy, partialResult);  // +=, -=, *=, /=, \=, asgn
-  syntx_generateCodeForRelOps(leftOperandCopy, oper, rightOperandCopy, partialResult);  // <, >, <=, >=, =, <>
+  syntx_generateCodeForBasicOps(&leftOperandCopy, oper, rightCopiedTokenAddr, partialResult);  // +, -, *, /, \, string +
+  syntx_generateCodeForBoolOps(&leftOperandCopy, oper, rightCopiedTokenAddr, partialResult); // AND, OR, NOT
+  syntx_generateCodeForAsgnOps(&leftOperandCopy, oper, rightCopiedTokenAddr, partialResult);  // +=, -=, *=, /=, \=, asgn
+  syntx_generateCodeForRelOps(&leftOperandCopy, oper, rightCopiedTokenAddr, partialResult);  // <, >, <=, >=, =, <>
 
   // will make available temporary variable
-  syntx_freeSymbol(leftOperandCopy->symbol);
-  syntx_freeSymbol(rightOperandCopy->symbol);
+  //syntx_freeSymbol((&leftOperandCopy)->symbol);
+  //syntx_freeSymbol(rightCopiedTokenAddr->symbol);
+
+  //symbt_printSymb(partialResult->symbol);
+  //fprintf(stderr, "OUT: %p\n\n", rightOperand);
 }
