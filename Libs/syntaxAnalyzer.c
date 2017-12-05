@@ -81,12 +81,14 @@ void syntx_emptyVarStack()
 {
   while (identStack->count > 0)
   {
+    ((TSymbol)identStack->top(identStack))->dataType = dtUnspecified;
     identStack->pop(identStack);
   }
 }
 
 void syntx_freeVar(SToken *var)
 {
+  var->symbol->dataType = dtUnspecified;
   identStack->push(identStack, var->symbol);
 }
 
@@ -101,25 +103,32 @@ SToken sytx_getFreeVar()
     identStack->pop(identStack);
     return token;
   }
-  if (nextTokenIdent == 1000000) //is that enough?
+  while(1)
   {
-    apperr_runtimeError("syntx_getFreeVar(): Limit of auxiliary variables reached! Too complicated expression.");
-  }
-  //generate next ident
-  char *ident = mmng_safeMalloc(sizeof(char) * 12); // TF@%T[1-9][0-9]{0,5}EOL = 12
-  sprintf(ident, "TF@%%T%d", nextTokenIdent);
-  nextTokenIdent++;
-  //if not defined, define ident
-  token.symbol = symbt_findSymb(ident);
-  if (token.symbol == NULL)
-  {
-    token.symbol = symbt_insertSymbOnTop(ident);
-    token.symbol->isTemp = true; // mark symbol as temporaly (deleted on changing frame)
-    token.symbol->type = symtVariable;
-    printInstruction("DEFVAR %s\n", ident);
-  }
-  token.symbol->dataType = dtUnspecified;
-  mmng_safeFree(ident);
+    if (nextTokenIdent == 1000000) //is that enough?
+    {
+      apperr_runtimeError("syntx_getFreeVar(): Limit of auxiliary variables reached! Too complicated expression.");
+    }
+    //generate next ident
+    char *ident = mmng_safeMalloc(sizeof(char) * 12); // TF@%T[1-9][0-9]{0,5}EOL = 12
+    sprintf(ident, "TF@%%T%d", nextTokenIdent);
+    nextTokenIdent++;
+    //if not defined, define ident
+    token.symbol = symbt_findSymb(ident);
+    if (token.symbol == NULL)
+    {
+      token.symbol = symbt_insertSymbOnTop(ident);
+      token.symbol->isTemp = true; // mark symbol as temporaly (deleted on changing frame)
+      token.symbol->type = symtVariable;
+      token.symbol->dataType = dtUnspecified;
+      printInstruction("DEFVAR %s\n", ident);
+      break;
+    }else if(token.symbol->dataType == dtUnspecified){
+      //already free
+      break;
+    }
+    mmng_safeFree(ident);
+}
   return token;
 }
 
@@ -363,7 +372,10 @@ int syntx_processUnaryOps(TTkList list, SToken *actToken)
   //unary +- before expr (-a*b)
   if(list->last->prev == NULL)
     return 0;
-  if((list->last->token.type == opMns || list->last->token.type == opPlus) && list->last->prev->token.type == precLes)
+  if(list->last->prev->prev == NULL)
+    return 0;
+  if((list->last->token.type == opMns || list->last->token.type == opPlus) 
+    && list->last->prev->token.type == precLes && list->last->prev->prev->token.type == eol)
   {
     if(actToken->type == ident)
     {
@@ -377,7 +389,9 @@ int syntx_processUnaryOps(TTkList list, SToken *actToken)
 
 int syntx_isUnaryOp(TTkList list, SToken *actToken)
 {
-  if(list->last->token.type != ident && (actToken->type == opPlus || actToken->type == opMns))
+  EGrSymb last = list->last->token.type;
+  if(last != ident && last != NT_EXPR && last != NT_EXPR_TMP && last != opRightBrc
+   && (actToken->type == opPlus || actToken->type == opMns))
     return 1;
   return 0;
 }
