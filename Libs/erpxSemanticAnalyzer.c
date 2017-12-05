@@ -20,7 +20,11 @@
 #include "syntaxAnalyzer.h"
 #include "utils.h"
 
-TSymbol convertedSymbol;  // variable for passing the symbol with the converted value between the functions
+// variable for passing the symbol with the converted value between the functions
+// is used for example for expression: A(int) = A(int) + A(double)
+// int variable A is converted to double and then is 
+TSymbol convertedSymbol;
+int isMyTemp = 0;
 
 /**
 * Returns 0 if symbols are out of range or relation between symbols is not defined, otherwise 1
@@ -75,6 +79,40 @@ int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn)
 }
 
 /**
+ * Deeply copies token
+ */
+SToken syntx_deepCopyToken(SToken *token){
+  SToken tokenCopy;
+
+  tokenCopy.dataType = token->dataType;
+  tokenCopy.symbol = token->symbol;
+  tokenCopy.type = token->type;
+
+  tokenCopy.symbol = mmng_safeMalloc(sizeof(struct Symbol));
+  tokenCopy.symbol->data = token->symbol->data;
+  tokenCopy.symbol->dataType = token->symbol->dataType;
+  tokenCopy.symbol->ident = util_StrHardCopy(token->symbol->ident);
+  tokenCopy.symbol->isTemp = token->symbol->isTemp;
+  tokenCopy.symbol->key = util_StrHardCopy(token->symbol->key);
+  tokenCopy.symbol->type = token->symbol->type;
+
+  return tokenCopy;
+}
+
+void syntx_freeSymbol(TSymbol symb){
+  if(symb->isTemp && isMyTemp){ // vymenil sem za mnou alokovanou volnou promennou --> muzu uvolnit
+    SToken token;
+    token.type = NT_EXPR_TMP;
+    token.symbol = symb;
+    syntx_freeVar(&token);  // put token back on stack (to list)
+  }else if(symb->isTemp && !isMyTemp){  // nemenil sem symbol za docasnou promennou a je docasna - neodalokovavam nic
+
+  }else if(symb->isTemp == false){  // symbol neni docasna promenna - muzu v pohode odalokovat
+    mmng_safeFree(symb);
+  }
+}
+
+/**
  * Converts double to integer - method half to even
  */
 int syntx_doubleToInt(double inputNum){
@@ -104,10 +142,16 @@ void syntx_intToDoubleToken(SToken *token){
   if(token->symbol->type == symtConstant){ // converts only constant symbols
     token->symbol->data.doubleVal = syntx_intToDouble(token->symbol->data.intVal);
   }else if(token->symbol->type == symtVariable){ // converts variable
+
+    // changes copied symbol to converted symbol
+    //mmng_safeFree(token->symbol); // ATTENTION: fries symbol from COPPIED token (which is left or right operand)
     SToken temp = sytx_getFreeVar();
-    convertedSymbol = temp.symbol;
-    printInstruction("INT2FLOAT %s %s\n", convertedSymbol->ident, token->symbol->ident);
-    token->symbol = convertedSymbol; // symbol of passed operand (right or left) will overwritten by converter value - pointer to symbol in list (stack) will by changed
+    isMyTemp = 1;
+
+    printInstruction("INT2FLOAT %s %s\n", temp.symbol->ident, token->symbol->ident);
+
+    //syntx_freeSymbol(token->symbol);
+    token->symbol = temp.symbol; // change symbol of token to converted symbol
   }
 
   token->symbol->dataType = dtFloat;
@@ -122,10 +166,16 @@ void syntx_doubleToIntToken(SToken *token){
   if(token->symbol->type == symtConstant){ // converts only constant symbols
     token->symbol->data.intVal = syntx_doubleToInt(token->symbol->data.doubleVal);
   }else if(token->symbol->type == symtVariable){ // converts variable
+    
+    // changes copied symbol to converted symbol
+    //mmng_safeFree(token->symbol); // ATTENTION: fries symbol from COPPIED token (which is left or right operand)
     SToken temp = sytx_getFreeVar();
-    convertedSymbol = temp.symbol;
-    printInstruction("FLOAT2R2EINT %s %s\n", convertedSymbol->ident, token->symbol->ident); // half to even
-    token->symbol = convertedSymbol; // symbol of passed operand (right or left) will overwritten by converter value - pointer to symbol in list (stack) will by changed
+    isMyTemp = 1;
+
+    printInstruction("FLOAT2R2EINT %s %s\n", temp.symbol->ident, token->symbol->ident); // half to even
+    
+    //syntx_freeSymbol(token->symbol);
+    token->symbol = temp.symbol; // change symbol of token to converted symbol
   }
 
   token->symbol->dataType = dtInt;
@@ -332,12 +382,46 @@ int syntx_checkDataTypeOfBool(SToken *boolOperand){
 
   return 0; //other combinations are not allowed
 }
+/*
+int checkBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand){
 
+  if(leftOperand->symbol->type == symtConstant && rightOperand == NULL){  // NOT bool
+    if(leftOperand->symbol->dataType == dtBool){
+      if(oper->type == opBoolNot){
+        token.symbol->data.boolVal = !leftOperand->symbol->data.boolVal;
+        token.symbol->dataType = dtBool;
+        return token;
+      }
+    }
+  }else if(leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant){  // if operation is possible to do
+    if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
+      if(oper->type == opEq){
+        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal == rightOperand->symbol->data.boolVal; // bool = bool
+        token.symbol->dataType = dtBool;
+        return token;
+      }else if(oper->type == opNotEq){
+        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal != rightOperand->symbol->data.boolVal; // bool <> bool
+        token.symbol->dataType = dtBool;
+        return token;
+      }else if(oper->type == opBoolAnd){
+        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal && rightOperand->symbol->data.boolVal; // bool AND bool
+        token.symbol->dataType = dtBool;
+        return token;
+      }else if(oper->type == opBoolOr){
+        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal || rightOperand->symbol->data.boolVal; // bool OR bool
+        token.symbol->dataType = dtBool;
+        return token;
+      }
+    }
+  }
+}
+*/
 /**
  * Optimalization function - do operation with constant booleans (=, <>, AND, OR, NOT)
  * Always returns filled token, token.type = NT_EXPR, token.symbol->type
  * if everythng is OK, is setted token.symbol->dataType, token.symbol->data
  * else token.symbol->dataType = dtUnspecified and wrong token.symbol->data
+ * EXPECTS constant booleans
  *
  * rightOperand can be NULL in case NOT operator - do NOT leftOperand
  */
@@ -348,28 +432,56 @@ SToken syntx_doBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand){
   token.symbol->type = symtConstant;
   token.symbol->dataType = dtUnspecified;
 
-  if(leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant){  // if operation is possible to do
+  if(leftOperand->symbol->type == symtConstant && rightOperand == NULL){  // NOT bool
+    if(leftOperand->symbol->dataType == dtBool){
+      if(oper->type == opBoolNot){
+        token.symbol->data.boolVal = !leftOperand->symbol->data.boolVal;
+        token.symbol->dataType = dtBool;
+        return token;
+      }
+    }
+  }else if(leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant){  // if operation is possible to do
     if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
       if(oper->type == opEq){
         token.symbol->data.boolVal = leftOperand->symbol->data.boolVal == rightOperand->symbol->data.boolVal; // bool = bool
         token.symbol->dataType = dtBool;
+        return token;
       }else if(oper->type == opNotEq){
         token.symbol->data.boolVal = leftOperand->symbol->data.boolVal != rightOperand->symbol->data.boolVal; // bool <> bool
         token.symbol->dataType = dtBool;
+        return token;
       }else if(oper->type == opBoolAnd){
         token.symbol->data.boolVal = leftOperand->symbol->data.boolVal && rightOperand->symbol->data.boolVal; // bool AND bool
         token.symbol->dataType = dtBool;
+        return token;
       }else if(oper->type == opBoolOr){
         token.symbol->data.boolVal = leftOperand->symbol->data.boolVal || rightOperand->symbol->data.boolVal; // bool OR bool
         token.symbol->dataType = dtBool;
+        return token;
       }
     }
-  }else if(leftOperand->symbol->type == symtConstant && rightOperand == NULL){  // NOT bool
-      if(oper->type == opBoolNot){
-        token.symbol->data.boolVal = !leftOperand->symbol->data.boolVal;
-        token.symbol->dataType = dtBool;
-      }
   }
+/*
+  // if constBool boolOp constBool or boolOp constBool
+  if((leftOperand->symbol->type == symtConstant && rightOperand == NULL && leftOperand->symbol->dataType == dtBool) ||
+     (leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant && 
+     leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool)){
+      if(token.symbol->dataType == dtUnspecified){  // operation was not boolean operation
+        scan_raiseCodeError(syntaxErr, "Error during boolean operation with two constant booleans.", NULL);  // prints error
+      }
+  }else if((leftOperand->symbol->type == symtConstant && rightOperand == NULL && leftOperand->symbol->dataType != dtBool) ||
+     (leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant && 
+     leftOperand->symbol->dataType != dtBool || rightOperand->symbol->dataType != dtBool)){
+      if(token.symbol->dataType == dtUnspecified){  // operation was not boolean operation
+        scan_raiseCodeError(typeCompatibilityErr, "One or both operands of boolean operation are not booleans.", NULL);  // prints error
+      }
+  }else if((leftOperand->symbol->type == symtConstant && rightOperand == NULL) || (leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant)){
+    apperr_runtimeError("exprSemanticAnalyzer.c, SToken syntx_doBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand): one or both operands is not constant.");
+  }
+
+  if(token.symbol->dataType == dtUnspecified){  // operation was not boolean operation
+    scan_raiseCodeError(syntaxErr, "Error during boolean operation with two constant booleans.", NULL);  // prints error
+  }*/
 
   return token;
 }
@@ -822,7 +934,6 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
   result->symbol->dataType = funcToken->symbol->data.funcData.returnType;
  }
 
-
 /**
  * Main function for code generation
  * leftOperand expects constant or ident
@@ -831,12 +942,25 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
  * partialResult reference variable to return result from part of expression back to the SyntaxAnalyzer - MUST BE VARIABLE!
  */
 void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand, SToken *partialResult){
+//fprintf(stderr, "INP: %p\n", leftOperand);
+/*symbt_printSymb(leftOperand->symbol);
+symbt_printSymb(rightOperand->symbol);*/
+
+  SToken *rightCopiedTokenAddr = NULL;
+  SToken rightOperandCopy;
+
+  if(rightOperand != NULL){
+    rightOperandCopy = syntx_deepCopyToken(rightOperand);
+    rightCopiedTokenAddr = &rightOperandCopy;
+  }
+
+  SToken leftOperandCopy = syntx_deepCopyToken(leftOperand);
 
   // checks data types, implicitly converts constants and generates code for implicit convertion of variables
-  if(rightOperand != NULL && oper->type != opBoolNot){  // operator is not bool NOT
-    syntx_checkDataTypes(leftOperand, oper, rightOperand);
-  }else if(rightOperand == NULL && oper->type == opBoolNot){  // operator is bool NOT
-    syntx_checkDataTypeOfBool(leftOperand);
+  if(rightCopiedTokenAddr != NULL && oper->type != opBoolNot){  // operator is not bool NOT
+    syntx_checkDataTypes(&leftOperandCopy, oper, rightCopiedTokenAddr);
+  }else if(rightCopiedTokenAddr == NULL && oper->type == opBoolNot){  // operator is bool NOT
+    syntx_checkDataTypeOfBool(&leftOperandCopy);
   }else{  //for example: NOT string, NOT float, etc.
     scan_raiseCodeError(typeCompatibilityErr, "An attempt to make a logical negation operation with non-bool data type.", NULL);  // prints error
   }
@@ -847,15 +971,15 @@ void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand,
   // NOTICE: data type for partialResult is setted in generateCodexxx functions!
 
   // one of functions bellow prints instructions according to operator type
-  syntx_generateCodeForBasicOps(leftOperand, oper, rightOperand, partialResult);  // +, -, *, /, \, string +
-  syntx_generateCodeForBoolOps(leftOperand, oper, rightOperand, partialResult); // AND, OR, NOT
-  syntx_generateCodeForAsgnOps(leftOperand, oper, rightOperand, partialResult);  // +=, -=, *=, /=, \=, asgn
-  syntx_generateCodeForRelOps(leftOperand, oper, rightOperand, partialResult);  // <, >, <=, >=, =, <>
+  syntx_generateCodeForBasicOps(&leftOperandCopy, oper, rightCopiedTokenAddr, partialResult);  // +, -, *, /, \, string +
+  syntx_generateCodeForBoolOps(&leftOperandCopy, oper, rightCopiedTokenAddr, partialResult); // AND, OR, NOT
+  syntx_generateCodeForAsgnOps(&leftOperandCopy, oper, rightCopiedTokenAddr, partialResult);  // +=, -=, *=, /=, \=, asgn
+  syntx_generateCodeForRelOps(&leftOperandCopy, oper, rightCopiedTokenAddr, partialResult);  // <, >, <=, >=, =, <>
 
-  if(convertedSymbol != NULL){
-    SToken tmp;
-    tmp.symbol = convertedSymbol;
-    syntx_freeVar(&tmp);  // put token back on stack (to list)
-    convertedSymbol = NULL;
-  }
+  // will make available temporary variable
+  //syntx_freeSymbol((&leftOperandCopy)->symbol);
+  //syntx_freeSymbol(rightCopiedTokenAddr->symbol);
+
+  //symbt_printSymb(partialResult->symbol);
+  //fprintf(stderr, "OUT: %p\n\n", rightOperand);
 }
