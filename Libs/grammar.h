@@ -37,7 +37,7 @@ typedef enum
   kwNext, kwShared, kwStatic, kwTrue, kwTo, kwUntil, kwStep,
 
   /* NON-TERMINALS */
-  NT_PROG = 1000,          // Program - staritng non-terminal
+  NT_PROG = 1000,   // Program - staritng non-terminal
   NT_DD,            // definitions and declarations section
   NT_ASSINGEXT,     // Assignement (...  [as datatype])
   NT_SCOPE,         // Scope statement where local variables can be owerriten.
@@ -63,120 +63,122 @@ typedef enum
 
 /* GRAMMAR RULES:
 
+first(NT_PROG) = { first(NT_DD) -> (1); else -> (error) }
 1. NT_PROG -> NT_DD NT_SCOPE
 
-first(NT_DD) = { kwDeclare -> (2); kwFunction -> (3);  kwStatic -> (4); else -> (5 [epsilon]) }
+first(NT_DD) = { kwDeclare -> (2); kwFunction -> (3); else -> ( 4 [epsilon]) }
 2. NT_DD -> kwDeclare kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_DD
 3. NT_DD -> kwFunction ident opLeftBrc NT_PARAM_LIST opRightBrc kwAs dataType eol NT_STAT_LIST kwEnd kwFunction eol NT_DD
-4. NT_DD -> kwStatic kwShared ident kwAs dataType NT_ASSINGEXT
-5. NT_DD -> (epsilon)
+4. NT_DD -> (epsilon)
 
-first(NT_ASSINGEXT) = { asgn -> (6); else -> (7 [epsilon]) }
-6. NT_ASSINGEXT -> asgn NT_EXPR
-7. NT_ASSINGEXT -> (epsilon)
+first(NT_ASSINGEXT) = { asgn -> (5); else -> (6 [epsilon]) }
+5. NT_ASSINGEXT -> asgn NT_EXPR
+6. NT_ASSINGEXT -> (epsilon)
 
-first(NT_SCOPE) = { kwScope -> (8); else -> (error) }
-8. NT_SCOPE -> kwScope eol NT_STAT_LIST kwEnd kwScope eol
+first(NT_SCOPE) = { kwScope -> (7); else -> (error) }
+7. NT_SCOPE -> kwScope eol NT_STAT_LIST kwEnd kwScope eol
 
-first(NT_PARAM_LIST) = { first(NT_PARAM) -> (9); else -> (10 [epsilon]) }
-9.  NT_PARAM_LIST -> NT_PARAM
-10. NT_PARAM_LIST -> (epsilon)
+first(NT_PARAM_LIST) = { first(NT_PARAM) -> (8); else -> (9 [epsilon]) }
+8. NT_PARAM_LIST -> NT_PARAM
+9. NT_PARAM_LIST -> (epsilon)
 
-first(NT_PARAM) = { ident -> (11); else -> (error) }
-11. NT_PARAM -> ident kwAs dataType NT_PARAM_EXT
+first(NT_PARAM) = { ident -> (10); else -> (error) }
+10. NT_PARAM -> ident kwAs dataType NT_PARAM_EXT
 
-first(NT_PARAM_EXT) = { opComma -> (12); else -> (13 [epsilon]) }
-12. NT_PARAM_EXT -> opComma NT_PARAM
-13. NT_PARAM_EXT -> (epsilon)
+first(NT_PARAM_EXT) = { opComma -> (11); else -> (12 [epsilon]) }
+11. NT_PARAM_EXT -> opComma NT_PARAM
+12. NT_PARAM_EXT -> (epsilon)
 
-first(NT_STAT_LIST) = { first(NT_STAT) -> (14); else -> (15 [epsilon]) }
-14. NT_STAT_LIST -> NT_STAT eol NT_STAT_LIST
-15. NT_STAT_LIST -> (epsilon)
+first(NT_STAT_LIST) = { first(NT_STAT) -> (13); else -> (14 [epsilon]) }
+13. NT_STAT_LIST -> NT_STAT eol NT_STAT_LIST
+14. NT_STAT_LIST -> (epsilon)
 
 first(NT_STAT) = {
-  kwInput -> (16);
-  kwPrint -> (17);
-  kwIf -> (18);
-  kwDim -> (19);
-  ident -> (20);
-  kwContinue -> (21);
-  kwExit -> (22);
-  first(NT_SCOPE) -> (23);
-  kwReturn -> (24);
-  kwDo -> (25);
-  kwFor -> (26);
+  kwInput -> (15);
+  kwPrint -> (16);
+  kwIf -> (17);
+  kwDim -> (18);
+  ident -> (19);
+  kwContinue -> (20);
+  kwExit -> (21);
+  first(NT_SCOPE) -> (22);
+  kwReturn -> (23);
+  kwDo -> (24);
+  kwFor -> (25);
   else -> (error) }
-16. NT_STAT -> kwInput ident
-17. NT_STAT -> kwPrint NT_PRINT_LIST
-18. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf
-19. NT_STAT -> kwDim ident kwAs dataType NT_ASSINGEXT
-20. NT_STAT -> ident opEq NT_EXPR
-21. NT_STAT -> kwContinue NT_CYCLE_NESTS
-22. NT_STAT -> kwExit NT_CYCLE_NESTS
-23. NT_STAT -> NT_SCOPE
-24. NT_STAT -> kwReturn NT_EXPR
-25. NT_STAT -> kwDo NT_DOIN
-26. NT_STAT -> kwFor ident [as datatype] NT_ASSINGEXT kwTo NT_EXPR NT_STEP eol NT_STAT_LIST kwNext
+15. NT_STAT -> kwInput ident
+16. NT_STAT -> kwPrint NT_PRINT_LIST
+17. NT_STAT -> kwIf NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT kwEnd kwIf
+18. NT_STAT -> kwDim ident kwAs dataType NT_ASSINGEXT
+19. NT_STAT -> ident opEq NT_EXPR (if ident is not function)
+19. NT_STAT -> NT_EXPR            (if line starts with function ident)
+20. NT_STAT -> kwContinue NT_CYCLE_NESTS
+21. NT_STAT -> kwExit NT_CYCLE_NESTS
+22. NT_STAT -> NT_SCOPE
+23. NT_STAT -> kwReturn NT_EXPR
+24. NT_STAT -> kwDo NT_DOIN
+25. NT_STAT -> kwFor ident [as datatype] NT_ASSINGEXT kwTo NT_EXPR NT_FORSTEP eol NT_STAT_LIST kwNext [ident]
 
-first(NT_DOIN) = { first(NT_DOIN_WU) -> (27); eol -> (28) else -> (error)}
-27. NT_DOIN -> NT_DOIN_WU eol NT_STAT_LIST kwLoop
-28. NT_DOIN -> eol NT_STAT_LIST kwLoop NT_DOIN_WU
+first(NT_DOIN) = { first(NT_DOIN_WU) -> (26); eol -> (27) else -> (error)}
+26. NT_DOIN -> NT_DOIN_WU eol NT_STAT_LIST kwLoop
+27. NT_DOIN -> eol NT_STAT_LIST kwLoop NT_DOIN_WU
 
-first(NT_DOIN_WU) = { kwWhile -> (29); kwUntil -> (30); else -> (31 [epsilon]) }
-29. NT_DOIN_WU -> kwWhile NT_EXPR
-30. NT_DOIN_WU -> kwUntil NT_EXPR
-31. NT_DOIN_WU -> (epsilon)
+first(NT_DOIN_WU) = { kwWhile -> (28); kwUntil -> (29); else -> (30 [epsilon]) }
+28. NT_DOIN_WU -> kwWhile NT_EXPR
+29. NT_DOIN_WU -> kwUntil NT_EXPR
+30. NT_DOIN_WU -> (epsilon)
 
 first(NT_FORSTEP) = { kwStep -> (31); else -> (32 [epsilon]) }
-32. NT_FORSTEP -> kwStep NT_EXPR
-33. NT_FORSTEP -> (epsilon)
+31. NT_FORSTEP -> kwStep NT_EXPR
+32. NT_FORSTEP -> (epsilon)
 
 first(NT_INIF_EXT) = { kwElseif -> (33); kwElse -> (34); else -> (35 [epsilon]) }
-34. NT_INIF_EXT -> kwElseif NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT
-35. NT_INIF_EXT -> kwElse eol NT_STAT_LIST
-36. NT_INIF_EXT -> (epsilon)
+33. NT_INIF_EXT -> kwElseif NT_EXPR kwThan eol NT_STAT_LIST NT_INIF_EXT
+34. NT_INIF_EXT -> kwElse eol NT_STAT_LIST
+35. NT_INIF_EXT -> (epsilon)
 
 first(NT_PRINT_LIST) = { first(NT_EXPR) -> (36); else -> (37 [epsilon]) }
-37. NT_PRINT_LIST -> NT_EXPR opSemcol NT_PRINT_LIST
-38. NT_PRINT_LIST -> (epsilon)
+36. NT_PRINT_LIST -> NT_EXPR opSemcol NT_PRINT_LIST
+37  NT_PRINT_LIST -> (epsilon)
 
-first(NT_CYCLE_NESTS) = {kwDo -> 38; kwFor -> 39; else -> (40 [epsilon])}
-39. NT_CYCLE_NESTS -> kwDo NT_CYCLES_DO
-40. NT_CYCLE_NESTS -> kwFor NT_CYCLES_FOR
-41. NT_CYCLE_NESTS -> (epsilon)
+first(NT_CYCLE_NESTS) = {kwDo -> (38); kwFor -> (39); else -> (40 [epsilon])}
+38. NT_CYCLE_NESTS -> kwDo NT_CYCLES_DO
+39. NT_CYCLE_NESTS -> kwFor NT_CYCLES_FOR
+40. NT_CYCLE_NESTS -> (epsilon)
 
-first(NT_CYCLES_DO) = {opComma -> 41; else -> (42 [epsilon])}
-42. NT_CYCLES_DO -> , kwDo NT_CYCLES_DO
-43. NT_CYCLES_DO -> (epsilon)
+first(NT_CYCLES_DO) = {opComma -> (41); else -> (42 [epsilon])}
+41. NT_CYCLES_DO -> opComma kwDo NT_CYCLES_DO
+42. NT_CYCLES_DO -> (epsilon)
 
-first(NT_CYCLES_FOR) = {opComma -> 43; else -> (44 [epsilon])}
-44. NT_CYCLES_FOR -> opComma kwFor NT_CYCLES_FOR
-45. NT_CYCLES_FOR -> (epsilon)
+first(NT_CYCLES_FOR) = {opComma -> (43); else -> (44 [epsilon])}
+43. NT_CYCLES_FOR -> opComma kwFor NT_CYCLES_FOR
+44. NT_CYCLES_FOR -> (epsilon)
 
 // following rules does not contain epsilon rules and it will be process by another algorithm
+// grammar of expressions for precedence table
 
-46. NT_EXPR -> ident
-47. NT_EXPR -> NT_EXPR opPlus NT_EXPR
-48. NT_EXPR -> NT_EXPR opMns NT_EXPR
-49. NT_EXPR -> NT_EXPR opMul NT_EXPR
-50. NT_EXPR -> NT_EXPR opDiv NT_EXPR
-51. NT_EXPR -> NT_EXPR opDivFlt NT_EXPR
-52. NT_EXPR -> NT_EXPR opPlusEq NT_EXPR
-53. NT_EXPR -> NT_EXPR opMnsEq NT_EXPR
-54. NT_EXPR -> NT_EXPR opMulEq NT_EXPR
-55. NT_EXPR -> NT_EXPR opDivEq NT_EXPR
-56. NT_EXPR -> NT_EXPR opDivFltEq NT_EXPR
-57. NT_EXPR -> NT_EXPR opEq NT_EXPR
-58. NT_EXPR -> NT_EXPR opLes NT_EXPR
-59. NT_EXPR -> NT_EXPR opGrt NT_EXPR
-60. NT_EXPR -> NT_EXPR opLesEq NT_EXPR
-61. NT_EXPR -> NT_EXPR opGrtEq NT_EXPR
-62. NT_EXPR -> ident kwLeftBrt NT_ARGUMENT_LIST kwRightBrt
-63. NT_EXPR -> kwLeftBrc NT_EXPR kwRightBrc
+NT_EXPR -> ident
+NT_EXPR -> NT_EXPR opPlus NT_EXPR
+NT_EXPR -> NT_EXPR opMns NT_EXPR
+NT_EXPR -> NT_EXPR opMul NT_EXPR
+NT_EXPR -> NT_EXPR opDiv NT_EXPR
+NT_EXPR -> NT_EXPR opDivFlt NT_EXPR
+NT_EXPR -> NT_EXPR opPlusEq NT_EXPR
+NT_EXPR -> NT_EXPR opMnsEq NT_EXPR
+NT_EXPR -> NT_EXPR opMulEq NT_EXPR
+NT_EXPR -> NT_EXPR opDivEq NT_EXPR
+NT_EXPR -> NT_EXPR opDivFltEq NT_EXPR
+NT_EXPR -> NT_EXPR opEq NT_EXPR
+NT_EXPR -> NT_EXPR opLes NT_EXPR
+NT_EXPR -> NT_EXPR opGrt NT_EXPR
+NT_EXPR -> NT_EXPR opLesEq NT_EXPR
+NT_EXPR -> NT_EXPR opGrtEq NT_EXPR
+NT_EXPR -> ident kwLeftBrt NT_ARGUMENT_LIST kwRightBrt
+NT_EXPR -> kwLeftBrc NT_EXPR kwRightBrc
 
-64. NT_ARGUMENT_LIST -> NT_EXPR opComma NT_ARGUMENT_LIST
-65. NT_ARGUMENT_LIST -> NT_EXPR
-66. NT_ARGUMENT_LIST -> (epsilon)
+NT_ARGUMENT_LIST -> NT_EXPR opComma NT_ARGUMENT_LIST
+NT_ARGUMENT_LIST -> NT_EXPR
+NT_ARGUMENT_LIST -> (epsilon)
 
 */
 
