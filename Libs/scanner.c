@@ -259,14 +259,14 @@ SToken scan_GetNextToken()
           tokenID[position++] = GLBScanner->line[GLBScanner->position++];
           tokenID[position] = '\0';
           allowed = true;
-          tokenType = opDivEq;
+          tokenType = opDivFltEq;;
         }
         break;
       case '\\':
         tokenType = opDiv;
         if(GLBScanner->line[GLBScanner->position] == '=')
         {
-          tokenType = opDivFltEq;
+          tokenType = opDivEq;
           GLBScanner->position++;
         }
         allowed = true;

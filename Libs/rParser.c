@@ -42,7 +42,7 @@ void raiseUnexpToken(SToken *actToken, EGrSymb expected);
 // unexpected token
 #define ERR_UNEXP_TOKEN() scan_raiseCodeError(syntaxErr, "Uexpected token.", actToken)
 // result of condition is not bool
-#define ERR_COND_TYPE() scan_raiseCodeError(semanticErr, "Condition expression does not return boolean value.", actToken);
+#define ERR_COND_TYPE() scan_raiseCodeError(typeCompatibilityErr, "Condition expression does not return boolean value.", actToken);
 
 // =============================================================================
 // ========================== Global variables =================================
@@ -283,9 +283,14 @@ void defOrRedefVariable(TSymbol symbolVar)
   else
   {
     if (symbolVar->type == symtVariable)
-      symbt_pushRedefinition(symbolVar);
-    else
-      scan_raiseCodeError(semanticErr, "Cannot redefine non variable identifier.", NULL);
+    {
+      if (!symbt_pushRedefinition(symbolVar))
+        scan_raiseCodeError(semanticErr, "Cannot redefine variable in the same scope.", NULL);
+    }
+    else if (symbolVar->type == symtConstant)
+      scan_raiseCodeError(syntaxErr, "Cannot redefine constant as variable.", NULL);
+    else // function remains
+      scan_raiseCodeError(semanticErr, "Cannot redefine function as variable.", NULL);
   }
 }
 
@@ -383,7 +388,7 @@ void ck_NT_PROG(SToken *actToken)
 }
 
 // definitions and declarations section
-// first(NT_DD) = { kwDeclare -> (2); kwFunction -> (3);  kwStatic -> (4); else -> (5 [epsilon]) }
+// first(NT_DD) = { kwDeclare -> (2); kwFunction -> (3); else -> (5 [epsilon]) }
 void ck_NT_DD(SToken *actToken)
 {
   TSymbol actSymbol = NULL;
@@ -431,30 +436,6 @@ void ck_NT_DD(SToken *actToken)
       NEXT_TOKEN(actToken);
       ck_NT_DD(actToken);
       break;
-    // 4. NT_DD -> kwStatic kwShared ident kwAs dataType NT_ASSINGEXT eol NT_DD
-      /*
-    case kwStatic:
-      NEXT_CHECK_TOKEN(actToken, kwShared);
-      NEXT_CHECK_TOKEN(actToken, ident);
-      actSymbol = actToken->symbol;
-      if (actSymbol->type == symtUnknown)
-        actSymbol->type = symtVariable;
-      else
-        ERR_SYMB_REDEF();
-
-      NEXT_CHECK_TOKEN(actToken, kwAs);
-      NEXT_CHECK_TOKEN(actToken, dataType);
-      actSymbol->dataType = actToken->dataType;
-      // add frame fo identifier
-      addPrefixToSymbolIdent("GF@", actSymbol);
-      printInstruction("DEFVAR %s\n", actSymbol->ident);
-      NEXT_TOKEN(actToken);
-      ck_NT_ASSINGEXT(actToken, actSymbol);
-      CHECK_TOKEN(actToken, eol);
-      NEXT_TOKEN(actToken);
-      ck_NT_DD(actToken);
-      break;
-      */
     // 5. NT_DD -> (epsilon)
     default:
       // let it be

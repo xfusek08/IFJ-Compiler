@@ -850,7 +850,7 @@ char *symbt_getNewLocalLabel()
 }
 
 // Push value of variable symbol on datastack and remembers it for frame destroing
-void symbt_pushRedefinition(TSymbol symbol)
+bool symbt_pushRedefinition(TSymbol symbol)
 {
   symbt_assertIfNotInit();
   if (symbol == NULL)
@@ -859,9 +859,13 @@ void symbt_pushRedefinition(TSymbol symbol)
     apperr_runtimeError("Cannot redefine constant.");
 
   TSymTable actTable = GLBSymbTabStack->top(GLBSymbTabStack);
+  // check if variable already exist in current frame
+  if (TSymTable_find(actTable, symbol->key) != NULL)
+    return false;
   actTable->redefStack->push(actTable->redefStack, TRedefSymb_create(symbol));
   if (symbol->type == symtVariable)
     printInstruction("PUSHS %s\n", symbol->ident);
+  return true;
 }
 
 // adds identifier of variable to fucntion frame
