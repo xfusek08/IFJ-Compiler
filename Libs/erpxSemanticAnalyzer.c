@@ -332,12 +332,46 @@ int syntx_checkDataTypeOfBool(SToken *boolOperand){
 
   return 0; //other combinations are not allowed
 }
+/*
+int checkBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand){
 
+  if(leftOperand->symbol->type == symtConstant && rightOperand == NULL){  // NOT bool
+    if(leftOperand->symbol->dataType == dtBool){
+      if(oper->type == opBoolNot){
+        token.symbol->data.boolVal = !leftOperand->symbol->data.boolVal;
+        token.symbol->dataType = dtBool;
+        return token;
+      }
+    }
+  }else if(leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant){  // if operation is possible to do
+    if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
+      if(oper->type == opEq){
+        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal == rightOperand->symbol->data.boolVal; // bool = bool
+        token.symbol->dataType = dtBool;
+        return token;
+      }else if(oper->type == opNotEq){
+        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal != rightOperand->symbol->data.boolVal; // bool <> bool
+        token.symbol->dataType = dtBool;
+        return token;
+      }else if(oper->type == opBoolAnd){
+        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal && rightOperand->symbol->data.boolVal; // bool AND bool
+        token.symbol->dataType = dtBool;
+        return token;
+      }else if(oper->type == opBoolOr){
+        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal || rightOperand->symbol->data.boolVal; // bool OR bool
+        token.symbol->dataType = dtBool;
+        return token;
+      }
+    }
+  }
+}
+*/
 /**
  * Optimalization function - do operation with constant booleans (=, <>, AND, OR, NOT)
  * Always returns filled token, token.type = NT_EXPR, token.symbol->type
  * if everythng is OK, is setted token.symbol->dataType, token.symbol->data
  * else token.symbol->dataType = dtUnspecified and wrong token.symbol->data
+ * EXPECTS constant booleans
  *
  * rightOperand can be NULL in case NOT operator - do NOT leftOperand
  */
@@ -348,28 +382,56 @@ SToken syntx_doBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand){
   token.symbol->type = symtConstant;
   token.symbol->dataType = dtUnspecified;
 
-  if(leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant){  // if operation is possible to do
+  if(leftOperand->symbol->type == symtConstant && rightOperand == NULL){  // NOT bool
+    if(leftOperand->symbol->dataType == dtBool){
+      if(oper->type == opBoolNot){
+        token.symbol->data.boolVal = !leftOperand->symbol->data.boolVal;
+        token.symbol->dataType = dtBool;
+        return token;
+      }
+    }
+  }else if(leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant){  // if operation is possible to do
     if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
       if(oper->type == opEq){
         token.symbol->data.boolVal = leftOperand->symbol->data.boolVal == rightOperand->symbol->data.boolVal; // bool = bool
         token.symbol->dataType = dtBool;
+        return token;
       }else if(oper->type == opNotEq){
         token.symbol->data.boolVal = leftOperand->symbol->data.boolVal != rightOperand->symbol->data.boolVal; // bool <> bool
         token.symbol->dataType = dtBool;
+        return token;
       }else if(oper->type == opBoolAnd){
         token.symbol->data.boolVal = leftOperand->symbol->data.boolVal && rightOperand->symbol->data.boolVal; // bool AND bool
         token.symbol->dataType = dtBool;
+        return token;
       }else if(oper->type == opBoolOr){
         token.symbol->data.boolVal = leftOperand->symbol->data.boolVal || rightOperand->symbol->data.boolVal; // bool OR bool
         token.symbol->dataType = dtBool;
+        return token;
       }
     }
-  }else if(leftOperand->symbol->type == symtConstant && rightOperand == NULL){  // NOT bool
-      if(oper->type == opBoolNot){
-        token.symbol->data.boolVal = !leftOperand->symbol->data.boolVal;
-        token.symbol->dataType = dtBool;
-      }
   }
+/*
+  // if constBool boolOp constBool or boolOp constBool
+  if((leftOperand->symbol->type == symtConstant && rightOperand == NULL && leftOperand->symbol->dataType == dtBool) ||
+     (leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant && 
+     leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool)){
+      if(token.symbol->dataType == dtUnspecified){  // operation was not boolean operation
+        scan_raiseCodeError(syntaxErr, "Error during boolean operation with two constant booleans.", NULL);  // prints error
+      }
+  }else if((leftOperand->symbol->type == symtConstant && rightOperand == NULL && leftOperand->symbol->dataType != dtBool) ||
+     (leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant && 
+     leftOperand->symbol->dataType != dtBool || rightOperand->symbol->dataType != dtBool)){
+      if(token.symbol->dataType == dtUnspecified){  // operation was not boolean operation
+        scan_raiseCodeError(typeCompatibilityErr, "One or both operands of boolean operation are not booleans.", NULL);  // prints error
+      }
+  }else if((leftOperand->symbol->type == symtConstant && rightOperand == NULL) || (leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant)){
+    apperr_runtimeError("exprSemanticAnalyzer.c, SToken syntx_doBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand): one or both operands is not constant.");
+  }
+
+  if(token.symbol->dataType == dtUnspecified){  // operation was not boolean operation
+    scan_raiseCodeError(syntaxErr, "Error during boolean operation with two constant booleans.", NULL);  // prints error
+  }*/
 
   return token;
 }
