@@ -35,7 +35,7 @@
 
 TTkList tlist; //list used as stack in precedent analyze
 TPStack identStack; //list of free unused auxiliary variables
-unsigned nextTokenIdent;
+unsigned nextTokenIdent; //for auxiliary variable generator
 
 /**
 * returns 1 if symbol is terminal, otherwise 0
@@ -77,6 +77,7 @@ SToken nextToken()
   return token;
 }
 
+//aux variable function
 void syntx_emptyVarStack()
 {
   while (identStack->count > 0)
@@ -86,12 +87,14 @@ void syntx_emptyVarStack()
   }
 }
 
+//aux variable function
 void syntx_freeVar(SToken *var)
 {
   var->symbol->dataType = dtUnspecified;
   identStack->push(identStack, var->symbol);
 }
 
+//aux variable function
 SToken sytx_getFreeVar()
 {
   SToken token;
@@ -235,23 +238,31 @@ int syntx_useRule(TTkList list)
     //unary minus
     if (list->active->next == NULL)
       return 0;
-    ret_var = sytx_getFreeVar();
-    SToken zeroT;
-    zeroT.type = ident;
-    zeroT.symbol = symbt_findOrInsertSymb("0");
-    if(zeroT.symbol->type == symtUnknown)
+    if (list->active->next->token.symbol == NULL)
+      return 0;
+    if(list->active->next->token.symbol->type == symtConstant)
     {
-      zeroT.symbol->type = symtConstant;
-      zeroT.symbol->dataType = dtInt;
-      zeroT.symbol->data.intVal = 0;
+      ret_var = syntx_doUnaryMinus(&list->active->next->token);
+    }else{
+      ret_var = sytx_getFreeVar();
+      SToken zeroT;
+      zeroT.type = ident;
+      zeroT.symbol = symbt_findOrInsertSymb("0");
+      if(zeroT.symbol->type == symtUnknown)
+      {
+        zeroT.symbol->type = symtConstant;
+        zeroT.symbol->dataType = dtInt;
+        zeroT.symbol->data.intVal = 0;
+      }
+      syntx_generateCode(&zeroT, &list->active->token, &list->active->next->token, &ret_var);
     }
-    syntx_generateCode(&zeroT, &list->active->token, &list->active->next->token, &ret_var);
     list->postDelete(list);
     list->postInsert(list, &ret_var);
     list->next(list);
     list->preDelete(list);
     break;
   case opLeftBrc:
+    DPRINT("Using rule EXPR --> opLeftBrc EXPR opRightBrc");
     if (list->active->next == NULL)
       return 0;
     if (list->active->next->next == NULL)
@@ -277,6 +288,7 @@ int syntx_useRule(TTkList list)
   return 1;
 }
 
+//test if type can appear in expression
 int isExpressionType(EGrSymb type)
 {
   return type <= eol && type != opComma;
@@ -294,6 +306,7 @@ TTkListItem *findLastEol(TTkList list)
   return lasteol;
 }
 
+//test if expression is calculated
 int isExprEnded(TTkList list, SToken *actToken, EGrSymb terminal)
 {
   TTkListItem *lastEol = findLastEol(list);
@@ -345,7 +358,7 @@ SToken syntx_parseFunction(SToken *actToken)
   return returnVal;
 }
 
-
+//optimalization function
 int syntx_OptimalizeUnary(TTkList list, SToken *actToken)
 {
   EGrSymb last = list->last->token.type;
@@ -382,6 +395,7 @@ int syntx_processUnaryOps(TTkList list, SToken *actToken)
   {
     if(actToken->type == ident)
     {
+      actToken->type = NT_EXPR;
       list->insertLast(list, actToken);
       syntx_useRule(list);
       return 1;
@@ -399,6 +413,7 @@ int syntx_isUnaryOp(TTkList list, SToken *actToken)
   return 0;
 }
 
+//Precedent table logic
 void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
 {
   if(syntx_processUnaryOps(list, actToken)) //check for unary operation
@@ -412,7 +427,7 @@ void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
     return;
   }
   EGrSymb tablesymb;
-  if (!syntx_getPrecedence(terminal, actToken->type, &tablesymb))
+  if (!syntx_getPrecedence(terminal, actToken->type, &tablesymb)) //look into precedent table
   {
     DPRINT("Table: undefined precedence!");
     scan_raiseCodeError(syntaxErr, "Incorrect expression. Undefined precedence.", actToken);
@@ -420,7 +435,7 @@ void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
   DDPRINT("Table: %d", tablesymb);
 
   if(syntx_isUnaryOp(list, actToken)) //check if its unary operation (a*-b)
-    tablesymb = precLes; //unstu + - have have bigger priority
+    tablesymb = precLes; //unary + - have have bigger priority
 
   switch (tablesymb)
   {
