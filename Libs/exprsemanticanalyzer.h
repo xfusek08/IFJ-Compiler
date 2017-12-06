@@ -1,10 +1,8 @@
 /******************************************************************************/
 /**
 * \project IFJ-Compiler
-* \file    erpxSemanticAnalyzer.h
+* \file    exprsemanticanalyzer.h
 * \brief   Expression semantic analyze
-*
-*
 *
 * \author  Radim Blaha (xblaha28)
 * \date    25.11.2017 - Radim Blaha

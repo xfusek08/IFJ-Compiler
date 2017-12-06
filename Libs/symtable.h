@@ -7,7 +7,7 @@
  * This package provides functions over global stack of symbol tables.
  *
  * \author  Petr Fusek (xfusek08)
- * \date    21.11.2017 - Petr Fusek
+ * \date    6.12.2017 - Petr Fusek
  */
 /******************************************************************************/
 

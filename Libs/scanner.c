@@ -16,8 +16,8 @@
 #include <math.h>
 #include "scanner.h"
 #include "symtable.h"
-#include "MMng.h"
-#include "appErr.h"
+#include "mmng.h"
+#include "apperr.h"
 
 #define KWORDNUMBER 30
 #define DTYPENUMBER 4

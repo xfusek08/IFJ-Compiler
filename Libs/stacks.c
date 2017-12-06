@@ -9,9 +9,9 @@
 /******************************************************************************/
 
 #include "stacks.h"
-#include "MMng.h"
+#include "mmng.h"
 #include "grammar.h"
-#include "appErr.h"
+#include "apperr.h"
 #include "utils.h"
 #include <stdlib.h>
 #include <stdio.h>

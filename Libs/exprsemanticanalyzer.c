@@ -1,10 +1,10 @@
 /******************************************************************************/
 /**
 * \project IFJ-Compiler
-* \file    erpxSemanticAnalyzer.c
+* \file    exprsemanticanalyzer.c
 * \brief   Expression semantic
 * \author  Radim Blaha (xblaha28)
-* \date    25.11.2017 - Radim Blaha
+* \date    6.12.2017 - Radim Blaha
 */
 /******************************************************************************/
 
@@ -13,11 +13,11 @@
 #include <math.h>
 #include "grammar.h"
 #include "scanner.h"
-#include "appErr.h"
-#include "MMng.h"
+#include "apperr.h"
+#include "mmng.h"
 #include "symtable.h"
-#include "erpxSemanticAnalyzer.h"
-#include "syntaxAnalyzer.h"
+#include "exprsemanticanalyzer.h"
+#include "syntaxanalyzer.h"
 #include "utils.h"
 
 // variable for passing the symbol with the converted value between the functions

@@ -5,13 +5,13 @@
  * \brief   Liblary providing supportive function for project
  *
  * \author  Petr Fusek (xfusek08)
- * \date    14.11.2017 - Petr Fusek
+ * \date    6.12.2017 - Petr Fusek
  */
 /******************************************************************************/
 
 #include <stdio.h>
 #include <string.h>
-#include "MMng.h"
+#include "mmng.h"
 #include "utils.h"
 #include <stdarg.h>
 

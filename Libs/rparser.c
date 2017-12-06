@@ -12,18 +12,18 @@
  * Some control code is generated and symbols in sybol table are managed.
  *
  * \author  Petr Fusek (xfusek08)
- * \date    16.11.2017 - Petr Fusek
+ * \date    6.12.2017 - Petr Fusek
  */
 /******************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "appErr.h"
+#include "apperr.h"
 #include "scanner.h"
-#include "MMng.h"
-#include "syntaxAnalyzer.h"
-#include "erpxSemanticAnalyzer.h"
+#include "mmng.h"
+#include "syntaxanalyzer.h"
+#include "exprsemanticanalyzer.h"
 #include "utils.h"
 
 void raiseUnexpToken(SToken *actToken, EGrSymb expected);

@@ -11,8 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "MMng.h"
-#include "appErr.h"
+#include "mmng.h"
+#include "apperr.h"
 
 // =============================================================================
 // ================= Iternal data structures definition ========================
