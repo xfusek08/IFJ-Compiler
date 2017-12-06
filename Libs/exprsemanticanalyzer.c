@@ -88,7 +88,6 @@ SToken syntx_deepCopyToken(SToken *token){
   SToken tokenCopy;
 
   tokenCopy.dataType = token->dataType;
-  //tokenCopy.symbol = token->symbol;
   tokenCopy.type = token->type;
 
   tokenCopy.symbol = symbt_getUniqeTmpSymb();
