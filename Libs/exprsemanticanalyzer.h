@@ -34,4 +34,6 @@ void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOp
 
 void syntx_generateCodeForAsgnOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult);
 
+SToken syntx_doUnaryMinus(SToken *token);
+
 #endif
