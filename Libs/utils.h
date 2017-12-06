@@ -5,7 +5,7 @@
  * \brief   Liblary providing supportive function and types for the project
  *
  * \author  Petr Fusek (xfusek08)
- * \date    14.11.2017 - Petr Fusek
+ * \date    5.12.2017 - Petr Fusek
  */
 /******************************************************************************/
 

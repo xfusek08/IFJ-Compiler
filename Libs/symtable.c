@@ -13,8 +13,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
-#include "appErr.h"
-#include "MMng.h"
+#include "apperr.h"
+#include "mmng.h"
 #include "utils.h"
 #include "stacks.h"
 #include "symtable.h"

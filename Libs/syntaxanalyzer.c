@@ -4,20 +4,20 @@
 * \file    syntaxAnalyzer.c
 * \brief   Syntax analyze
 * \author  Pavel Vosyka (xvosyk00)
-* \date    10.11.2017 - Pavel Vosyka
+* \date    6.12.2017 - Pavel Vosyka
 */
 /******************************************************************************/
 
 #include <stdio.h>
 #include <string.h>
-#include "syntaxAnalyzer.h"
+#include "syntaxanalyzer.h"
 #include "grammar.h"
 #include "scanner.h"
 #include "stacks.h"
-#include "appErr.h"
-#include "MMng.h"
+#include "apperr.h"
+#include "mmng.h"
 #include "symtable.h"
-#include "erpxSemanticAnalyzer.h"
+#include "exprsemanticanalyzer.h"
 
 //=============================== DEBUG MACROS =========================================
 #ifdef PRECDEBUG
@@ -371,13 +371,13 @@ int syntx_OptimalizeUnary(TTkList list, SToken *actToken)
 }
 
 int syntx_processUnaryOps(TTkList list, SToken *actToken)
-{ 
+{
   //unary +- before expr (-a*b)
   if(list->last->prev == NULL)
     return 0;
   if(list->last->prev->prev == NULL)
     return 0;
-  if((list->last->token.type == opMns || list->last->token.type == opPlus) 
+  if((list->last->token.type == opMns || list->last->token.type == opPlus)
     && list->last->prev->token.type == precLes && list->last->prev->prev->token.type == eol)
   {
     if(actToken->type == ident)
@@ -402,7 +402,7 @@ int syntx_isUnaryOp(TTkList list, SToken *actToken)
 void syntx_tableLogic(TTkList list, EGrSymb terminal, SToken *actToken)
 {
   if(syntx_processUnaryOps(list, actToken)) //check for unary operation
-  { 
+  {
     *actToken = nextToken();
     return;
   }

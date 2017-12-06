@@ -11,8 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "appErr.h"
-#include "MMng.h"
+#include "apperr.h"
+#include "mmng.h"
 
 void apperr_runtimeError(char *errMsg)
 {

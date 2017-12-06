@@ -7,7 +7,7 @@
 * This file contains enummeration of grammar (terminal + non-terminals) and definition of token provided by scanner and processed by parsers.
 *
 * \author  Pavel Vosyka (xvosyk00)
-* \date    21.11.2017 - Pavel Vosyka
+* \date    1.12.2017 - Pavel Vosyka
 */
 /******************************************************************************/
 
