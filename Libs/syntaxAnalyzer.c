@@ -238,10 +238,9 @@ int syntx_useRule(TTkList list)
     ret_var = sytx_getFreeVar();
     SToken zeroT;
     zeroT.type = ident;
-    zeroT.symbol = symbt_findSymb("0");
-    if(zeroT.symbol == NULL)
+    zeroT.symbol = symbt_findOrInsertSymb("0");
+    if(zeroT.symbol->type == symtUnknown)
     {
-      zeroT.symbol = symbt_insertSymbOnTop("0");
       zeroT.symbol->type = symtConstant;
       zeroT.symbol->dataType = dtInt;
       zeroT.symbol->data.intVal = 0;
