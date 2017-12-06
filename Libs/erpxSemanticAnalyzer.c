@@ -263,7 +263,7 @@ int syntx_checkDataTypesOfIntegerDiv(SToken *leftOperand, SToken *rightOperand){
  * Checks data types of two operands of assignment operators
  * Returns 1 if everything is OK, otherwise 0
  */
-int syntx_checkDataTypesOfAsgnOps(SToken *leftOperand, SToken *rightOperand){
+int syntx_checkDataTypesOfAsgnOps(SToken *leftOperand, SToken *oper, SToken *rightOperand){
   //TODO: optimalization
 
   if(leftOperand->symbol->type == symtConstant){  // if asigns to the constant -> error
@@ -276,7 +276,10 @@ int syntx_checkDataTypesOfAsgnOps(SToken *leftOperand, SToken *rightOperand){
   }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtFloat){  // double - double
     return 1;
   }else if(leftOperand->symbol->dataType == dtString && rightOperand->symbol->dataType == dtString){  // string - string
-    return 1;
+    if(oper->type == asgn || oper->type == opPlus || oper->type == opPlusEq){
+      return 1;
+    }
+    return 0;
   }else if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){  // bool - bool
     return 1;
   }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> double - double
@@ -339,7 +342,7 @@ void syntx_checkDataTypes(SToken *leftOperand, SToken *operator, SToken *rightOp
      operator->type == opMulEq ||
      operator->type == opDivFltEq
   ){
-    if(syntx_checkDataTypesOfAsgnOps(leftOperand, rightOperand) == 0){
+    if(syntx_checkDataTypesOfAsgnOps(leftOperand, operator, rightOperand) == 0){
       scan_raiseCodeError(typeCompatibilityErr, "Error during assignment operation.", NULL);  // prints error
     }
   }else if(operator->type == opDivEq){ // if operator is \=
@@ -759,7 +762,7 @@ void syntx_generateCodeForBoolOps(SToken *leftOperand, SToken *operator, SToken 
  * Generates code for assign operations
  */
 void syntx_generateCodeForAsgnOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
-  // fprintf(stderr, "jioerfhuerhurheruifrjjjjjjjjjjjjbhueuhu\n");
+
   switch(operator->type){
     case asgn:
       syntx_generateInstruction("MOVE", leftOperand, rightOperand, NULL);
