@@ -158,8 +158,8 @@ first(NT_CYCLES_FOR) = {opComma -> (43); else -> (44 [epsilon])}
 // grammar of expressions for precedence table
 
 NT_EXPR -> ident
-NT_EXPR -> opPlus ident
-NT_EXPR -> opMns ident
+NT_EXPR -> opPlus NT_EXPR
+NT_EXPR -> opMns NT_EXPR
 NT_EXPR -> NT_EXPR opPlus NT_EXPR
 NT_EXPR -> NT_EXPR opMns NT_EXPR
 NT_EXPR -> NT_EXPR opMul NT_EXPR
