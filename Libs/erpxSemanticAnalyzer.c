@@ -143,6 +143,7 @@ void syntx_intToDoubleToken(SToken *token){
     SToken temp = sytx_getFreeVar();
 
     printInstruction("INT2FLOAT %s %s\n", temp.symbol->ident, token->symbol->ident);
+    temp.symbol->dataType = dtFloat;
 
     token->symbol = temp.symbol; // change symbol of token to converted symbol
   }
@@ -164,6 +165,7 @@ void syntx_doubleToIntToken(SToken *token){
     SToken temp = sytx_getFreeVar();
 
     printInstruction("FLOAT2R2EINT %s %s\n", temp.symbol->ident, token->symbol->ident); // half to even
+    temp.symbol->dataType = dtInt;
 
     token->symbol = temp.symbol; // change symbol of token to converted symbol
   }
@@ -702,6 +704,22 @@ void syntx_generateCodeForBasicOps(SToken *leftOperand, SToken *operator, SToken
 
   switch(operator->type){
     case opPlus:
+    case opMns:
+    case opMul:
+    case opDivFlt:
+    case opDiv:
+      break;
+    default:
+      return;
+  }
+
+  if (partialResult == NULL)
+    partialResult = leftOperand;
+  else
+    partialResult->symbol->dataType = leftOperand->symbol->dataType;
+
+  switch(operator->type){
+    case opPlus:
       if(leftOperand->symbol->dataType != dtString && rightOperand->symbol->dataType != dtString){ // if doesn't concatenates two strings
         syntx_generateInstruction("ADD", partialResult, leftOperand, rightOperand);
       }else{
@@ -720,15 +738,10 @@ void syntx_generateCodeForBasicOps(SToken *leftOperand, SToken *operator, SToken
     case opDiv:
       syntx_generateInstruction("DIV", partialResult, leftOperand, rightOperand);
       syntx_generateInstruction("FLOAT2INT", partialResult, partialResult, NULL);
+      partialResult->symbol->dataType = dtInt;
       break;
     default:
       return;
-      break;
-  }
-
-  if(partialResult != NULL){
-    //Sets data type only according to first operand. Both operands already have same data type - so it can work.
-    partialResult->symbol->dataType = leftOperand->symbol->dataType;
   }
 }
 
@@ -736,6 +749,19 @@ void syntx_generateCodeForBasicOps(SToken *leftOperand, SToken *operator, SToken
  * Generates code for boolean operations
  */
 void syntx_generateCodeForBoolOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
+
+  switch(operator->type){
+    case opBoolAnd:
+    case opBoolOr:
+    case opBoolNot:
+      break;
+    default: return;
+  }
+
+  if (partialResult == NULL)
+    partialResult = leftOperand;
+  else
+    partialResult->symbol->dataType = leftOperand->symbol->dataType;
 
   switch(operator->type){
     case opBoolAnd:
@@ -749,12 +775,6 @@ void syntx_generateCodeForBoolOps(SToken *leftOperand, SToken *operator, SToken 
       break;
     default:
       return;
-      break;
-  }
-
-  if(partialResult != NULL){
-    //Sets data type only according to first operand. Both operands already have same data type - so it can work.
-    partialResult->symbol->dataType = leftOperand->symbol->dataType;
   }
 }
 
@@ -762,6 +782,22 @@ void syntx_generateCodeForBoolOps(SToken *leftOperand, SToken *operator, SToken 
  * Generates code for assign operations
  */
 void syntx_generateCodeForAsgnOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
+
+  switch(operator->type){
+    case asgn:
+    case opPlusEq:
+    case opMnsEq:
+    case opMulEq:
+    case opDivFltEq:
+    case opDivEq:
+      break;
+    default: return;
+  }
+
+  if (partialResult == NULL)
+    partialResult = leftOperand;
+  else
+    partialResult->symbol->dataType = leftOperand->symbol->dataType;
 
   switch(operator->type){
     case asgn:
@@ -775,26 +811,21 @@ void syntx_generateCodeForAsgnOps(SToken *leftOperand, SToken *operator, SToken 
       }
       break;
     case opMnsEq:
-      syntx_generateInstruction("SUB", leftOperand, leftOperand, rightOperand);
+      syntx_generateInstruction("SUB", partialResult, leftOperand, rightOperand);
       break;
     case opMulEq:
-      syntx_generateInstruction("MUL", leftOperand, leftOperand, rightOperand);
+      syntx_generateInstruction("MUL", partialResult, leftOperand, rightOperand);
       break;
     case opDivFltEq:
-      syntx_generateInstruction("DIV", leftOperand, leftOperand, rightOperand);
+      syntx_generateInstruction("DIV", partialResult, leftOperand, rightOperand);
       break;
     case opDivEq: // division integer by integer
-      syntx_generateInstruction("DIV", leftOperand, leftOperand, rightOperand);
-      syntx_generateInstruction("FLOAT2INT", leftOperand, leftOperand, NULL);
+      syntx_generateInstruction("DIV", partialResult, leftOperand, rightOperand);
+      syntx_generateInstruction("FLOAT2INT", partialResult, partialResult, NULL);
+      partialResult->symbol->dataType = dtInt;
       break;
     default:
       return;
-      break;
-  }
-
-  if(partialResult != NULL){
-    //Sets data type only according to first operand. Both operands already have same data type - so it can work.
-    partialResult->symbol->dataType = leftOperand->symbol->dataType;
   }
 }
 
@@ -802,7 +833,6 @@ void syntx_generateCodeForAsgnOps(SToken *leftOperand, SToken *operator, SToken 
  * Generates code for relation operations
  */
 void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
-
   switch(operator->type){
     case opLes: // <
       syntx_generateInstruction("LT", partialResult, leftOperand, rightOperand);
@@ -827,7 +857,6 @@ void syntx_generateCodeForRelOps(SToken *leftOperand, SToken *operator, SToken *
       break;
     default:
       return;
-      break;
   }
 
   if(partialResult != NULL){
@@ -914,6 +943,9 @@ void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand,
     rightCopiedTokenAddr = &rightOperandCopy;
   }
 
+  if (partialResult == NULL)
+    partialResult = leftOperand;
+
   SToken leftOperandCopy = syntx_deepCopyToken(leftOperand);
 
   // checks data types, implicitly converts constants and generates code for implicit convertion of variables
@@ -927,7 +959,6 @@ void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand,
 
   // here are all data in right form
 
-
   // NOTICE: data type for partialResult is setted in generateCodexxx functions!
 
   // one of functions bellow prints instructions according to operator type
@@ -935,5 +966,4 @@ void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand,
   syntx_generateCodeForBoolOps(&leftOperandCopy, oper, rightCopiedTokenAddr, partialResult); // AND, OR, NOT
   syntx_generateCodeForAsgnOps(&leftOperandCopy, oper, rightCopiedTokenAddr, partialResult);  // +=, -=, *=, /=, \=, asgn
   syntx_generateCodeForRelOps(&leftOperandCopy, oper, rightCopiedTokenAddr, partialResult);  // <, >, <=, >=, =, <>
-
 }
