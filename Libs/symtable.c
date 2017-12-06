@@ -984,8 +984,8 @@ void symbt_printSymb(TSymbol symbol)
     case symtConstant: stype = "constant"; break;
   }
   fprintf(stderr, "Symbol: %p\n", symbol);
-  fprintf(stderr, "  identifier:   %s\n", symbol->ident);
-  fprintf(stderr, "  key:          %s\n", symbol->key);
+  fprintf(stderr, "  identifier:   %s %p\n", symbol->ident, symbol->ident);
+  fprintf(stderr, "  key:          %s %p\n", symbol->key, symbol->key);
   fprintf(stderr, "  type:         %s\n", stype);
   fprintf(stderr, "  data type:    %s\n", util_dataTypeToString(symbol->dataType));
   fprintf(stderr, "  data: ");
@@ -1001,7 +1001,7 @@ void symbt_printSymb(TSymbol symbol)
         case dtUnspecified: fprintf(stderr, "NULL\n"); break;
         case dtInt: fprintf(stderr, "%d (integer) \n", symbol->data.intVal); break;
         case dtFloat: fprintf(stderr, "%lf (double)\n", symbol->data.doubleVal); break;
-        case dtString: fprintf(stderr, "\"%s\" (string)\n", symbol->data.stringVal); break;
+        case dtString: fprintf(stderr, "\"%s\" (string) %p\n", symbol->data.stringVal, symbol->data.stringVal); break;
         case dtBool: fprintf(stderr, "%s (boolean)\n", (symbol->data.boolVal) ? "True" : "False"); break;
       }
       break;

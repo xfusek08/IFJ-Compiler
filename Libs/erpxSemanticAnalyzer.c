@@ -22,7 +22,7 @@
 
 // variable for passing the symbol with the converted value between the functions
 // is used for example for expression: A(int) = A(int) + A(double)
-// int variable A is converted to double and then is 
+// int variable A is converted to double and then is
 TSymbol convertedSymbol;
 int isMyTemp = 0;
 
@@ -82,23 +82,35 @@ int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn)
  * Deeply copies token
  */
 SToken syntx_deepCopyToken(SToken *token){
+  if (token->symbol->type == symtFuction)
+    apperr_runtimeError("Can not make deep copy of function symbol");
+
   SToken tokenCopy;
 
   tokenCopy.dataType = token->dataType;
-  tokenCopy.symbol = token->symbol;
+  //tokenCopy.symbol = token->symbol;
   tokenCopy.type = token->type;
 
-  tokenCopy.symbol = mmng_safeMalloc(sizeof(struct Symbol));
-  tokenCopy.symbol->data = token->symbol->data;
+  tokenCopy.symbol = symbt_getUniqeTmpSymb();
+  if (token->symbol->type == symtConstant)
+  {
+    if (token->symbol->dataType == dtString)
+      tokenCopy.symbol->data.stringVal = util_StrHardCopy(token->symbol->data.stringVal);
+    else
+      tokenCopy.symbol->data = token->symbol->data;
+  }
+
   tokenCopy.symbol->dataType = token->symbol->dataType;
+  mmng_safeFree(tokenCopy.symbol->ident);
   tokenCopy.symbol->ident = util_StrHardCopy(token->symbol->ident);
-  tokenCopy.symbol->isTemp = token->symbol->isTemp;
-  tokenCopy.symbol->key = util_StrHardCopy(token->symbol->key);
+  // tokenCopy.symbol->isTemp = token->symbol->isTemp;
+  // tokenCopy.symbol->key = util_StrHardCopy(token->symbol->key);
   tokenCopy.symbol->type = token->symbol->type;
 
   return tokenCopy;
 }
 
+/*
 void syntx_freeSymbol(TSymbol symb){
   if(symb->isTemp && isMyTemp){ // vymenil sem za mnou alokovanou volnou promennou --> muzu uvolnit
     SToken token;
@@ -110,7 +122,7 @@ void syntx_freeSymbol(TSymbol symb){
   }else if(symb->isTemp == false){  // symbol neni docasna promenna - muzu v pohode odalokovat
     mmng_safeFree(symb);
   }
-}
+}*/
 
 /**
  * Converts double to integer - method half to even
@@ -146,11 +158,9 @@ void syntx_intToDoubleToken(SToken *token){
     // changes copied symbol to converted symbol
     //mmng_safeFree(token->symbol); // ATTENTION: fries symbol from COPPIED token (which is left or right operand)
     SToken temp = sytx_getFreeVar();
-    isMyTemp = 1;
 
     printInstruction("INT2FLOAT %s %s\n", temp.symbol->ident, token->symbol->ident);
 
-    //syntx_freeSymbol(token->symbol);
     token->symbol = temp.symbol; // change symbol of token to converted symbol
   }
 
@@ -166,15 +176,13 @@ void syntx_doubleToIntToken(SToken *token){
   if(token->symbol->type == symtConstant){ // converts only constant symbols
     token->symbol->data.intVal = syntx_doubleToInt(token->symbol->data.doubleVal);
   }else if(token->symbol->type == symtVariable){ // converts variable
-    
+
     // changes copied symbol to converted symbol
     //mmng_safeFree(token->symbol); // ATTENTION: fries symbol from COPPIED token (which is left or right operand)
     SToken temp = sytx_getFreeVar();
-    isMyTemp = 1;
 
     printInstruction("FLOAT2R2EINT %s %s\n", temp.symbol->ident, token->symbol->ident); // half to even
-    
-    //syntx_freeSymbol(token->symbol);
+
     token->symbol = temp.symbol; // change symbol of token to converted symbol
   }
 
@@ -382,40 +390,64 @@ int syntx_checkDataTypeOfBool(SToken *boolOperand){
 
   return 0; //other combinations are not allowed
 }
-/*
-int checkBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand){
+
+/**
+ * Checks if operation with booleans is syntacally correct
+ */
+int checkBoolOpSyntax(SToken *leftOperand, SToken *oper, SToken *rightOperand){
 
   if(leftOperand->symbol->type == symtConstant && rightOperand == NULL){  // NOT bool
     if(leftOperand->symbol->dataType == dtBool){
       if(oper->type == opBoolNot){
-        token.symbol->data.boolVal = !leftOperand->symbol->data.boolVal;
-        token.symbol->dataType = dtBool;
-        return token;
+        return 1;
       }
     }
   }else if(leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant){  // if operation is possible to do
     if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
       if(oper->type == opEq){
-        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal == rightOperand->symbol->data.boolVal; // bool = bool
-        token.symbol->dataType = dtBool;
-        return token;
+        return 1;
       }else if(oper->type == opNotEq){
-        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal != rightOperand->symbol->data.boolVal; // bool <> bool
-        token.symbol->dataType = dtBool;
-        return token;
+        return 1;
       }else if(oper->type == opBoolAnd){
-        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal && rightOperand->symbol->data.boolVal; // bool AND bool
-        token.symbol->dataType = dtBool;
-        return token;
+        return 1;
       }else if(oper->type == opBoolOr){
-        token.symbol->data.boolVal = leftOperand->symbol->data.boolVal || rightOperand->symbol->data.boolVal; // bool OR bool
-        token.symbol->dataType = dtBool;
-        return token;
+        return 1;
       }
     }
   }
+
+  return 0;
 }
-*/
+
+/**
+ * Checks if operation with booleans is semantically correct
+ */
+int checkBoolOpSemantics(SToken *leftOperand, SToken *oper, SToken *rightOperand){
+  if(oper->type == opBoolNot){
+    if(leftOperand->symbol->dataType == dtBool){
+      return 1;
+    }
+  }else if(oper->type == opEq){
+    if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
+      return 1;
+    }
+  }else if(oper->type == opNotEq){
+    if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
+      return 1;
+    }
+  }else if(oper->type == opBoolAnd){
+    if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
+      return 1;
+    }
+  }else if(oper->type == opBoolOr){
+    if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
 /**
  * Optimalization function - do operation with constant booleans (=, <>, AND, OR, NOT)
  * Always returns filled token, token.type = NT_EXPR, token.symbol->type
@@ -426,9 +458,19 @@ int checkBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand){
  * rightOperand can be NULL in case NOT operator - do NOT leftOperand
  */
 SToken syntx_doBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand){
+
+  // checks possibility of const boolean + op
+  if(checkBoolOpSyntax(leftOperand, oper, rightOperand) == 0){  // => syntax error
+    scan_raiseCodeError(typeCompatibilityErr, "Wrong operation with booleans.", NULL);  // prints error
+  }
+
+  if(checkBoolOpSemantics(leftOperand, oper, rightOperand) == 0){
+    scan_raiseCodeError(typeCompatibilityErr, "Boolean operation with non-boolean constants.", NULL);  // prints error
+  }
+
   SToken token;
   token.type = NT_EXPR;
-  token.symbol = mmng_safeMalloc(sizeof(struct Symbol));
+  token.symbol = symbt_getUniqeTmpSymb();
   token.symbol->type = symtConstant;
   token.symbol->dataType = dtUnspecified;
 
@@ -464,13 +506,13 @@ SToken syntx_doBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand){
 /*
   // if constBool boolOp constBool or boolOp constBool
   if((leftOperand->symbol->type == symtConstant && rightOperand == NULL && leftOperand->symbol->dataType == dtBool) ||
-     (leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant && 
+     (leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant &&
      leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool)){
       if(token.symbol->dataType == dtUnspecified){  // operation was not boolean operation
         scan_raiseCodeError(syntaxErr, "Error during boolean operation with two constant booleans.", NULL);  // prints error
       }
   }else if((leftOperand->symbol->type == symtConstant && rightOperand == NULL && leftOperand->symbol->dataType != dtBool) ||
-     (leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant && 
+     (leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant &&
      leftOperand->symbol->dataType != dtBool || rightOperand->symbol->dataType != dtBool)){
       if(token.symbol->dataType == dtUnspecified){  // operation was not boolean operation
         scan_raiseCodeError(typeCompatibilityErr, "One or both operands of boolean operation are not booleans.", NULL);  // prints error
@@ -493,170 +535,204 @@ SToken syntx_doBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand){
  * else token.symbol->dataType = dtUnspecified and wrong token.symbol->data
  */
 SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOperand){
+/*
+  symbt_printSymb(leftOperand->symbol);
+  fprintf(stderr, "Opearnd: %d\n",  oper->type);
+  symbt_printSymb(rightOperand->symbol);
+*/
 
   SToken token;
   token.type = NT_EXPR;
-  token.symbol = mmng_safeMalloc(sizeof(struct Symbol));
+  token.symbol = symbt_getUniqeTmpSymb();
   token.symbol->type = symtConstant;
   token.symbol->dataType = dtUnspecified;
 
-  SToken leftOperandCopy;
-  leftOperandCopy.type = NT_EXPR;
-  leftOperandCopy.symbol = mmng_safeMalloc(sizeof(struct Symbol));
-  leftOperandCopy.symbol->type = leftOperand->symbol->type;
-  leftOperandCopy.symbol->dataType = leftOperand->symbol->dataType;
-  leftOperandCopy.symbol->data = leftOperand->symbol->data;
 
-  SToken rightOperandCopy;
-  rightOperandCopy.type = NT_EXPR;
-  rightOperandCopy.symbol = mmng_safeMalloc(sizeof(struct Symbol));
-  rightOperandCopy.symbol->type = rightOperand->symbol->type;
-  rightOperandCopy.symbol->dataType = rightOperand->symbol->dataType;
-  rightOperandCopy.symbol->data = rightOperand->symbol->data;
+  SToken leftOperandCopy = syntx_deepCopyToken(leftOperand);
+
+  if(rightOperand != NULL){
+
+    SToken rightOperandCopy = syntx_deepCopyToken(rightOperand);
+/*
+    symbt_printSymb(leftOperandCopy.symbol);
+  fprintf(stderr, "Operand: %d\n", oper->type);
+  symbt_printSymb(rightOperandCopy.symbol);
+  fprintf(stderr, "\n");*/
 
 
-  if(leftOperandCopy.symbol->type == symtConstant && rightOperandCopy.symbol->type == symtConstant){  // if operation is possible to do
+    if(leftOperandCopy.symbol->type == symtConstant && rightOperandCopy.symbol->type == symtConstant){  // if operation is possible to do
 
-    if(oper->type == opDivFlt || oper->type == opDiv){
-      if(rightOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->data.intVal == 0){
-        scan_raiseCodeError(anotherSemanticErr, "Dividing by zero integer.", NULL);  // prints error
-      }else if(rightOperandCopy.symbol->dataType == dtFloat && rightOperandCopy.symbol->data.doubleVal == 0.0){
-        scan_raiseCodeError(anotherSemanticErr, "Dividing by zero double.", NULL);  // prints error
+      // checks dividing by zero
+      if(oper->type == opDivFlt || oper->type == opDiv){
+        if(rightOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->data.intVal == 0){
+          scan_raiseCodeError(anotherSemanticErr, "Dividing by zero integer.", NULL);  // prints error
+        }else if(rightOperandCopy.symbol->dataType == dtFloat && rightOperandCopy.symbol->data.doubleVal == 0.0){
+          scan_raiseCodeError(anotherSemanticErr, "Dividing by zero double.", NULL);  // prints error
+        }
+      }
+
+      // by dataType choose right type from union, do implicit conversion and do operation
+      if(leftOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->dataType == dtInt){
+
+        token.symbol->dataType = dtInt;
+
+        if(oper->type == opPlus){
+          token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal + rightOperandCopy.symbol->data.intVal; // adds two integers
+        }else if(oper->type == opMns){
+          token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal - rightOperandCopy.symbol->data.intVal; // subs two integers
+        }else if(oper->type == opMul){
+          token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal * rightOperandCopy.symbol->data.intVal; // muls two integers
+        }else if(oper->type == opDivFlt){
+          syntx_intToDoubleToken(&leftOperandCopy);
+          syntx_intToDoubleToken(&rightOperandCopy);
+          token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal / rightOperandCopy.symbol->data.doubleVal; // float divides two doubles
+          token.symbol->dataType = dtFloat; // result/dataType after divide is DOUBLE
+        }else if(oper->type == opDiv){
+          token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two integers
+        }
+
+      }else if(leftOperandCopy.symbol->dataType == dtFloat && rightOperandCopy.symbol->dataType == dtFloat){  // double - double
+
+        // integer division
+        if(oper->type == opDiv){
+          // -> int - int
+          syntx_doubleToIntToken(&leftOperandCopy);
+          syntx_doubleToIntToken(&rightOperandCopy);
+
+          // result after rounding can be zero
+          if(rightOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->data.intVal == 0){
+            scan_raiseCodeError(anotherSemanticErr, "Dividing by zero integer.", NULL);  // prints error
+          }
+
+          token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
+          token.symbol->dataType = dtInt;
+          return token;
+        }
+
+        if(oper->type == opPlus){
+          token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal + rightOperandCopy.symbol->data.doubleVal; // adds two doubles
+        }else if(oper->type == opMns){
+          token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal - rightOperandCopy.symbol->data.doubleVal; // subs two doubles
+        }else if(oper->type == opMul){
+          token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal * rightOperandCopy.symbol->data.doubleVal; // muls two doubles
+        }else if(oper->type == opDivFlt){
+          token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal / rightOperandCopy.symbol->data.doubleVal; // float divides two doubles
+        }
+
+        token.symbol->dataType = dtFloat;
+
+      }else if(leftOperandCopy.symbol->dataType == dtFloat && rightOperandCopy.symbol->dataType == dtInt){  // double - int
+
+        // integer division
+        if(oper->type == opDiv){
+          syntx_doubleToIntToken(&leftOperandCopy); // -> int - int
+
+          // result after rounding can be zero
+          if(rightOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->data.intVal == 0){
+            scan_raiseCodeError(anotherSemanticErr, "Dividing by zero integer.", NULL);  // prints error
+          }
+
+          token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
+          token.symbol->dataType = dtInt;
+          return token;
+        }
+
+        //TODO: again! implicit conversion - return some value or not?
+        syntx_intToDoubleToken(&rightOperandCopy); // -> double - double
+
+        if(oper->type == opPlus){
+          token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal + rightOperandCopy.symbol->data.doubleVal; // adds two doubles
+        }else if(oper->type == opMns){
+          token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal - rightOperandCopy.symbol->data.doubleVal; // subs two doubles
+        }else if(oper->type == opMul){
+          token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal * rightOperandCopy.symbol->data.doubleVal; // muls two doubles
+        }else if(oper->type == opDivFlt){
+          token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal / rightOperandCopy.symbol->data.doubleVal; // float divides two doubles
+        }
+
+        token.symbol->dataType = dtFloat;
+
+      }else if(leftOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->dataType == dtFloat){  // int - double -> double - double
+
+
+
+        // integer division
+        if(oper->type == opDiv){
+          syntx_doubleToIntToken(&rightOperandCopy); // -> int - int
+
+          // result after rounding can be zero
+          if(rightOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->data.intVal == 0){
+            scan_raiseCodeError(anotherSemanticErr, "Dividing by zero integer.", NULL);  // prints error
+          }
+
+          token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
+          token.symbol->dataType = dtInt;
+          return token;
+        }
+
+        //TODO: again! implicit conversion - return some value or not?
+        syntx_intToDoubleToken(&leftOperandCopy); // -> double - double
+
+        if(oper->type == opPlus){
+          token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal + rightOperandCopy.symbol->data.doubleVal; // adds two doubles
+        }else if(oper->type == opMns){
+          token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal - rightOperandCopy.symbol->data.doubleVal; // subs two doubles
+        }else if(oper->type == opMul){
+          token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal * rightOperandCopy.symbol->data.doubleVal; // muls two doubles
+        }else if(oper->type == opDivFlt){
+          token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal / rightOperandCopy.symbol->data.doubleVal; // float divides two doubles
+        }
+
+        token.symbol->dataType = dtFloat;
+
+      }else if(leftOperandCopy.symbol->dataType == dtString && rightOperandCopy.symbol->dataType == dtString){  // string - string
+
+        if(oper->type == opPlus){
+          token.symbol->data.stringVal = util_StrConcatenate(leftOperandCopy.symbol->data.stringVal, rightOperandCopy.symbol->data.stringVal);
+          token.symbol->dataType = dtString;
+        }
+
+      }else if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){  // bool - bool
+        if(oper->type == opEq){
+          token.symbol->data.boolVal = leftOperand->symbol->data.boolVal == rightOperand->symbol->data.boolVal; // bool = bool
+          token.symbol->dataType = dtBool;
+        }else if(oper->type == opNotEq){
+          token.symbol->data.boolVal = leftOperand->symbol->data.boolVal != rightOperand->symbol->data.boolVal; // bool <> bool
+          token.symbol->dataType = dtBool;
+        }else if(oper->type == opBoolAnd){
+          token.symbol->data.boolVal = leftOperand->symbol->data.boolVal && rightOperand->symbol->data.boolVal; // bool AND bool
+          token.symbol->dataType = dtBool;
+        }else if(oper->type == opBoolOr){/*
+          fprintf(stderr, "bhfbhrehurbhurgtbhgrbhrebghurejonvnjnjhe");
+          symbt_printSymb(leftOperand->symbol);
+          symbt_printSymb(rightOperand->symbol);*/
+          token.symbol->data.boolVal = leftOperand->symbol->data.boolVal || rightOperand->symbol->data.boolVal; // bool OR bool
+          token.symbol->dataType = dtBool;
+          //symbt_printSymb(token.symbol);
+        }
       }
     }
 
-    // by dataType choose right type from union, do implicit conversion and do operation
-    if(leftOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->dataType == dtInt){
-
-      token.symbol->dataType = dtInt;
-
-      if(oper->type == opPlus){
-        token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal + rightOperandCopy.symbol->data.intVal; // adds two integers
-      }else if(oper->type == opMns){
-        token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal - rightOperandCopy.symbol->data.intVal; // subs two integers
-      }else if(oper->type == opMul){
-        token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal * rightOperandCopy.symbol->data.intVal; // muls two integers
-      }else if(oper->type == opDivFlt){
-        syntx_intToDoubleToken(&leftOperandCopy);
-        syntx_intToDoubleToken(&rightOperandCopy);
-        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal / rightOperandCopy.symbol->data.doubleVal; // float divides two doubles
-        token.symbol->dataType = dtFloat; // result/dataType after divide is DOUBLE
-      }else if(oper->type == opDiv){
-        token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two integers
-      }
-
-    }else if(leftOperandCopy.symbol->dataType == dtFloat && rightOperandCopy.symbol->dataType == dtFloat){  // double - double
-
-      // integer division
-      if(oper->type == opDiv){
-        // -> int - int
-        syntx_doubleToIntToken(&leftOperandCopy);
-        syntx_doubleToIntToken(&rightOperandCopy);
-
-        // result after rounding can be zero
-        if(rightOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->data.intVal == 0){
-          scan_raiseCodeError(anotherSemanticErr, "Dividing by zero integer.", NULL);  // prints error
-        }
-
-        token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
-        token.symbol->dataType = dtInt;
-        return token;
-      }
-
-      if(oper->type == opPlus){
-        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal + rightOperandCopy.symbol->data.doubleVal; // adds two doubles
-      }else if(oper->type == opMns){
-        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal - rightOperandCopy.symbol->data.doubleVal; // subs two doubles
-      }else if(oper->type == opMul){
-        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal * rightOperandCopy.symbol->data.doubleVal; // muls two doubles
-      }else if(oper->type == opDivFlt){
-        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal / rightOperandCopy.symbol->data.doubleVal; // float divides two doubles
-      }
-
-      token.symbol->dataType = dtFloat;
-      
-    }else if(leftOperandCopy.symbol->dataType == dtFloat && rightOperandCopy.symbol->dataType == dtInt){  // double - int
-
-      // integer division
-      if(oper->type == opDiv){
-        syntx_doubleToIntToken(&leftOperandCopy); // -> int - int
-
-        // result after rounding can be zero
-        if(rightOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->data.intVal == 0){
-          scan_raiseCodeError(anotherSemanticErr, "Dividing by zero integer.", NULL);  // prints error
-        }
-
-        token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
-        token.symbol->dataType = dtInt;
-        return token;
-      }
-
-      //TODO: again! implicit conversion - return some value or not?
-      syntx_intToDoubleToken(&rightOperandCopy); // -> double - double
-
-      if(oper->type == opPlus){
-        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal + rightOperandCopy.symbol->data.doubleVal; // adds two doubles
-      }else if(oper->type == opMns){
-        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal - rightOperandCopy.symbol->data.doubleVal; // subs two doubles
-      }else if(oper->type == opMul){
-        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal * rightOperandCopy.symbol->data.doubleVal; // muls two doubles
-      }else if(oper->type == opDivFlt){
-        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal / rightOperandCopy.symbol->data.doubleVal; // float divides two doubles
-      }
-
-      token.symbol->dataType = dtFloat;
-
-    }else if(leftOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->dataType == dtFloat){  // int - double -> double - double
-
-
-
-      // integer division
-      if(oper->type == opDiv){
-        syntx_doubleToIntToken(&rightOperandCopy); // -> int - int
-
-        // result after rounding can be zero
-        if(rightOperandCopy.symbol->dataType == dtInt && rightOperandCopy.symbol->data.intVal == 0){
-          scan_raiseCodeError(anotherSemanticErr, "Dividing by zero integer.", NULL);  // prints error
-        }
-
-        token.symbol->data.intVal = leftOperandCopy.symbol->data.intVal / rightOperandCopy.symbol->data.intVal; // integer divides two doubles
-        token.symbol->dataType = dtInt;
-        return token;
-      }
-
-      //TODO: again! implicit conversion - return some value or not?
-      syntx_intToDoubleToken(&leftOperandCopy); // -> double - double
-
-      if(oper->type == opPlus){
-        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal + rightOperandCopy.symbol->data.doubleVal; // adds two doubles
-      }else if(oper->type == opMns){
-        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal - rightOperandCopy.symbol->data.doubleVal; // subs two doubles
-      }else if(oper->type == opMul){
-        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal * rightOperandCopy.symbol->data.doubleVal; // muls two doubles
-      }else if(oper->type == opDivFlt){
-        token.symbol->data.doubleVal = leftOperandCopy.symbol->data.doubleVal / rightOperandCopy.symbol->data.doubleVal; // float divides two doubles
-      }
-
-      token.symbol->dataType = dtFloat;
-
-    }else if(leftOperandCopy.symbol->dataType == dtString && rightOperandCopy.symbol->dataType == dtString){  // string - string
-
-      if(oper->type == opPlus){
-        token.symbol->data.stringVal = util_StrConcatenate(leftOperandCopy.symbol->data.stringVal, rightOperandCopy.symbol->data.stringVal);
-        token.symbol->dataType = dtString;
-      }
-
+    // function was invoked with wrong arguments - typeCompatibilityErr
+    if(token.symbol->dataType == dtUnspecified){
+      scan_raiseCodeError(typeCompatibilityErr, "Error during arithmetic operation with two constants.", NULL);  // prints error
     }
-  }
 
-  // function was invoked with wrong arguments - typeCompatibilityErr
-  if(token.symbol->dataType == dtUnspecified){
-    scan_raiseCodeError(typeCompatibilityErr, "Error during arithmetic operation with two constants.", NULL);  // prints error
-  }
-
-  // free copied symbols
-  mmng_safeFree(leftOperandCopy.symbol);
-  mmng_safeFree(rightOperandCopy.symbol);
+    // end of rightOperand != NULL
+  } else if(rightOperand == NULL){
+    if(leftOperand->symbol->type == symtConstant){  // NOT bool
+      if(leftOperand->symbol->dataType == dtBool){
+        if(oper->type == opBoolNot){
+          token.symbol->data.boolVal = !leftOperand->symbol->data.boolVal;
+          token.symbol->dataType = dtBool;
+        }
+      }
+    }
+  }// end of rightOperand == NULL
+/*
+  fprintf(stderr, "Result: \n");
+  symbt_printSymb(token.symbol);
+  fprintf(stderr, "\n");*/
 
   return token;
 }
@@ -799,7 +875,7 @@ void syntx_generateCodeForBoolOps(SToken *leftOperand, SToken *operator, SToken 
  * Generates code for assign operations
  */
 void syntx_generateCodeForAsgnOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
-
+  // fprintf(stderr, "jioerfhuerhurheruifrjjjjjjjjjjjjbhueuhu\n");
   switch(operator->type){
     case asgn:
       syntx_generateInstruction("MOVE", leftOperand, rightOperand, NULL);
@@ -946,6 +1022,10 @@ void syntx_generateCode(SToken *leftOperand, SToken *oper, SToken *rightOperand,
 /*symbt_printSymb(leftOperand->symbol);
 symbt_printSymb(rightOperand->symbol);*/
 
+//symbt_printSymb(leftOperand->symbol);
+//fprintf(stderr, "ajem hir, %d\n", oper->type);
+//symbt_printSymb(rightOperand->symbol);
+
   SToken *rightCopiedTokenAddr = NULL;
   SToken rightOperandCopy;
 
@@ -976,10 +1056,11 @@ symbt_printSymb(rightOperand->symbol);*/
   syntx_generateCodeForAsgnOps(&leftOperandCopy, oper, rightCopiedTokenAddr, partialResult);  // +=, -=, *=, /=, \=, asgn
   syntx_generateCodeForRelOps(&leftOperandCopy, oper, rightCopiedTokenAddr, partialResult);  // <, >, <=, >=, =, <>
 
-  // will make available temporary variable
-  //syntx_freeSymbol((&leftOperandCopy)->symbol);
-  //syntx_freeSymbol(rightCopiedTokenAddr->symbol);
 
   //symbt_printSymb(partialResult->symbol);
   //fprintf(stderr, "OUT: %p\n\n", rightOperand);
+
+  //symbt_printSymb(leftOperand->symbol);
+  //symbt_printSymb(rightOperand->symbol);
+  //fprintf(stderr, "ajem hir ende\n\n");
 }

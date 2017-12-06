@@ -53,6 +53,9 @@ void printInstruction(const char *arg, ...)
   {
     va_list ap;
     va_start(ap, arg);
+    // vfprintf(stderr, arg, ap);
+    // va_end(ap);
+    // va_start(ap, arg);
     arrPos += vsprintf(&(Iarr[arrPos]), arg, ap);
     va_end(ap);
   }
@@ -73,7 +76,6 @@ void printLongInstruction(unsigned len, const char *arg, ...)
 
   if (arglen == 0)
     return;
-
   while (len + arglen + arrPos + 1 > arrSize)
   {
     arrSize += UTILS_ARR_CHUNK;
@@ -82,6 +84,9 @@ void printLongInstruction(unsigned len, const char *arg, ...)
 
   va_list ap;
   va_start(ap, arg);
+  // vfprintf(stderr, arg, ap);
+  // va_end(ap);
+  // va_start(ap, arg);
   arrPos += vsprintf(&(Iarr[arrPos]), arg, ap);
   va_end(ap);
 }
