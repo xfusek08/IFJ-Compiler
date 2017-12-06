@@ -293,6 +293,8 @@ int syntx_checkDataTypesOfAsgnOps(SToken *leftOperand, SToken *oper, SToken *rig
 
     syntx_doubleToIntToken(rightOperand);
     return 1;
+  }else if(leftOperand->symbol->dataType == dtUnspecified){ // undeclared
+    scan_raiseCodeError(semanticErr, "Attempt to assign to undeclared variable.", NULL);  // prints error
   }
 
   return 0; //other combinations are not allowed
