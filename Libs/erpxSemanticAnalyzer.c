@@ -22,7 +22,7 @@
 
 // variable for passing the symbol with the converted value between the functions
 // is used for example for expression: A(int) = A(int) + A(double)
-// int variable A is converted to double and then is 
+// int variable A is converted to double and then is
 TSymbol convertedSymbol;
 int isMyTemp = 0;
 
@@ -82,18 +82,29 @@ int syntx_getPrecedence(EGrSymb stackSymb, EGrSymb inputSymb, EGrSymb *precRtrn)
  * Deeply copies token
  */
 SToken syntx_deepCopyToken(SToken *token){
+  if (token->symbol->type == symtFuction)
+    apperr_runtimeError("Can not make deep copy of function symbol");
+
   SToken tokenCopy;
 
   tokenCopy.dataType = token->dataType;
-  tokenCopy.symbol = token->symbol;
+  //tokenCopy.symbol = token->symbol;
   tokenCopy.type = token->type;
 
   tokenCopy.symbol = symbt_getUniqeTmpSymb();
-  tokenCopy.symbol->data = token->symbol->data;
+  if (token->symbol->type == symtConstant)
+  {
+    if (token->symbol->dataType == dtString)
+      tokenCopy.symbol->data.stringVal = util_StrHardCopy(token->symbol->data.stringVal);
+    else
+      tokenCopy.symbol->data = token->symbol->data;
+  }
+
   tokenCopy.symbol->dataType = token->symbol->dataType;
+  mmng_safeFree(tokenCopy.symbol->ident);
   tokenCopy.symbol->ident = util_StrHardCopy(token->symbol->ident);
-  tokenCopy.symbol->isTemp = token->symbol->isTemp;
-  tokenCopy.symbol->key = util_StrHardCopy(token->symbol->key);
+  // tokenCopy.symbol->isTemp = token->symbol->isTemp;
+  // tokenCopy.symbol->key = util_StrHardCopy(token->symbol->key);
   tokenCopy.symbol->type = token->symbol->type;
 
   return tokenCopy;
@@ -146,8 +157,7 @@ void syntx_intToDoubleToken(SToken *token){
 
     // changes copied symbol to converted symbol
     //mmng_safeFree(token->symbol); // ATTENTION: fries symbol from COPPIED token (which is left or right operand)
-    SToken temp;
-    temp.symbol = symbt_getUniqeTmpSymb();
+    SToken temp = sytx_getFreeVar();
 
     printInstruction("INT2FLOAT %s %s\n", temp.symbol->ident, token->symbol->ident);
 
@@ -166,14 +176,13 @@ void syntx_doubleToIntToken(SToken *token){
   if(token->symbol->type == symtConstant){ // converts only constant symbols
     token->symbol->data.intVal = syntx_doubleToInt(token->symbol->data.doubleVal);
   }else if(token->symbol->type == symtVariable){ // converts variable
-    
+
     // changes copied symbol to converted symbol
     //mmng_safeFree(token->symbol); // ATTENTION: fries symbol from COPPIED token (which is left or right operand)
-    SToken temp;
-    temp.symbol = symbt_getUniqeTmpSymb();
+    SToken temp = sytx_getFreeVar();
 
     printInstruction("FLOAT2R2EINT %s %s\n", temp.symbol->ident, token->symbol->ident); // half to even
-    
+
     token->symbol = temp.symbol; // change symbol of token to converted symbol
   }
 
@@ -497,13 +506,13 @@ SToken syntx_doBoolOp(SToken *leftOperand, SToken *oper, SToken *rightOperand){
 /*
   // if constBool boolOp constBool or boolOp constBool
   if((leftOperand->symbol->type == symtConstant && rightOperand == NULL && leftOperand->symbol->dataType == dtBool) ||
-     (leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant && 
+     (leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant &&
      leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool)){
       if(token.symbol->dataType == dtUnspecified){  // operation was not boolean operation
         scan_raiseCodeError(syntaxErr, "Error during boolean operation with two constant booleans.", NULL);  // prints error
       }
   }else if((leftOperand->symbol->type == symtConstant && rightOperand == NULL && leftOperand->symbol->dataType != dtBool) ||
-     (leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant && 
+     (leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant &&
      leftOperand->symbol->dataType != dtBool || rightOperand->symbol->dataType != dtBool)){
       if(token.symbol->dataType == dtUnspecified){  // operation was not boolean operation
         scan_raiseCodeError(typeCompatibilityErr, "One or both operands of boolean operation are not booleans.", NULL);  // prints error
@@ -611,7 +620,7 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
         }
 
         token.symbol->dataType = dtFloat;
-        
+
       }else if(leftOperandCopy.symbol->dataType == dtFloat && rightOperandCopy.symbol->dataType == dtInt){  // double - int
 
         // integer division
@@ -866,7 +875,7 @@ void syntx_generateCodeForBoolOps(SToken *leftOperand, SToken *operator, SToken 
  * Generates code for assign operations
  */
 void syntx_generateCodeForAsgnOps(SToken *leftOperand, SToken *operator, SToken *rightOperand, SToken *partialResult){
-fprintf(stderr, "jioerfhuerhurheruifrjjjjjjjjjjjjbhueuhu\n");
+  // fprintf(stderr, "jioerfhuerhurheruifrjjjjjjjjjjjjbhueuhu\n");
   switch(operator->type){
     case asgn:
       syntx_generateInstruction("MOVE", leftOperand, rightOperand, NULL);
@@ -1050,8 +1059,8 @@ symbt_printSymb(rightOperand->symbol);*/
 
   //symbt_printSymb(partialResult->symbol);
   //fprintf(stderr, "OUT: %p\n\n", rightOperand);
-  
-symbt_printSymb(leftOperand->symbol);
-symbt_printSymb(rightOperand->symbol);
-  fprintf(stderr, "ajem hir ende\n\n");
+
+  //symbt_printSymb(leftOperand->symbol);
+  //symbt_printSymb(rightOperand->symbol);
+  //fprintf(stderr, "ajem hir ende\n\n");
 }

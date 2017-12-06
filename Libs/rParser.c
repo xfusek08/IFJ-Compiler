@@ -629,7 +629,9 @@ void ck_NT_STAT(SToken *actToken)
 
       CHECK_TOKEN(actToken, kwThen);
       NEXT_CHECK_TOKEN(actToken, eol);
-      printInstruction("JUMPIFNEQ %s$else %s bool@true\n", iflabel, symbol->ident);
+      printInstruction("JUMPIFNEQ %s$else ", iflabel);
+      printSymbolToOperand(symbol);
+      printInstruction(" bool@true\n");
       symbt_pushFrame(iflabel, true, false, false);
       NEXT_TOKEN(actToken);
       ck_NT_STAT_LIST(actToken);
@@ -691,7 +693,6 @@ void ck_NT_STAT(SToken *actToken)
         SToken rightOperand;
         rightOperand.type = ident;
         rightOperand.symbol = syntx_processExpression(actToken, NULL);
-
         syntx_generateCode(&leftOperand, &tokAsgn, &rightOperand, NULL);
       }
       break;
