@@ -53,6 +53,7 @@ struct SymTable {
   unsigned int localLabelCnt; // counter of local labels
   TPStack redefStack;         // stack of redefined symbols to be pops and frame end
   TPStack definedIdentVars;   // stact of defined variable identifiers
+  unsigned int tmpCnt;        // counter of generated temporaly symbols
 };
 
 // global internal instance of symbol table stack
@@ -556,6 +557,7 @@ TSymTable TSymTable_create(char *frameLabel, bool transparent, bool isForLoop, b
   newST->isDoLoop = isDoLoop;
   newST->redefStack = TPStack_create();
   newST->definedIdentVars = TPStack_create();
+  newST->tmpCnt = 0;
   return newST;
 }
 
@@ -909,6 +911,26 @@ char *symbt_getUndefinedFunc()
   }
   nodeStack->destroy(nodeStack);
   return result;
+}
+
+/**
+  * Generates and returns new temp symbol on top frame with unique identifier
+  */
+TSymbol symbt_getUniqeTmpSymb()
+{
+  symbt_assertIfNotInit();
+  TSymTable actTable = GLBSymbTabStack->top(GLBSymbTabStack);
+  TSymbol res = NULL;
+  char *cntString = mmng_safeMalloc(sizeof(char) * 16);
+  while(res == NULL)
+  {
+    sprintf(cntString, "%%tmp%u", actTable->tmpCnt);
+    res = symbt_insertSymbOnTop(cntString);
+    actTable->tmpCnt++;
+  }
+  res->isTemp = true;
+  mmng_safeFree(cntString);
+  return res;
 }
 
 // =============================================================================

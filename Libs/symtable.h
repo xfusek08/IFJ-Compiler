@@ -260,6 +260,11 @@ bool symbt_isVarDefined(char *varIdent);
  */
  char *symbt_getUndefinedFunc();
 
+ /**
+  * Generates and returns new temp symbol on top frame with unique identifier
+  */
+ TSymbol symbt_getUniqeTmpSymb();
+
 // functions olny for testing
 
 #ifdef DEBUG
