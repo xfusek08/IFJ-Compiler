@@ -238,10 +238,14 @@ int syntx_useRule(TTkList list)
     ret_var = sytx_getFreeVar();
     SToken zeroT;
     zeroT.type = ident;
-    zeroT.symbol = mmng_safeMalloc(sizeof(struct Symbol));
-    zeroT.symbol->type = symtConstant;
-    zeroT.symbol->dataType = dtInt;
-    zeroT.symbol->data.intVal = 0;
+    zeroT.symbol = symbt_findSymb("0");
+    if(zeroT.symbol == NULL)
+    {
+      zeroT.symbol = symbt_insertSymbOnTop("0");
+      zeroT.symbol->type = symtConstant;
+      zeroT.symbol->dataType = dtInt;
+      zeroT.symbol->data.intVal = 0;
+    }
     syntx_generateCode(&zeroT, &list->active->token, &list->active->next->token, &ret_var);
     list->postDelete(list);
     list->postInsert(list, &ret_var);
