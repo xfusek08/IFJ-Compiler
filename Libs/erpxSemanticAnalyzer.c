@@ -379,63 +379,6 @@ int syntx_checkDataTypeOfBool(SToken *boolOperand){
 }
 
 /**
- * Checks if operation with booleans is syntacally correct
- */
-int checkBoolOpSyntax(SToken *leftOperand, SToken *oper, SToken *rightOperand){
-
-  if(leftOperand->symbol->type == symtConstant && rightOperand == NULL){  // NOT bool
-    if(leftOperand->symbol->dataType == dtBool){
-      if(oper->type == opBoolNot){
-        return 1;
-      }
-    }
-  }else if(leftOperand->symbol->type == symtConstant && rightOperand->symbol->type == symtConstant){  // if operation is possible to do
-    if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
-      if(oper->type == opEq){
-        return 1;
-      }else if(oper->type == opNotEq){
-        return 1;
-      }else if(oper->type == opBoolAnd){
-        return 1;
-      }else if(oper->type == opBoolOr){
-        return 1;
-      }
-    }
-  }
-
-  return 0;
-}
-
-/**
- * Checks if operation with booleans is semantically correct
- */
-int checkBoolOpSemantics(SToken *leftOperand, SToken *oper, SToken *rightOperand){
-  if(oper->type == opBoolNot){
-    if(leftOperand->symbol->dataType == dtBool){
-      return 1;
-    }
-  }else if(oper->type == opEq){
-    if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
-      return 1;
-    }
-  }else if(oper->type == opNotEq){
-    if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
-      return 1;
-    }
-  }else if(oper->type == opBoolAnd){
-    if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
-      return 1;
-    }
-  }else if(oper->type == opBoolOr){
-    if(leftOperand->symbol->dataType == dtBool && rightOperand->symbol->dataType == dtBool){
-      return 1;
-    }
-  }
-
-  return 0;
-}
-
-/**
  * Optimalization function - do operation with constants (+, -, *, /, \, + for concat strings and extra =, <> with bool - bool)
  * Always returns filled token, token.type = NT_EXPR, token.symbol->type
  * if everythng is OK, is setted token.symbol->dataType, token.symbol->data
@@ -622,6 +565,26 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
   }
 
   return token;
+}
+
+/**
+ * Optimalization function - do minus operation with token
+ * data type must be int or double, otherwise error
+ */
+SToken syntx_doUnaryMinus(SToken *token){
+  SToken resToken = syntx_deepCopyToken(token);
+
+  if(resToken.symbol->dataType == dtInt){
+    resToken.symbol->data.intVal = -resToken.symbol->data.intVal;
+    return resToken;
+  }else if(resToken.symbol->dataType == dtFloat){
+    resToken.symbol->data.doubleVal = -resToken.symbol->data.doubleVal;
+    return resToken;
+  }
+  
+  scan_raiseCodeError(typeCompatibilityErr, "An attempt to make unary minus with wrong data type.", NULL);  // prints error
+
+  return resToken;
 }
 
 /**
