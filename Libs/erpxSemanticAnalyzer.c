@@ -180,7 +180,6 @@ void syntx_doubleToIntToken(SToken *token){
  */
 int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *operator, SToken *rightOperand){
 
-  //TODO: optimalization
   // enabled data types pairs
   if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){  // int - int
 
@@ -202,7 +201,7 @@ int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *operator, SToken 
   }else if(leftOperand->symbol->dataType == dtFloat && rightOperand->symbol->dataType == dtInt){  // double - int -> double - double
 
     syntx_intToDoubleToken(rightOperand);
-    return 1; //TODO: maybe 0 - not clear from task
+    return 1;
 
   }else if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtFloat){  // int - double -> double - double
 
@@ -220,7 +219,7 @@ int syntx_checkDataTypesOfBasicOp(SToken *leftOperand, SToken *operator, SToken 
  * Returns 1 if everything is OK, otherwise 0
  */
 int syntx_checkDataTypesOfIntegerDiv(SToken *leftOperand, SToken *rightOperand){
-  // CHECKME: really cast here - doubleToInt?
+  
   if(leftOperand->symbol->dataType == dtInt && rightOperand->symbol->dataType == dtInt){  // int - int
 
     // DIV can not work with integers: int - int -> double - double
@@ -266,7 +265,6 @@ int syntx_checkDataTypesOfIntegerDiv(SToken *leftOperand, SToken *rightOperand){
  * Returns 1 if everything is OK, otherwise 0
  */
 int syntx_checkDataTypesOfAsgnOps(SToken *leftOperand, SToken *oper, SToken *rightOperand){
-  //TODO: optimalization
 
   if(leftOperand->symbol->type == symtConstant){  // if asigns to the constant -> error
     return 0;
@@ -536,7 +534,6 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
           return token;
         }
 
-        //TODO: again! implicit conversion - return some value or not?
         syntx_intToDoubleToken(&rightOperandCopy); // -> double - double
 
         if(oper->type == opPlus){
@@ -569,7 +566,6 @@ SToken syntx_doArithmeticOp(SToken *leftOperand, SToken *oper, SToken *rightOper
           return token;
         }
 
-        //TODO: again! implicit conversion - return some value or not?
         syntx_intToDoubleToken(&leftOperandCopy); // -> double - double
 
         if(oper->type == opPlus){
