@@ -235,17 +235,24 @@ int syntx_useRule(TTkList list)
     //unary minus
     if (list->active->next == NULL)
       return 0;
-    ret_var = sytx_getFreeVar();
-    SToken zeroT;
-    zeroT.type = ident;
-    zeroT.symbol = symbt_findOrInsertSymb("0");
-    if(zeroT.symbol->type == symtUnknown)
+    if (list->active->next->token.symbol == NULL)
+      return 0;
+    if(list->active->next->token.symbol->type == symtConstant)
     {
-      zeroT.symbol->type = symtConstant;
-      zeroT.symbol->dataType = dtInt;
-      zeroT.symbol->data.intVal = 0;
+      ret_var = syntx_doUnaryMinus(&list->active->next->token);
+    }else{
+      ret_var = sytx_getFreeVar();
+      SToken zeroT;
+      zeroT.type = ident;
+      zeroT.symbol = symbt_findOrInsertSymb("0");
+      if(zeroT.symbol->type == symtUnknown)
+      {
+        zeroT.symbol->type = symtConstant;
+        zeroT.symbol->dataType = dtInt;
+        zeroT.symbol->data.intVal = 0;
+      }
+      syntx_generateCode(&zeroT, &list->active->token, &list->active->next->token, &ret_var);
     }
-    syntx_generateCode(&zeroT, &list->active->token, &list->active->next->token, &ret_var);
     list->postDelete(list);
     list->postInsert(list, &ret_var);
     list->next(list);
@@ -382,6 +389,7 @@ int syntx_processUnaryOps(TTkList list, SToken *actToken)
   {
     if(actToken->type == ident)
     {
+      actToken->type = NT_EXPR;
       list->insertLast(list, actToken);
       syntx_useRule(list);
       return 1;
